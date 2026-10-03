@@ -1,0 +1,24 @@
+{
+  "name": "findemes",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=12"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "pnpm -r typecheck",
+    "depcruise": "pnpm --filter @findemes/backend depcruise",
+    "test": "pnpm -r test",
+    "test:core": "pnpm --filter @findemes/backend test:core",
+    "check": "pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.0"
+  }
+}

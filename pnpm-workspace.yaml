@@ -1,0 +1,12 @@
+packages:
+  - backend
+
+# Supply-chain defenses.
+# Do not install package versions published less than 24 h ago.
+minimumReleaseAge: 1440
+# Fail the install if any dependency wants to run a build script that is not allowed below.
+strictDepBuilds: true
+# Packages allowed to run install/build scripts. Empty: nothing needs to build today.
+allowBuilds: {}
+# Refuse to install on a Node.js or pnpm version outside package.json "engines".
+engineStrict: true
