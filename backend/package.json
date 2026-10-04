@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev:api": "node --watch src/composition/main-api.ts",
+    "dev:admin-api": "node --watch src/composition/main-admin-api.ts",
+    "openapi:generate": "node src/composition/generate-openapi.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p src/core/tsconfig.json --noEmit",
     "depcruise": "depcruise src test --config .dependency-cruiser.cjs",
     "test": "vitest run --coverage",
@@ -13,6 +16,12 @@
     "@vitest/coverage-v8": "^5.0.3",
     "dependency-cruiser": "^18.5.0",
     "typescript": "~6.0.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "yaml": "^2.9.1"
+  },
+  "dependencies": {
+    "@fastify/swagger": "^9.9.1",
+    "fastify": "^5.12.5",
+    "zod": "^4.6.5"
   }
 }

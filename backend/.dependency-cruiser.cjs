@@ -41,6 +41,22 @@ module.exports = {
       to: { path: '^src/adapters/' },
     },
     {
+      name: 'integration-packages-only-in-adapters',
+      comment: 'Rule 7: database, payment, bank and email libraries are used only inside src/adapters.',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/adapters/' },
+      to: {
+        path: '(^|/)node_modules/(pg|pg-[^/]+|kysely|fintoc|plaid|transbank-sdk|nodemailer|resend|postmark|@sendgrid/[^/]+)/',
+      },
+    },
+    {
+      name: 'http-helpers-are-generic',
+      comment: 'src/http holds framework helpers shared by both APIs; it knows nothing of the app.',
+      severity: 'error',
+      from: { path: '^src/http/' },
+      to: { path: '^src/(core|modules|adapters|api|admin-api|composition)/' },
+    },
+    {
       name: 'core-only-through-public-api',
       comment: 'Other layers import the core through src/core/index.ts, never its internals.',
       severity: 'error',

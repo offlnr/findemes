@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: Fin de Mes — API pública
+  description: API REST versionada de Fin de Mes. Las rutas administrativas no
+    forman parte de esta API.
+  version: 1.0.0
+components:
+  schemas: {}
+paths:
+  /health:
+    get:
+      summary: Estado del servicio
+      tags:
+        - infraestructura
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ok
+                required:
+                  - status
+                additionalProperties: false

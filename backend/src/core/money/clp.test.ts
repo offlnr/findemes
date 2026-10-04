@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addClp, clp, subtractClp } from './clp.js';
+import { addClp, clp, subtractClp } from './clp.ts';
 
 describe('clp', () => {
   it('accepts whole peso amounts, including zero and negatives', () => {

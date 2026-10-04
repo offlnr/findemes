@@ -21,9 +21,11 @@ El calendario de sprints del informe (Tabla 36) es simulado y no se usa para pla
                         privacy (HU21), audit (RNF10, HU25), demo (HU27-29),
                         aggregation (HU36), notifications
                         (cada módulo: domain/ application/ ports/)
-  /src/adapters      -> postgres, webpay, plaid, email
+                        shared/ -> Actor, Clock, IdGenerator (comunes a los módulos)
+  /src/adapters      -> postgres, webpay, fintoc, email
   /src/api/v1        -> API REST pública versionada (Fastify; genera el OpenAPI)
   /src/admin-api     -> API de administración (proceso y despliegue separados)
+  /src/http          -> utilidades HTTP comunes a ambas APIs (errores uniformes, sin lógica)
   /src/composition   -> raíz de composición: conecta puertos con adaptadores
   /migrations        -> SQL versionado
   /test              -> integración y acceso cruzado
@@ -50,8 +52,8 @@ El calendario de sprints del informe (Tabla 36) es simulado y no se usa para pla
    Toda ruta nueva que exponga datos individuales requiere prueba automatizada de acceso cruzado.
 6. **Pagos.** Nunca almacenar datos de tarjeta. La activación del plan se confirma desde el
    backend contra Transbank y es idempotente; no depende del retorno del navegador.
-7. **Integraciones solo por adaptadores.** Webpay Plus (ambiente de integración), Plaid
-   (solo sandbox) y correo transaccional. El núcleo funciona sin ninguna de ellas.
+7. **Integraciones solo por adaptadores.** Webpay Plus (ambiente de integración), Fintoc
+   (modo de prueba) y correo transaccional. El núcleo funciona sin ninguna de ellas.
 8. **Sin lógica de negocio en el cliente.** Flutter y el panel consumen la API; no recalculan.
 9. **Panel de administración separado.** Ninguna ruta administrativa en la API pública.
 10. **Montos en pesos chilenos como enteros** (sin decimales de punto flotante; `bigint` en
@@ -76,7 +78,8 @@ El calendario de sprints del informe (Tabla 36) es simulado y no se usa para pla
 - **Panel de administración:** segundo factor TOTP (RNF22).
 - **Pagos:** `commit` de Webpay desde el servidor, restricción única sobre `buy_order`,
   verificación del monto contra el plan, manejo de flujos abortados (`TBK_TOKEN`).
-- **Datos:** tokens de Plaid cifrados en la aplicación (AES-256-GCM); HSTS, CSP y CORS con
+- **Datos:** `link_token` de Fintoc cifrados en la aplicación (AES-256-GCM); la clave bancaria
+  del usuario la recibe solo el widget de Fintoc, nunca la app ni el backend; HSTS, CSP y CORS con
   orígenes exactos; validación estricta (se rechazan campos desconocidos, montos con límites);
   los logs no registran correos, montos ni tokens; exportación y borrado efectivo (HU21).
 - **CI:** gitleaks, osv-scanner / `pnpm audit`, CodeQL, Dependabot; acciones de GitHub fijadas
@@ -92,8 +95,12 @@ El calendario de sprints del informe (Tabla 36) es simulado y no se usa para pla
 
 ## Tecnología
 Ver `docs/adr/001-technical-stack.md`.
-- Backend: Node.js 24 LTS + TypeScript (strict), pnpm workspaces, Fastify, Zod (solo en `api`
-  y `modules`), Kysely + migraciones SQL, Vitest, PostgreSQL, JWT.
+- Backend: Node.js 24 LTS + TypeScript (strict), pnpm workspaces, Fastify, Zod (solo en `api`,
+  `modules` y `composition`), Kysely + migraciones SQL, Vitest, PostgreSQL, JWT.
+- Node ejecuta TypeScript directamente (type stripping): los imports relativos usan extensión
+  `.ts` y solo se permite sintaxis borrable (`erasableSyntaxOnly`: sin `enum` ni `namespace`).
+- Comandos: `pnpm check` (lint, tipos, capas, pruebas), `pnpm --filter @findemes/backend dev:api`,
+  `openapi:generate` tras cambiar una ruta (una prueba falla si `docs/openapi.yaml` queda desfasado).
 - Base de datos local: PostgreSQL en Docker Desktop (`docker compose`), misma versión que CI y
   producción.
 - App: Flutter (una base de código para web, Android e iOS). Manejo de estado: Riverpod.
@@ -127,9 +134,11 @@ El motor es mensual: responde "en qué mes", no "en qué semana".
   la base.
 - **Modo demostración (HU27-28):** endpoint público sin estado `POST /v1/demo/projection`, sin
   persistencia y con límite de tasa. El cálculo sigue en el servidor.
-- **Plaid (HU36):** el sandbox entrega USD; el adaptador convierte con una tasa fija
-  configurable, redondea a CLP entero y marca los movimientos como sandbox. El núcleo solo
-  conoce CLP.
+- **Agregación bancaria (HU36): Fintoc** en lugar de Plaid, que no opera en Chile (decisión
+  del 03-10-2026, ver `docs/adr/002-bank-aggregation-fintoc.md`). Modo de prueba; entrega
+  cuentas corrientes y vista con montos CLP enteros (negativo = cargo). No entrega tarjetas de
+  crédito, así que las deudas en cuotas (HU03) siguen siendo registro manual. El usuario
+  confirma qué movimientos son recurrentes: el sistema no los clasifica por su cuenta.
 - **Importación de cartolas:** fuera del MVP.
 
 ## Definición de terminado
