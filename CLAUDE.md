@@ -22,7 +22,7 @@ El calendario de sprints del informe (Tabla 36) es simulado y no se usa para pla
                         aggregation (HU36), notifications
                         (cada módulo: domain/ application/ ports/)
                         shared/ -> Actor, Clock, IdGenerator (comunes a los módulos)
-  /src/adapters      -> postgres, webpay, fintoc, email
+  /src/adapters      -> postgres, webpay, fintoc, demo-bank, email
   /src/api/v1        -> API REST pública versionada (Fastify; genera el OpenAPI)
   /src/admin-api     -> API de administración (proceso y despliegue separados)
   /src/http          -> utilidades HTTP comunes a ambas APIs (errores uniformes, sin lógica)
@@ -139,6 +139,10 @@ El motor es mensual: responde "en qué mes", no "en qué semana".
   cuentas corrientes y vista con montos CLP enteros (negativo = cargo). No entrega tarjetas de
   crédito, así que las deudas en cuotas (HU03) siguen siendo registro manual. El usuario
   confirma qué movimientos son recurrentes: el sistema no los clasifica por su cuenta.
+- **Banco de demostración:** adaptador `demo-bank` del mismo puerto, con perfiles realistas y
+  deterministas (estudiante, familia, profesional con deudas) para la validación con usuarios y la
+  defensa. Todo dato agregado declara su origen (`real`, `provider_test` o `demo`), y la app
+  rotula lo que no es `real`: nunca se presentan datos de prueba o demostración como reales.
 - **Importación de cartolas:** fuera del MVP.
 
 ## Definición de terminado

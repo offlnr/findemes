@@ -57,3 +57,19 @@ movimientos. Resultados:
   equipo no decida lo contrario.
 - El MCP de Fintoc para asistentes de IA opera solo en modo live y puede mover dinero. El proyecto
   no lo usa.
+
+## Banco de demostración (agregado el 03-10-2026)
+
+Los datos del modo de prueba de Fintoc no se pueden personalizar: son aleatorios, con
+descripciones en latín y montos de millones. No sirven para mostrar casos realistas. Por eso el
+puerto `BankAggregator` tiene un segundo adaptador, `src/adapters/demo-bank`:
+
+- Ofrece perfiles curados y deterministas (`estudiante`, `familia`, `profesional-con-deudas`) con
+  12 meses de historial, ingresos y cargos recurrentes y gastos variables generados con una
+  semilla fija.
+- Lo elige la raíz de composición. El resto del sistema no distingue entre ambos adaptadores, lo
+  que además demuestra la regla 7 y el RNF16.
+- Cada cuenta y cada movimiento declaran `origin`: `real`, `provider_test` o `demo`. La app debe
+  rotular los datos que no son reales, para no presentar datos inventados como información
+  bancaria del usuario.
+
