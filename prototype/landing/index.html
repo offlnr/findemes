@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Fin de Mes · Tus gastos, a la vista</title>
+<meta name="description" content="Fin de Mes reúne tus ingresos, gastos, deudas y cuotas, proyecta tu saldo mes a mes y te muestra qué cambia con una compra en cuotas antes de que decidas.">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=erode@400,500,600,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f9f8;
+  --surface: #ebf0ee;
+  --ink: #06525c;
+  --muted: #2f737d;
+  --field-1: #06525c;
+  --field-1-ink: #f7f9f8;
+  --field-1-pale: #9fd1cc;
+
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-stmt: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem);
+  --step-xl: clamp(2.5rem, 1.4rem + 4.6vw, 5.25rem);
+  --step-display: clamp(4rem, 14vw, 13.75rem);
+
+  --margin: clamp(16px, 3vw, 48px);
+  --gap-section: clamp(80px, 9vw, 144px);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --font: "Erode", Georgia, "Times New Roman", serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font); font-size: var(--step-body); line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+a { color: inherit; text-underline-offset: 0.18em; text-decoration-thickness: 0.06em; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-weight: 500; letter-spacing: -0.025em; line-height: 1; text-wrap: balance; }
+p { text-wrap: pretty; }
+:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+::selection { background: var(--ink); color: var(--bg); }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.wrap { padding: 0 var(--margin); }
+.section { padding-top: var(--gap-section); }
+h2.xl { font-size: var(--step-xl); }
+
+/* ---------- botones: una forma, esquinas rectas ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 48px;
+  padding: 0 1.25em; border: 2px solid currentColor; border-radius: 0;
+  font: 600 var(--step-body)/1 var(--font); text-decoration: none; cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease, transform 120ms var(--ease-out);
+}
+.btn:active { transform: translateY(1px) scale(0.98); }
+.btn-solid { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn-solid:hover { background: var(--bg); color: var(--ink); }
+.on-field .btn-solid { background: var(--field-1-ink); color: var(--field-1); border-color: var(--field-1-ink); }
+.on-field .btn-solid:hover { background: transparent; color: var(--field-1-ink); }
+
+/* ---------- barra superior: toma el color del capítulo ---------- */
+.corner {
+  position: fixed; inset: 0 0 auto 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 18px var(--margin); color: var(--field-1-ink); background: var(--field-1);
+  transition: color 300ms ease, background-color 300ms ease, transform 320ms var(--ease-out);
+}
+.corner.away { transform: translateY(-100%); }
+.corner:focus-within { transform: none; }
+@media (prefers-reduced-motion: reduce) { .corner { transition: color 300ms ease, background-color 300ms ease; } }
+.corner[data-ink="ink"] { color: var(--ink); }
+.corner .wordmark { font-size: var(--step-lead); font-weight: 600; text-decoration: none; letter-spacing: -0.015em; }
+.corner nav { display: flex; align-items: center; gap: clamp(14px, 2.4vw, 36px); font-size: var(--step-body); }
+.corner nav a:not(.btn) { text-decoration: none; padding: 12px 0; }
+.corner nav a:not(.btn):hover { text-decoration: underline; }
+.corner .btn { min-height: 48px; font-size: var(--step-body); background: currentColor; }
+.corner .btn span { color: var(--field-1); transition: color 300ms ease; }
+.corner[data-ink="ink"] .btn span { color: var(--bg); }
+.corner .btn:hover { background: transparent; }
+.corner .btn:hover span, .corner[data-ink="ink"] .btn:hover span { color: currentColor; }
+@media (max-width: 900px) { .corner nav a.hide-sm { display: none; } }
+
+/* ---------- hero ---------- */
+.hero {
+  min-height: 100svh; background: var(--field-1); color: var(--field-1-ink);
+  padding: 0 var(--margin); display: grid; grid-template-rows: 15svh auto 1fr auto;
+}
+.hero h1 { grid-row: 2; font-size: var(--step-display); line-height: 0.84; letter-spacing: -0.035em; margin-left: -0.04em; }
+.hero h1 .l1 { display: block; color: var(--field-1-pale); }
+.hero h1 .l2 { display: block; color: var(--field-1-ink); }
+.hero-foot { grid-row: 4; display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: end; padding-bottom: clamp(24px, 6svh, 64px); }
+.hero-foot p { grid-column: 1 / 7; font-size: var(--step-lead); line-height: 1.35; max-width: 34ch; }
+.hero-foot .actions { grid-column: 8 / 13; justify-self: end; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: flex-end; }
+.hero-foot .actions a:not(.btn) { padding: 12px 0; }
+@media (max-width: 760px) {
+  .hero h1 { font-size: 16vw; line-height: 0.88; }
+  .hero-foot p, .hero-foot .actions { grid-column: 1 / -1; justify-self: start; justify-content: flex-start; }
+}
+
+/* ---------- cómo funciona: cada etapa lleva su texto dentro ---------- */
+.stages-head { margin-bottom: 40px; }
+.bar { display: flex; gap: 6px; }
+.bar > div { flex-basis: 0; min-height: 200px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.bar .s1 { flex-grow: 1; background: var(--surface); color: var(--ink); }
+.bar .s2 { flex-grow: 1.4; background: var(--muted); color: var(--bg); }
+.bar .s3 { flex-grow: 1.2; background: var(--ink); color: var(--bg); }
+.bar h3 { font-size: var(--step-stmt); font-weight: 500; line-height: 1.1; }
+.bar p { max-width: 34ch; }
+@media (max-width: 760px) {
+  .bar { flex-direction: column; }
+  .bar > div { flex-basis: auto; min-height: 0; padding: 20px; gap: 10px; }
+}
+
+/* ---------- simulador + proyección ---------- */
+.sim h2 { margin-bottom: 32px; }
+.sim-input {
+  display: block; width: 100%; border: 0; padding: 0; margin: 0; background: transparent; color: var(--ink);
+  font: 500 var(--step-xl)/1.1 var(--font); letter-spacing: -0.03em; caret-color: var(--ink); border-radius: 0; outline-offset: 8px;
+}
+.sim-hint { margin-top: 10px; font-size: var(--step-small); color: var(--muted); }
+.examples { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px 24px; }
+.examples button {
+  font: 400 var(--step-body)/1.3 var(--font); color: var(--ink); background: none; border: 0; padding: 10px 0;
+  cursor: pointer; text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 0.06em;
+  transition: color 150ms ease, transform 120ms var(--ease-out);
+}
+.examples button:hover { color: var(--muted); }
+.examples button:active { transform: translateY(1px); }
+.sim-grid { margin-top: 40px; display: grid; grid-template-columns: 5fr 7fr; gap: 6px; align-items: stretch; }
+.answer, .table-panel { background: var(--surface); padding: 28px; }
+.tag { display: inline-block; font-size: var(--step-small); background: var(--ink); color: var(--bg); padding: 2px 8px; margin-bottom: 16px; }
+.answer dl { display: grid; grid-template-columns: 1fr auto; gap: 10px 24px; margin: 0; }
+.answer dt { color: var(--muted); }
+.answer dd { margin: 0; text-align: right; font-weight: 600; }
+.answer .why { margin-top: 24px; }
+.answer .profile { margin-top: 24px; font-size: var(--step-small); color: var(--muted); }
+.table-panel h3 { font-size: var(--step-lead); font-weight: 500; line-height: 1.2; margin-bottom: 16px; }
+.proj { width: 100%; border-collapse: collapse; line-height: 1.6; }
+.proj th { font-weight: 400; text-align: left; color: var(--muted); font-size: var(--step-small); padding: 0 12px 8px 0; }
+.proj td { padding: 0 12px 0 0; }
+.proj .r { text-align: right; padding-right: 0; }
+.proj tr.neg td { font-weight: 600; }
+.proj .flag { font-weight: 400; font-size: var(--step-small); color: var(--muted); margin-left: 0.5em; }
+.proj .mshort { display: none; }
+@media (max-width: 900px) {
+  .sim-grid { grid-template-columns: 1fr; }
+  .answer, .table-panel { padding: 20px; }
+}
+@media (max-width: 520px) {
+  .sim-input { font-size: 9vw; }
+  .examples { gap: 8px; }
+  .examples button { background: var(--surface); padding: 0 14px; min-height: 44px; text-decoration: none; }
+  .proj .hide-sm { display: none; }
+  .proj .mlong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .proj .mshort { display: inline; }
+  .proj .flag { display: block; margin-left: 0; }
+}
+
+/* ---------- qué incluye: campo de color, título y texto juntos ---------- */
+.includes { margin-top: var(--gap-section); background: var(--field-1); color: var(--field-1-ink); padding: clamp(64px, 8vw, 120px) var(--margin); }
+.includes .lead { font-size: var(--step-stmt); line-height: 1.3; font-weight: 500; max-width: 46ch; }
+.inc-grid { margin-top: clamp(48px, 6vw, 88px); display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(40px, 5vw, 72px) clamp(24px, 6vw, 96px); }
+.inc-grid h3 { font-size: var(--step-stmt); font-weight: 600; line-height: 1.1; margin-bottom: 12px; }
+.inc-grid p { max-width: 44ch; color: var(--field-1-ink); }
+@media (max-width: 760px) { .inc-grid { grid-template-columns: 1fr; } }
+
+
+/* ---------- plan familiar ---------- */
+.hogar-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 40px 24px; align-items: start; }
+.hogar-text { grid-column: 1 / 6; }
+.hogar-lead { font-size: var(--step-lead); line-height: 1.35; margin: 20px 0 40px; max-width: 52ch; }
+.hogar-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
+.hogar-steps li { max-width: 44ch; }
+.hogar-steps b { display: block; font-size: var(--step-lead); font-weight: 600; line-height: 1.2; margin-bottom: 4px; }
+.hogar-panel { grid-column: 7 / 13; background: var(--surface); padding: 28px; }
+.hogar-panel h3 { font-size: var(--step-lead); font-weight: 500; line-height: 1.2; }
+.hogar-panel .sub { font-size: var(--step-small); color: var(--muted); margin: 4px 0 16px; }
+.split { width: 100%; border-collapse: collapse; line-height: 1.45; }
+.split th { font-weight: 400; text-align: left; color: var(--muted); font-size: var(--step-small); padding: 0 12px 8px 0; }
+.split td { padding: 6px 12px 6px 0; vertical-align: top; }
+.split .r { text-align: right; padding-right: 0; padding-left: 14px; white-space: nowrap; }
+.split .rule { color: var(--muted); font-size: var(--step-small); }
+.split tfoot td { font-weight: 600; padding-top: 14px; }
+.hogar-panel .flow { margin-top: 20px; font-size: var(--step-small); color: var(--ink); }
+.privacy { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.privacy > div { padding: 28px; }
+.privacy .shared { background: var(--surface); color: var(--ink); }
+.privacy .own { background: var(--ink); color: var(--bg); }
+.privacy h3 { font-size: var(--step-stmt); font-weight: 600; line-height: 1.1; margin-bottom: 12px; }
+.privacy ul { margin: 0; padding-left: 1.1em; }
+.privacy li { margin-top: 4px; }
+.hogar-note { margin-top: 20px; max-width: 70ch; }
+@media (max-width: 900px) {
+  .hogar-text, .hogar-panel { grid-column: 1 / -1; }
+  .hogar-panel { padding: 20px; }
+  .privacy { grid-template-columns: 1fr; }
+  .privacy > div { padding: 20px; }
+}
+@media (max-width: 520px) { .split .rule-col { display: none; } }
+
+/* ---------- planes ---------- */
+.plans-wrap { overflow-x: auto; }
+.plans { width: 100%; border-collapse: collapse; line-height: 1.35; min-width: 820px; }
+.plans th, .plans td { text-align: left; padding: 18px 20px; vertical-align: top; }
+.plans thead th { vertical-align: bottom; }
+.plans thead th:first-child { font-size: var(--step-xl); font-weight: 500; letter-spacing: -0.025em; line-height: 1; padding-left: 0; }
+.plans .pname { display: block; font-size: var(--step-stmt); font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+.plans .price { display: block; font-size: var(--step-stmt); font-weight: 400; letter-spacing: -0.02em; line-height: 1.1; margin-top: 6px; }
+.plans .per { display: block; font-size: var(--step-small); color: var(--muted); margin-top: 6px; }
+.plans tbody th { font-weight: 400; width: 34%; padding-left: 12px; }
+.plans tbody tr:nth-child(odd) { background: var(--surface); }
+.plans tfoot td { padding-top: 24px; }
+.plans tfoot .btn { width: 100%; }
+.plans-note { margin-top: 20px; max-width: 70ch; }
+.plans-cards { display: none; }
+@media (max-width: 900px) {
+  .plans-wrap { display: none; }
+  .plans-cards { display: grid; gap: 40px; }
+  .plans-cards > h2 { margin-bottom: -8px; }
+  .plan-card { background: var(--surface); padding: 24px 16px; }
+  .plan-card h3 { font-size: var(--step-stmt); font-weight: 600; }
+  .plan-card .price { font-size: var(--step-stmt); line-height: 1.1; margin-top: 6px; }
+  .plan-card .per { font-size: var(--step-small); color: var(--muted); margin-top: 4px; }
+  .plan-card dl { margin: 20px 0 24px; }
+  .plan-card dt { color: var(--muted); margin-top: 12px; }
+  .plan-card dd { margin: 2px 0 0; }
+  .plan-card .btn { width: 100%; }
+}
+
+/* ---------- preguntas ---------- */
+.faq .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; }
+.faq .grid > h2 { grid-column: 1 / 5; font-size: var(--step-xl); }
+.faq .cols { grid-column: 5 / 13; columns: 2; column-gap: 56px; }
+.faq .cols p { break-inside: avoid; margin-bottom: 20px; line-height: 1.55; }
+.faq .cols b { font-weight: 600; }
+@media (max-width: 900px) {
+  .faq .grid > h2, .faq .cols { grid-column: 1 / -1; }
+  .faq .grid > h2 { margin-bottom: 28px; }
+  .faq .cols { columns: 1; }
+}
+
+/* ---------- cierre ---------- */
+.cta { margin-top: var(--gap-section); background: var(--field-1); color: var(--field-1-ink); padding: clamp(64px, 8vw, 120px) var(--margin); }
+.cta-inner { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: end; }
+.cta h2 { grid-column: 1 / 8; }
+.cta p { grid-column: 1 / 7; font-size: var(--step-lead); line-height: 1.35; max-width: 38ch; }
+.cta-actions { grid-column: 8 / 13; grid-row: 2; justify-self: end; display: flex; flex-wrap: wrap; gap: 12px; }
+.cta .btn:not(.btn-solid) { color: var(--field-1-ink); }
+.cta .btn:not(.btn-solid):hover { background: var(--field-1-ink); color: var(--field-1); }
+@media (max-width: 900px) {
+  .cta h2, .cta p, .cta-actions { grid-column: 1 / -1; grid-row: auto; justify-self: start; }
+}
+
+/* ---------- pie ---------- */
+.page { position: relative; background: var(--bg); }
+.foot { background: var(--bg); color: var(--ink); padding: clamp(48px, 6vw, 88px) var(--margin) 24px; }
+.foot-top { display: grid; grid-template-columns: repeat(12, 1fr); gap: 40px 24px; }
+.foot-brand { grid-column: 1 / 5; }
+.foot-name { font-size: var(--step-stmt); font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+.foot-desc { margin-top: 12px; max-width: 30ch; color: var(--muted); }
+.foot .cols { grid-column: 6 / 13; display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px 24px; }
+.foot ul { list-style: none; margin: 0; padding: 0; line-height: 1.6; }
+.foot li:first-child { font-weight: 600; margin-bottom: 4px; }
+.foot li a { text-decoration: none; display: inline-block; padding: 4px 0; color: var(--muted); }
+.foot li a:hover { text-decoration: underline; color: var(--ink); }
+.foot .legal { margin-top: clamp(40px, 5vw, 72px); font-size: var(--step-small); color: var(--muted); }
+@media (max-width: 900px) {
+  .foot-brand, .foot .cols { grid-column: 1 / -1; }
+  .foot .cols { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- paletas de prueba (selector abajo a la izquierda) ---------- */
+html[data-palette="bosque"]  { --bg:#f6f8f5; --surface:#e7eee8; --ink:#1d4634; --muted:#456b59; --field-1:#1d4634; --field-1-ink:#f6f8f5; --field-1-pale:#a9d4b8; }
+html[data-palette="tinta"]   { --bg:#f6f8fb; --surface:#e5ecf5; --ink:#142f57; --muted:#3d5a85; --field-1:#142f57; --field-1-ink:#f6f8fb; --field-1-pale:#a7c3ec; }
+html[data-palette="grafito"] { --bg:#f6f6f3; --surface:#e9e9e4; --ink:#23282b; --muted:#535b60; --field-1:#23282b; --field-1-ink:#f6f6f3; --field-1-pale:#cfdc6e; }
+html[data-palette="mostaza"] { --bg:#f8f7f2; --surface:#eeece3; --ink:#1f2a24; --muted:#4e5a53; --field-1:#f0bf3c; --field-1-ink:#1f2a24; --field-1-pale:#7c5a00; }
+html[data-palette="coral"]   { --bg:#f8f6f5; --surface:#efe9e7; --ink:#2b2422; --muted:#5c504c; --field-1:#e8664f; --field-1-ink:#1f1715; --field-1-pale:#4a170e; }
+html[data-palette="vino"] { --bg:#f9f6f6; --surface:#f0e7e8; --ink:#4a1520; --muted:#7a4650; --field-1:#6b1e2e; --field-1-ink:#f9f6f6; --field-1-pale:#f2b8c0; }
+html[data-palette="oliva"] { --bg:#f7f7f1; --surface:#ebebdf; --ink:#33391a; --muted:#5e6538; --field-1:#4b5320; --field-1-ink:#f7f7f1; --field-1-pale:#d9e29a; }
+html[data-palette="celeste"] { --bg:#f6f9fb; --surface:#e5eef4; --ink:#0f2f45; --muted:#3e6077; --field-1:#bfe3f2; --field-1-ink:#0f2f45; --field-1-pale:#2f6488; }
+html[data-palette="lima"] { --bg:#f8f9f3; --surface:#ecefe1; --ink:#1c2a10; --muted:#4b5a3a; --field-1:#c8e86b; --field-1-ink:#1c2a10; --field-1-pale:#4b6611; }
+html[data-palette="rojo"] { --bg:#faf6f6; --surface:#f1e8e8; --ink:#2a1416; --muted:#6a3a3e; --field-1:#b3102a; --field-1-ink:#fff7f5; --field-1-pale:#ffc9c2; }
+html[data-palette="naranja"] { --bg:#faf7f3; --surface:#f1ebe2; --ink:#2b1a0c; --muted:#6b4a2e; --field-1:#f28c28; --field-1-ink:#1f1408; --field-1-pale:#6b2f00; }
+html[data-palette="turquesa"] { --bg:#f5faf9; --surface:#e4f1ee; --ink:#0b2b27; --muted:#2f5e57; --field-1:#4fc1b0; --field-1-ink:#0b2b27; --field-1-pale:#0b5a50; }
+html[data-palette="electrico"] { --bg:#f6f8ff; --surface:#e6ecfb; --ink:#0d1f4d; --muted:#3a4f80; --field-1:#1f5eff; --field-1-ink:#ffffff; --field-1-pale:#c9d8ff; }
+html[data-palette="rosa"] { --bg:#fbf7f8; --surface:#f3e8eb; --ink:#3a1020; --muted:#74404f; --field-1:#f4b6c2; --field-1-ink:#3a1020; --field-1-pale:#8a2a46; }
+.palette-picker {
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 30; display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 4px; max-height: 86vh; overflow-y: auto;
+  padding: 8px; background: var(--bg); color: var(--ink); font-size: var(--step-small);
+  box-shadow: 0 2px 12px rgb(0 0 0 / .18); /* taste-skill-ignore: selector flotante de prueba */
+}
+.palette-picker span { grid-column: 1 / -1; padding: 0 2px 4px; font-weight: 600; }
+@media (max-width: 760px) { .palette-picker button { font-size: 0; gap: 0; min-height: 32px; padding: 0 9px; } .palette-picker span { display: none; } }
+.palette-picker button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 2px solid transparent;
+  background: var(--surface); color: var(--ink); font: 500 var(--step-small)/1 var(--font); cursor: pointer;
+  transition: border-color 150ms ease, transform 120ms var(--ease-out);
+}
+.palette-picker button:active { transform: scale(0.97); }
+.palette-picker button[aria-pressed="true"] { border-color: var(--ink); }
+.palette-picker i { width: 14px; height: 14px; display: inline-block; }
+@media (max-width: 760px) { .palette-picker { grid-template-columns: 1fr 1fr 1fr; } .palette-picker button { font-size: 0; gap: 0; min-height: 36px; padding: 0 10px; justify-content: center; } .palette-picker i { width: 16px; height: 16px; } }
+
+/* ---------- movimiento ---------- */
+.js .rise { opacity: 0; transform: translateY(24px); transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out); transition-delay: calc(var(--i, 0) * 75ms); }
+.js .rise.in { opacity: 1; transform: none; }
+.js .hero h1 .l1, .js .hero h1 .l2 { opacity: 0; transform: translateY(0.18em); animation: up 900ms var(--ease-out) forwards; }
+.js .hero h1 .l2 { animation-delay: 120ms; }
+.js .hero-foot > * { opacity: 0; animation: fade 700ms var(--ease-out) 420ms forwards; }
+@keyframes up { to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.answer.flash dd { animation: tick 360ms var(--ease-out); }
+@keyframes tick { from { opacity: 0.35; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .js .rise, .js .hero h1 .l1, .js .hero h1 .l2, .js .hero-foot > * { opacity: 1; transform: none; animation: none; transition: opacity 200ms linear; }
+  .answer.flash dd { animation: none; }
+}
+</style>
+</head>
+<body>
+<header class="corner" data-ink="paper">
+  <a class="wordmark" href="#inicio">Fin de Mes</a>
+  <nav aria-label="Sitio">
+    <a class="hide-sm" href="#como">Cómo funciona</a>
+    <a class="hide-sm" href="#hogar">Hogar</a>
+    <a class="hide-sm" href="#planes">Planes</a>
+    <a class="hide-sm" href="#preguntas">Preguntas</a>
+    <a href="../#/login">Entrar</a>
+    <a class="btn" href="../#/registro"><span>Crear cuenta</span></a>
+  </nav>
+</header>
+
+<div class="page">
+<main>
+  <section class="hero" id="inicio" data-chapter="paper" aria-labelledby="t-hero">
+    <h1 id="t-hero"><span class="l1">Tus gastos,</span> <span class="l2">a la vista.</span></h1>
+    <div class="hero-foot on-field">
+      <p>Fin de Mes reúne tus ingresos, gastos, deudas y cuotas, proyecta tu saldo mes a mes y te muestra qué cambia con una compra en cuotas antes de que decidas.</p>
+      <div class="actions">
+        <a class="btn btn-solid" href="#simula">Probar con un ejemplo</a>
+        <a href="#como">Ver cómo funciona</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section wrap" id="como" data-chapter="ink" aria-labelledby="t-como">
+    <h2 class="xl stages-head rise" id="t-como">Cómo funciona</h2>
+    <div class="bar">
+      <div class="s1 rise" style="--i:0"><h3>Registras una vez</h3><p>Ingresos, gastos fijos y deudas con sus cuotas. O conectas tu cuenta con Fintoc.</p></div>
+      <div class="s2 rise" style="--i:1"><h3>Ves tus próximos doce meses</h3><p>Tu saldo al cierre de cada mes, el mes en que termina cada cuota y el margen que queda libre.</p></div>
+      <div class="s3 rise" style="--i:2"><h3>Pruebas antes de decidir</h3><p>Simulas una compra o un prepago sobre una copia. Tu situación registrada no cambia.</p></div>
+    </div>
+  </section>
+
+  <section class="section wrap sim" id="simula" data-chapter="ink" aria-labelledby="t-sim">
+    <h2 class="xl rise" id="t-sim">Escribe una compra</h2>
+    <label class="vh" for="decision">Compra a simular, por ejemplo: Notebook de $899.990 en 12 cuotas</label>
+    <input class="sim-input rise" style="--i:1" id="decision" type="text" autocomplete="off" spellcheck="false"
+           value="Notebook de $899.990 en 12 cuotas" maxlength="60" aria-describedby="sim-hint">
+    <p class="sim-hint rise" style="--i:2" id="sim-hint">Escribe el monto y el número de cuotas. Sin cuotas, se calcula como un pago único este mes.</p>
+    <div class="examples rise" style="--i:2" aria-label="Otros ejemplos">
+      <button type="button" data-ex="Bicicleta de $450.000 en 6 cuotas">Bicicleta de $450.000 en 6 cuotas</button>
+      <button type="button" data-ex="Celular de $699.990 en 24 cuotas">Celular de $699.990 en 24 cuotas</button>
+      <button type="button" data-ex="Pasajes de $380.000 al contado">Pasajes de $380.000 al contado</button>
+    </div>
+
+    <div class="sim-grid">
+      <div class="answer rise" style="--i:3" aria-live="polite" id="answer" data-ui>
+        <span class="tag">Datos de ejemplo</span>
+        <dl>
+          <dt>Cuota mensual</dt><dd class="num" id="a-cuota"></dd>
+          <dt>Saldo más bajo</dt><dd class="num" id="a-min"></dd>
+          <dt>Primer mes con saldo negativo</dt><dd id="a-break"></dd>
+          <dt>Saldo más bajo frente a no comprar</dt><dd class="num" id="a-diff"></dd>
+        </dl>
+        <p class="why" id="a-why"></p>
+        <p class="profile">Perfil de ejemplo: ingreso de $1.150.000, gastos fijos de $890.000, un crédito de consumo con 5 cuotas de $220.000 por pagar y $120.000 de saldo inicial.</p>
+      </div>
+      <div class="table-panel rise" style="--i:4" data-ui>
+        <h3>Tus próximos doce meses</h3>
+        <table class="proj num">
+          <thead><tr><th scope="col">Mes</th><th scope="col" class="hide-sm">Sin la compra</th><th scope="col">Con la compra</th><th scope="col" class="r">Diferencia</th></tr></thead>
+          <tbody id="proj-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="includes" data-chapter="paper" aria-labelledby="t-inc">
+    <h2 class="vh" id="t-inc">Lo que incluye</h2>
+    <p class="lead rise">Fin de Mes no te dice qué hacer. Te muestra qué ocurre con tu saldo, en qué mes y qué lo causa. No ordena alternativas ni sugiere productos financieros. La decisión es tuya.</p>
+    <div class="inc-grid">
+      <div class="rise" style="--i:0"><h3>Cada cifra, explicada</h3><p>Junto a cada indicador va una explicación en lenguaje simple: qué ocurre, en qué mes y qué compromiso lo causa.</p></div>
+      <div class="rise" style="--i:1"><h3>Tu base no se toca</h3><p>Cada escenario guarda solo sus decisiones. Pruebas, comparas y borras sin cambiar lo que registraste.</p></div>
+      <div class="rise" style="--i:2"><h3>Tus cuotas, hasta la última</h3><p>Cada deuda en cuotas muestra cuántas quedan y en qué mes termina, para que veas cuándo se libera ese monto.</p></div>
+      <div class="rise" style="--i:3"><h3>Tu banco, sin tu clave</h3><p>Conecta tu cuenta con Fintoc: tu clave la recibe solo su widget. En esta etapa opera en modo de prueba, y esos datos aparecen rotulados.</p></div>
+    </div>
+  </section>
+
+
+  <section class="section wrap" id="hogar" data-chapter="ink" aria-labelledby="t-hogar">
+    <h2 class="xl rise" id="t-hogar">Los gastos de la casa, en común</h2>
+    <p class="hogar-lead rise" style="--i:1">Con el plan Familiar, dos o más personas organizan juntas los gastos del hogar. Cada una mantiene privadas sus finanzas personales.</p>
+    <div class="hogar-grid">
+      <div class="hogar-text">
+        <ol class="hogar-steps">
+          <li class="rise" style="--i:1"><b>Crean el hogar</b>Quien contrata el plan invita a los demás. Cada invitación sirve una sola vez, y antes de aceptar la persona ve qué será visible para el hogar y qué no.</li>
+          <li class="rise" style="--i:2"><b>Anotan los gastos comunes</b>Arriendo, cuentas, supermercado. Todos ven cada gasto y quién lo registró.</li>
+          <li class="rise" style="--i:3"><b>Acuerdan cómo se reparte</b>Cada gasto se divide en partes iguales, por porcentajes o se asigna a una persona.</li>
+          <li class="rise" style="--i:4"><b>Cada aporte llega a su mes</b>Lo que te toca aportar aparece en tu propia proyección como un compromiso más, junto a tus ingresos y tus cuotas.</li>
+        </ol>
+      </div>
+
+      <div class="hogar-panel rise" style="--i:2" data-ui>
+        <span class="tag">Datos de ejemplo</span>
+        <h3>Hogar de Camila y Diego</h3>
+        <p class="sub">Gastos comunes de noviembre y lo que aporta cada uno.</p>
+        <table class="split num">
+          <thead><tr><th scope="col">Gasto</th><th scope="col" class="rule-col">Cómo se reparte</th><th scope="col" class="r">Camila</th><th scope="col" class="r">Diego</th></tr></thead>
+          <tbody>
+            <tr><td>Arriendo<br><span class="rule">$650.000</span></td><td class="rule rule-col">55 % y 45 %</td><td class="r">$357.500</td><td class="r">$292.500</td></tr>
+            <tr><td>Supermercado<br><span class="rule">$320.000</span></td><td class="rule rule-col">Partes iguales</td><td class="r">$160.000</td><td class="r">$160.000</td></tr>
+            <tr><td>Gastos comunes del edificio<br><span class="rule">$85.000</span></td><td class="rule rule-col">Partes iguales</td><td class="r">$42.500</td><td class="r">$42.500</td></tr>
+            <tr><td>Luz y agua<br><span class="rule">$64.000</span></td><td class="rule rule-col">55 % y 45 %</td><td class="r">$35.200</td><td class="r">$28.800</td></tr>
+            <tr><td>Internet<br><span class="rule">$38.000</span></td><td class="rule rule-col">Asignado a Diego</td><td class="r">$0</td><td class="r">$38.000</td></tr>
+          </tbody>
+          <tfoot><tr><td>Aporte del mes</td><td class="rule-col"></td><td class="r">$595.200</td><td class="r">$561.800</td></tr></tfoot>
+        </table>
+        <p class="flow">Los $595.200 de Camila aparecen en su proyección como un compromiso mensual. Diego ve ese monto, pero no el sueldo, las deudas ni los escenarios de Camila.</p>
+      </div>
+    </div>
+
+    <div class="privacy">
+      <div class="shared rise"><h3>Lo que ve todo el hogar</h3><ul><li>Los gastos comunes y quién los registró</li><li>Cómo se reparte cada gasto</li><li>Cuánto aporta cada persona</li></ul></div>
+      <div class="own rise" style="--i:1"><h3>Lo que solo ves tú</h3><ul><li>Tus ingresos y tus gastos personales</li><li>Tus deudas y tus cuotas</li><li>Tus escenarios y simulaciones</li></ul></div>
+    </div>
+    <p class="hogar-note rise">Quien administra el hogar puede invitar y quitar miembros, pero tampoco ve los datos personales de nadie. Si el plan vence, el espacio común queda en solo lectura y no se borra nada.</p>
+  </section>
+
+  <section class="section wrap" id="planes" data-chapter="ink" aria-labelledby="t-planes">
+    <div class="plans-wrap rise">
+      <table class="plans">
+        <thead>
+          <tr>
+            <th scope="col" id="t-planes">Planes</th>
+            <th scope="col"><span class="pname">Gratuito</span><span class="price num">$0</span><span class="per">sin plazo</span></th>
+            <th scope="col"><span class="pname">Individual</span><span class="price">Por definir</span><span class="per">por período, renovación manual</span></th>
+            <th scope="col"><span class="pname">Familiar</span><span class="price">Por definir</span><span class="per">por período, renovación manual</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Registro y proyección mensual</th><td>Incluido</td><td>Incluido</td><td>Incluido</td></tr>
+          <tr><th scope="row">Escenarios guardados</th><td>Hasta 2</td><td>Sin límite</td><td>Sin límite</td></tr>
+          <tr><th scope="row">Comparación con tu situación base</th><td>1 escenario a la vez</td><td>Varios a la vez</td><td>Varios a la vez</td></tr>
+          <tr><th scope="row">Historial de meses</th><td>Mes en curso</td><td>Completo</td><td>Completo</td></tr>
+          <tr><th scope="row">Simulación de prepagos de deuda</th><td>No incluida</td><td>Incluida</td><td>Incluida</td></tr>
+          <tr><th scope="row">Conexión con tu banco (Fintoc)</th><td>Incluida</td><td>Incluida</td><td>Incluida</td></tr>
+          <tr><th scope="row">Hogar con espacio común y perfiles privados</th><td>No incluido</td><td>No incluido</td><td>Incluido</td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td></td>
+            <td><a class="btn btn-solid" href="../#/registro">Crear cuenta gratis</a></td>
+            <td><a class="btn" href="../#/registro?plan=individual">Elegir Individual</a></td>
+            <td><a class="btn" href="../#/registro?plan=familiar">Elegir Familiar</a></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="plans-cards">
+      <h2 class="xl">Planes</h2>
+      <article class="plan-card"><h3>Gratuito</h3><p class="price num">$0</p><p class="per">sin plazo</p>
+        <dl><dt>Escenarios guardados</dt><dd>Hasta 2</dd><dt>Comparación con tu situación base</dt><dd>1 escenario a la vez</dd><dt>Historial de meses</dt><dd>Mes en curso</dd><dt>Simulación de prepagos</dt><dd>No incluida</dd><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Hogar</dt><dd>No incluido</dd></dl>
+        <a class="btn btn-solid" href="../#/registro">Crear cuenta gratis</a></article>
+      <article class="plan-card"><h3>Individual</h3><p class="price">Por definir</p><p class="per">por período, renovación manual</p>
+        <dl><dt>Escenarios guardados</dt><dd>Sin límite</dd><dt>Comparación con tu situación base</dt><dd>Varios a la vez</dd><dt>Historial de meses</dt><dd>Completo</dd><dt>Simulación de prepagos</dt><dd>Incluida</dd><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Hogar</dt><dd>No incluido</dd></dl>
+        <a class="btn" href="../#/registro?plan=individual">Elegir Individual</a></article>
+      <article class="plan-card"><h3>Familiar</h3><p class="price">Por definir</p><p class="per">por período, renovación manual</p>
+        <dl><dt>Escenarios guardados</dt><dd>Sin límite</dd><dt>Comparación con tu situación base</dt><dd>Varios a la vez</dd><dt>Historial de meses</dt><dd>Completo</dd><dt>Simulación de prepagos</dt><dd>Incluida</dd><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Hogar</dt><dd>Espacio común y perfiles privados</dd></dl>
+        <a class="btn" href="../#/registro?plan=familiar">Elegir Familiar</a></article>
+    </div>
+
+    <p class="plans-note rise">Pagas con Webpay Plus y renuevas cuando quieras, sin cobros automáticos. Fin de Mes no guarda datos de tarjeta. Si tu plan vence, tus datos se conservan y vuelves al plan Gratuito.</p>
+  </section>
+
+  <section class="section wrap faq" id="preguntas" data-chapter="ink" aria-labelledby="t-faq">
+    <div class="grid">
+      <h2 id="t-faq" class="rise">Preguntas</h2>
+      <div class="cols">
+        <p class="rise"><b>¿Me dice qué decisión tomar?</b> No. Muestra qué ocurre con tu saldo con y sin la decisión, y qué lo causa. Los escenarios aparecen lado a lado, sin ordenarlos ni destacar uno.</p>
+        <p class="rise"><b>¿Mueve mi dinero o paga mis deudas?</b> No. Fin de Mes no hace transferencias ni pagos. Solo registra, proyecta y simula.</p>
+        <p class="rise"><b>¿Tengo que conectar mi banco?</b> No. Puedes registrar todo a mano. Las tarjetas de crédito y las compras en cuotas se registran a mano en cualquier caso.</p>
+        <p class="rise"><b>¿Qué ven los demás miembros de mi hogar?</b> Los gastos comunes y cuánto aporta cada uno. Tus ingresos, deudas y escenarios son solo tuyos.</p>
+        <p class="rise"><b>¿Qué pasa si dejo de pagar el plan?</b> Vuelves al plan Gratuito y no se borra nada. En un hogar, el espacio común queda en solo lectura hasta que renueves.</p>
+        <p class="rise"><b>¿Puedo llevarme o borrar mis datos?</b> Sí. Puedes exportarlos o eliminar tu cuenta con borrado efectivo, conforme a la Ley 21.719.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta on-field" data-chapter="paper" aria-labelledby="t-cta">
+    <div class="cta-inner">
+      <h2 class="xl rise" id="t-cta">Prueba con un ejemplo</h2>
+      <p class="rise" style="--i:1">Arma un mes de ejemplo y simula una compra, sin crear cuenta. Lo que hagas no se guarda, salvo que después decidas crear tu cuenta.</p>
+      <div class="cta-actions rise" style="--i:2">
+        <a class="btn btn-solid" href="../#/demo">Probar sin cuenta</a>
+        <a class="btn" href="../#/registro">Crear cuenta gratis</a>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<footer class="foot" data-chapter="paper">
+  <div class="foot-top">
+    <div class="foot-brand">
+      <p class="foot-name">Fin de Mes</p>
+      <p class="foot-desc">Registra, proyecta y simula tus gastos mes a mes. Solo o en hogar.</p>
+    </div>
+    <div class="cols">
+      <ul><li>Producto</li><li><a href="#como">Cómo funciona</a></li><li><a href="#simula">Probar una compra</a></li><li><a href="#hogar">Plan Familiar</a></li><li><a href="#planes">Planes</a></li></ul>
+      <ul><li>Cuenta</li><li><a href="../#/registro">Crear cuenta</a></li><li><a href="../#/login">Entrar</a></li><li><a href="../#/demo">Modo de prueba</a></li></ul>
+      <ul><li>Tus datos</li><li><a href="../#privacidad">Qué datos guardamos</a></li><li><a href="#preguntas">Preguntas</a></li><li><a href="../#contacto">Contacto</a></li></ul>
+    </div>
+  </div>
+  <p class="legal">Proyecto de Título, Ingeniería en Informática, 2026. Versión de prueba: los montos de esta página son de ejemplo.</p>
+</footer>
+
+
+<div class="palette-picker" role="group" aria-label="Paleta de prueba">
+  <span>Paleta</span>
+  <button type="button" data-p="teal"><i style="background:#06525c"></i>Teal</button>
+  <button type="button" data-p="bosque"><i style="background:#1d4634"></i>Bosque</button>
+  <button type="button" data-p="tinta"><i style="background:#142f57"></i>Tinta</button>
+  <button type="button" data-p="grafito"><i style="background:#23282b"></i>Grafito</button>
+  <button type="button" data-p="mostaza"><i style="background:#f0bf3c"></i>Mostaza</button>
+  <button type="button" data-p="coral"><i style="background:#e8664f"></i>Coral</button>
+  <button type="button" data-p="vino"><i style="background:#6b1e2e"></i>Vino</button>
+  <button type="button" data-p="oliva"><i style="background:#4b5320"></i>Oliva</button>
+  <button type="button" data-p="celeste"><i style="background:#bfe3f2"></i>Celeste</button>
+  <button type="button" data-p="lima"><i style="background:#c8e86b"></i>Lima</button>
+  <button type="button" data-p="rojo"><i style="background:#b3102a"></i>Rojo</button>
+  <button type="button" data-p="naranja"><i style="background:#f28c28"></i>Naranja</button>
+  <button type="button" data-p="turquesa"><i style="background:#4fc1b0"></i>Turquesa</button>
+  <button type="button" data-p="electrico"><i style="background:#1f5eff"></i>Azul eléctrico</button>
+  <button type="button" data-p="rosa"><i style="background:#f4b6c2"></i>Rosa</button>
+</div>
+<script>
+document.documentElement.classList.add('js');
+// Selector de paletas (solo para pruebas). La paleta queda en la URL: ?paleta=bosque
+(() => {
+  const root = document.documentElement;
+  const btns = [...document.querySelectorAll('.palette-picker [data-p]')];
+  const apply = p => {
+    if (p === 'teal') root.removeAttribute('data-palette'); else root.dataset.palette = p;
+    btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === p)));
+    const u = new URL(location.href); if (p === 'teal') u.searchParams.delete('paleta'); else u.searchParams.set('paleta', p);
+    history.replaceState(null, '', u);
+    dispatchEvent(new Event('scroll'));
+  };
+  const first = new URLSearchParams(location.search).get('paleta');
+  apply(btns.some(b => b.dataset.p === first) ? first : 'teal');
+  btns.forEach(b => b.addEventListener('click', () => apply(b.dataset.p)));
+})();
+(() => {
+  // Perfil de ejemplo. En la aplicación real, el cálculo lo hace el servidor (POST /v1/demo/projection).
+  const P = { income: 1150000, fixed: 890000, loan: 220000, loanLeft: 5, opening: 120000, months: 12, start: { y: 2026, m: 10 } };
+  const MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const nf = new Intl.NumberFormat('es-CL');
+  const money = n => (n < 0 ? '−$' : '$') + nf.format(Math.abs(n));
+  const signed = n => n === 0 ? 'sin diferencia' : (n > 0 ? '+$' : '−$') + nf.format(Math.abs(n));
+  const label = k => { const t = P.start.m + k; return { m: MES[t % 12], y: P.start.y + Math.floor(t / 12) }; };
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+  function parse(text) {
+    const t = text.toLowerCase();
+    const amt = t.match(/\$?\s*(\d{1,3}(?:[.\s]\d{3})+|\d+)/);
+    if (!amt) return null;
+    const total = parseInt(amt[1].replace(/[.\s]/g, ''), 10);
+    if (!Number.isSafeInteger(total) || total < 1000 || total > 100000000) return null;
+    const c = t.match(/(\d{1,2})\s*cuotas?/);
+    let n = c ? parseInt(c[1], 10) : 1;
+    if (c && c.index <= amt.index) n = 1;
+    if (!(n >= 1 && n <= 48)) return null;
+    return { total, n };
+  }
+
+  function project(dec) {
+    let bal = P.opening; const out = [];
+    for (let k = 0; k < P.months; k++) {
+      let move = P.income - P.fixed - (k < P.loanLeft ? P.loan : 0);
+      if (dec && k < dec.n) move -= k === dec.n - 1 ? dec.total - Math.floor(dec.total / dec.n) * (dec.n - 1) : Math.floor(dec.total / dec.n);
+      bal += move; out.push(bal);
+    }
+    return out;
+  }
+
+  const $ = id => document.getElementById(id);
+  const input = $('decision'), answer = $('answer'), body = $('proj-body');
+
+  function render() {
+    const dec = parse(input.value);
+    const base = project(null), sc = dec ? project(dec) : base;
+    const minI = sc.indexOf(Math.min(...sc)), minB = Math.min(...base);
+    const brk = sc.findIndex(v => v < 0);
+    if (dec) {
+      const q = Math.floor(dec.total / dec.n);
+      const lm = label(minI);
+      $('a-cuota').textContent = dec.n === 1 ? 'Pago único de ' + money(dec.total) : dec.n + ' cuotas de ' + money(q);
+      $('a-min').textContent = money(sc[minI]) + ' en ' + lm.m;
+      $('a-break').textContent = brk < 0 ? 'Ningún mes de los próximos 12' : label(brk).m + ' de ' + label(brk).y;
+      $('a-diff').textContent = signed(sc[minI] - minB);
+      const what = dec.n === 1 ? 'el pago de ' + money(dec.total) + ' en ' + label(0).m : 'la cuota de ' + money(q);
+      const overlap = dec.n > 1 && P.loanLeft > 0 ? ', que se suma a la cuota del crédito de consumo hasta ' + label(Math.min(dec.n, P.loanLeft) - 1).m : '';
+      $('a-why').textContent = brk < 0
+        ? 'El saldo se mantiene positivo los 12 meses. El más bajo es ' + money(sc[minI]) + ' en ' + lm.m + ', por ' + what + overlap + '.'
+        : 'El saldo pasa a negativo en ' + label(brk).m + ' de ' + label(brk).y + '. Lo causa ' + what + overlap + '. Desde ' + label(P.loanLeft).m + ', cuando ese crédito termina, el saldo vuelve a subir.';
+    } else {
+      $('a-cuota').textContent = 'Falta el monto';
+      $('a-min').textContent = money(Math.min(...base)) + ' sin compra';
+      $('a-break').textContent = '—';
+      $('a-diff').textContent = '—';
+      $('a-why').textContent = 'Escribe un monto entre $1.000 y $100.000.000 y, si quieres, el número de cuotas (hasta 48).';
+    }
+    answer.classList.remove('flash'); void answer.offsetWidth; answer.classList.add('flash');
+    body.innerHTML = sc.map((v, k) => {
+      const l = label(k), d = v - base[k];
+      return '<tr class="' + (v < 0 ? 'neg' : '') + '"><td><span class="mlong">' + cap(l.m) + ' ' + l.y + '</span><span class="mshort" aria-hidden="true">' + cap(l.m.slice(0, 3)) + ' ' + String(l.y).slice(2) + '</span></td><td class="hide-sm">' + money(base[k]) +
+        '</td><td>' + money(v) + (v < 0 ? '<span class="flag">saldo negativo</span>' : '') + '</td><td class="r">' + signed(d) + '</td></tr>';
+    }).join('');
+    if (window.__revealRows) window.__revealRows();
+  }
+  input.addEventListener('input', render);
+  document.querySelectorAll('[data-ex]').forEach(b => b.addEventListener('click', () => { input.value = b.dataset.ex; render(); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }));
+  render();
+
+  // Entradas por sección, una vez.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
+  document.querySelectorAll('.rise').forEach(el => io.observe(el));
+  let rowsShown = false;
+  window.__revealRows = () => {
+    if (reduce || !rowsShown) return;
+    body.querySelectorAll('tr').forEach((tr, i) => { if (!tr.dataset.seen) { tr.dataset.seen = 1; tr.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: i * 45, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' }); } });
+  };
+  const rowsIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { rowsShown = true; window.__revealRows(); rowsIO.disconnect(); } }), { threshold: 0.2 });
+  rowsIO.observe(body);
+
+  // Color por capítulo: la barra superior toma el color de la sección que tiene debajo.
+  const corner = document.querySelector('.corner');
+  const chapters = [...document.querySelectorAll('[data-chapter]')];
+  const setInk = () => {
+    const y = corner.offsetHeight / 2;
+    const hit = chapters.find(c => { const r = c.getBoundingClientRect(); return r.top <= y && r.bottom > y; });
+    corner.dataset.ink = hit ? hit.dataset.chapter : 'ink';
+    let bg = hit ? getComputedStyle(hit).backgroundColor : '';
+    if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') bg = getComputedStyle(document.body).backgroundColor;
+    corner.style.backgroundColor = bg;
+  };
+  // La barra se oculta al bajar y vuelve al subir, para no tapar el contenido.
+  let ticking = false, lastY = scrollY;
+  const onScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => {
+    setInk();
+    const y = scrollY; if (Math.abs(y - lastY) > 4) { corner.classList.toggle('away', y > lastY && y > innerHeight * 0.6); lastY = y; }
+    ticking = false; }); };
+  addEventListener('scroll', onScroll, { passive: true }); addEventListener('resize', onScroll); onScroll();
+})();
+</script>
+</body>
+</html>

@@ -56,3 +56,8 @@ desktop.ini
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Design tooling artifacts (screenshots, inspector reports)
+.taste-skill/
+.playwright-mcp/
+.impeccable/

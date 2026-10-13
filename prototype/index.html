@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fin de Mes · Prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f5f1; --surface: #ffffff; --surface-2: #efede6; --ink: #1d2320; --ink-2: #545c57;
+  --line: #dcd9cf; --accent: #1f5f5b; --accent-ink: #ffffff; --accent-soft: #dcebe8;
+  --series-base: #6b7280; --series-a: #1f5f5b; --series-b: #b4652a; --series-c: #6a4fa3;
+  --warn-soft: #fbf0d9; --warn-ink: #6b4a00; --tag: #e8e5dc; --focus: #2b6cb0;
+  --admin-bg: #14181f; --admin-surface: #1c222c; --admin-line: #2c3442; --admin-ink: #e6e9ef; --admin-ink-2: #9aa4b5; --admin-accent: #7cc4ff;
+  --radius: 12px; --shadow: 0 1px 2px rgb(0 0 0 / .05), 0 4px 16px rgb(0 0 0 / .04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121514; --surface: #1a1f1d; --surface-2: #232927; --ink: #e9ece9; --ink-2: #a6afaa;
+    --line: #2e3633; --accent: #6cc3b9; --accent-ink: #0d1514; --accent-soft: #1f3532;
+    --series-base: #9aa1ab; --series-a: #6cc3b9; --series-b: #e3a066; --series-c: #b39ae6;
+    --warn-soft: #3a2f16; --warn-ink: #f2d79a; --tag: #2a312e; --focus: #8ab4f8;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121514; --surface: #1a1f1d; --surface-2: #232927; --ink: #e9ece9; --ink-2: #a6afaa;
+  --line: #2e3633; --accent: #6cc3b9; --accent-ink: #0d1514; --accent-soft: #1f3532;
+  --series-base: #9aa1ab; --series-a: #6cc3b9; --series-b: #e3a066; --series-c: #b39ae6;
+  --warn-soft: #3a2f16; --warn-ink: #f2d79a; --tag: #2a312e; --focus: #8ab4f8;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .5rem; }
+h1 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: clamp(1.6rem, 3vw, 2.2rem); }
+h2 { font-size: 1.25rem; } h3 { font-size: 1rem; }
+p { margin: 0 0 .75rem; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.muted { color: var(--ink-2); }
+.small { font-size: .85rem; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* prototype bar */
+.proto-bar { background: var(--warn-soft); color: var(--warn-ink); font-size: .85rem; padding: .45rem 16px; display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.proto-bar select { font: inherit; padding: .15rem .3rem; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.proto-bar .group { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+
+/* public site */
+.site-head { display: flex; align-items: center; justify-content: space-between; padding: 1rem 16px; max-width: 1120px; margin: 0 auto; gap: 1rem; flex-wrap: wrap; }
+.brand { font-family: Fraunces, Georgia, serif; font-size: 1.35rem; font-weight: 600; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: .5rem; }
+.brand-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: inline-grid; place-items: center; color: var(--accent-ink); font-size: .9rem; }
+.site-nav { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.site-nav a { color: var(--ink-2); text-decoration: none; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+.hero { padding: 3rem 0 2rem; display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: center; }
+.hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); }
+.lead { font-size: 1.1rem; color: var(--ink-2); max-width: 36rem; }
+.section { padding: 2.5rem 0; border-top: 1px solid var(--line); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+@media (max-width: 860px) { .hero, .grid-3, .grid-2 { grid-template-columns: 1fr; } .grid-4 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .grid-4 { grid-template-columns: 1fr; } }
+
+/* components */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; box-shadow: var(--shadow); min-width: 0; }
+.card + .card { margin-top: 1rem; }
+.grid-2 > .card + .card, .grid-3 > .card + .card, .grid-4 > .card + .card { margin-top: 0; }
+.btn { font: inherit; font-weight: 600; border-radius: 10px; padding: .55rem 1rem; border: 1px solid transparent; cursor: pointer; background: var(--accent); color: var(--accent-ink); text-decoration: none; display: inline-flex; align-items: center; gap: .4rem; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.small { padding: .3rem .65rem; font-size: .85rem; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.link { background: none; border: 0; color: var(--accent); padding: 0; font-weight: 500; }
+.row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
+.between { justify-content: space-between; }
+.stack > * + * { margin-top: 1rem; }
+.tag { display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: .02em; padding: .1rem .45rem; border-radius: 999px; background: var(--tag); color: var(--ink-2); white-space: nowrap; }
+.tag.hu { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 500; }
+.tag.origin-provider_test { background: #e2e8f7; color: #2a3f73; }
+.tag.origin-demo { background: var(--warn-soft); color: var(--warn-ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.origin-provider_test { background: #26304a; color: #b9c8f0; } }
+.notice { background: var(--surface-2); border-left: 4px solid var(--accent); border-radius: 8px; padding: .75rem 1rem; color: var(--ink); font-size: .92rem; }
+.notice.warn { border-left-color: #b98b1c; background: var(--warn-soft); color: var(--warn-ink); }
+.kpi .label { color: var(--ink-2); font-size: .85rem; }
+.kpi .value { font-size: 1.45rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: .15rem; }
+.kpi .sub { color: var(--ink-2); font-size: .82rem; margin-top: .2rem; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--ink-2); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+label.f { display: block; font-size: .85rem; color: var(--ink-2); margin-bottom: .2rem; }
+input, select, textarea { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .45rem .6rem; width: 100%; }
+input[type=checkbox], input[type=radio] { width: auto; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; align-items: end; }
+.explain { background: var(--accent-soft); border-radius: 10px; padding: .9rem 1rem; }
+.explain p:last-child { margin: 0; }
+.legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .85rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: .35rem; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--ink-2); font-size: 11px; font-family: Inter, sans-serif; }
+.lock { color: var(--ink-2); font-size: .85rem; }
+
+/* app shell */
+.app { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 36px); }
+.side { background: var(--surface); border-right: 1px solid var(--line); padding: 1rem .75rem; display: flex; flex-direction: column; gap: .25rem; }
+.side .brand { padding: .25rem .5rem 1rem; }
+.side a.nav { display: flex; align-items: center; gap: .6rem; padding: .5rem .65rem; border-radius: 8px; color: var(--ink-2); text-decoration: none; font-weight: 500; }
+.side a.nav:hover { background: var(--surface-2); color: var(--ink); }
+.side a.nav.active { background: var(--accent-soft); color: var(--ink); }
+.side .who { margin-top: auto; padding: .75rem .5rem 0; border-top: 1px solid var(--line); font-size: .85rem; }
+.main { padding: 1.5rem clamp(16px, 3vw, 2rem) 3rem; min-width: 0; }
+.page-head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1.25rem; }
+.disclaimer { font-size: .82rem; color: var(--ink-2); border-top: 1px dashed var(--line); margin-top: 2rem; padding-top: .75rem; }
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .side { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: .5rem 16px; gap: .25rem; }
+  .side .brand, .side .who { display: none; }
+  .side a.nav { white-space: nowrap; }
+}
+
+/* modal */
+.modal-bg { position: fixed; inset: 0; background: rgb(0 0 0 / .45); display: grid; place-items: center; padding: 16px; z-index: 50; }
+.modal { background: var(--surface); color: var(--ink); border-radius: 14px; max-width: 460px; width: 100%; padding: 1.25rem; box-shadow: 0 20px 60px rgb(0 0 0 / .3); max-height: 90vh; overflow: auto; }
+.modal.fintoc { border-top: 6px solid #3a5bff; }
+.modal.webpay { border-top: 6px solid #d5002b; }
+.bank-list button { display: block; width: 100%; text-align: left; margin-bottom: .4rem; }
+
+/* admin */
+.admin { background: var(--admin-bg); color: var(--admin-ink); min-height: calc(100vh - 36px); }
+.admin .card { background: var(--admin-surface); border-color: var(--admin-line); color: var(--admin-ink); box-shadow: none; }
+.admin th { color: var(--admin-ink-2); } .admin td, .admin th { border-color: var(--admin-line); }
+.admin .muted { color: var(--admin-ink-2); }
+.admin .btn { background: var(--admin-accent); color: #0b1620; }
+.admin .btn.ghost { background: transparent; color: var(--admin-ink); border-color: var(--admin-line); }
+.admin input { background: #121821; color: var(--admin-ink); border-color: var(--admin-line); }
+.admin .tag { background: #2a3342; color: var(--admin-ink-2); }
+.admin-head { display: flex; justify-content: space-between; align-items: center; padding: .9rem 16px; border-bottom: 1px solid var(--admin-line); gap: 1rem; flex-wrap: wrap; }
+.admin-tabs { display: flex; gap: .25rem; padding: .5rem 16px; border-bottom: 1px solid var(--admin-line); overflow-x: auto; }
+.admin-tabs a { color: var(--admin-ink-2); text-decoration: none; padding: .4rem .7rem; border-radius: 6px; white-space: nowrap; }
+.admin-tabs a.active { background: #263042; color: var(--admin-ink); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; }
+.ok-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4cc38a; margin-right: .4rem; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+'use strict';
+/* =========================================================================
+   PROTOTIPO NAVEGABLE. Todo es ficticio y vive en este navegador.
+   El cálculo de abajo imita el motor solo para poder conversar sobre la
+   interfaz: en la aplicación real lo hace el backend (regla 8 de CLAUDE.md).
+   ========================================================================= */
+
+const START = { y: 2026, m: 10 }; // octubre 2026 = mes 0
+const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MONTHS_LONG = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const clpFmt = new Intl.NumberFormat('es-CL');
+const fmt = n => (n < 0 ? '−$' : '$') + clpFmt.format(Math.abs(n));
+const diff = n => n === 0 ? 'sin diferencia' : (n > 0 ? '+' : '−') + '$' + clpFmt.format(Math.abs(n));
+const mLabel = i => { const t = START.m - 1 + i; return MONTHS[((t % 12) + 12) % 12] + ' ' + (START.y + Math.floor(t / 12)); };
+const mLong = i => { const t = START.m - 1 + i; return MONTHS_LONG[((t % 12) + 12) % 12] + ' de ' + (START.y + Math.floor(t / 12)); };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hu = (...codes) => codes.map(c => `<span class="tag hu" title="Historia de usuario">${c}</span>`).join(' ');
+let seq = 100; const uid = p => p + (++seq);
+
+/* ---------------- datos ficticios ---------------- */
+const SEED = () => ({
+  proto: { plan: 'family', sub: 'activa' },
+  user: { name: 'Camila Rojas', email: 'camila@ejemplo.cl', display: 'Camila' },
+  horizon: 12,
+  opening: { amount: 180000, origin: 'real' },
+  incomes: [
+    { id: 'i1', name: 'Sueldo líquido', amount: 1080000, kind: 'recurrente', origin: 'real' },
+    { id: 'i2', name: 'Aguinaldo', amount: 150000, kind: 'esporadico', month: 2, origin: 'real' },
+  ],
+  expenses: [
+    { id: 'e1', name: 'Transporte', amount: 75000, kind: 'variable', origin: 'real' },
+    { id: 'e2', name: 'Internet y celular', amount: 38000, kind: 'fijo', origin: 'real' },
+    { id: 'e3', name: 'Plan de salud', amount: 62000, kind: 'fijo', origin: 'real' },
+    { id: 'e4', name: 'Gastos personales', amount: 120000, kind: 'variable', origin: 'real' },
+    { id: 'e5', name: 'Permiso de circulación', amount: 110000, kind: 'esporadico', month: 5, origin: 'real' },
+    { id: 'e6', name: 'Matrícula curso', amount: 350000, kind: 'esporadico', month: 5, origin: 'real' },
+  ],
+  debts: [
+    { id: 'd1', name: 'Crédito de consumo', installment: 96000, remaining: 14, origin: 'real' },
+    { id: 'd2', name: 'Notebook en cuotas (tarjeta)', installment: 58000, remaining: 5, origin: 'real' },
+  ],
+  household: {
+    name: 'Depto Ñuñoa',
+    members: [ { id: 'm1', display: 'Camila', role: 'admin', me: true }, { id: 'm2', display: 'Tomás', role: 'miembro' } ],
+    invites: [ { email: 'v***@ejemplo.cl', status: 'pendiente' } ],
+    expenses: [
+      { id: 'h1', name: 'Arriendo', amount: 780000, rule: { type: 'porcentaje', shares: { m1: 55, m2: 45 } }, author: 'Camila' },
+      { id: 'h2', name: 'Cuentas básicas', amount: 95000, rule: { type: 'iguales' }, author: 'Tomás' },
+      { id: 'h3', name: 'Supermercado común', amount: 260000, rule: { type: 'iguales' }, author: 'Camila' },
+      { id: 'h4', name: 'Plan de mascota', amount: 18000, rule: { type: 'asignado', member: 'm2' }, author: 'Tomás' },
+    ],
+  },
+  bank: { connected: false, accounts: [], movements: [] },
+  scenarios: [
+    { id: 's1', name: 'Notebook nuevo en 12 cuotas', decisions: [ { id: 'x1', type: 'installment_purchase', label: 'Notebook', total: 899990, n: 12, start: 1 } ] },
+    { id: 's2', name: 'Si baja mi sueldo desde enero', decisions: [ { id: 'x2', type: 'income_change', delta: -250000, start: 3, end: null } ] },
+  ],
+  demo: { opening: 150000, income: 650000, expense: 480000 },
+});
+
+let S;
+try { S = JSON.parse(localStorage.getItem('fdm-proto')) || SEED(); } catch { S = SEED(); }
+const save = () => { try { localStorage.setItem('fdm-proto', JSON.stringify(S)); } catch {} };
+const ui = { decisionType: 'installment_purchase', editing: null, compare: [], modal: null, adminAuthed: false };
+
+/* ---------------- plan efectivo (Tablas 13 y 14) ---------------- */
+const SUB_STATES = { gratuito: 'Gratuito', pendiente: 'Pendiente', activa: 'Activa', por_vencer: 'Por vencer', vencida: 'Vencida', fallida: 'Fallida', cancelada: 'Cancelada' };
+const PLAN_NAMES = { free: 'Gratuito', paid: 'Pagado', family: 'Familiar' };
+function effectivePlan() {
+  const { plan, sub } = S.proto;
+  if (sub === 'gratuito' || sub === 'vencida') return 'free';
+  if (sub === 'pendiente' || sub === 'fallida') return 'free'; // se mantiene el plan anterior (aquí, gratuito)
+  return plan;
+}
+const limits = () => effectivePlan() === 'free'
+  ? { saved: 2, compare: 1, prepay: false, household: false }
+  : { saved: Infinity, compare: Infinity, prepay: true, household: effectivePlan() === 'family' };
+const householdVisible = () => limits().household || S.proto.sub === 'vencida' && S.proto.plan === 'family';
+const householdReadOnly = () => S.proto.sub === 'vencida';
+
+/* ---------------- motor (imitación) ---------------- */
+function myHouseholdShare() {
+  if (!householdVisible()) return { total: 0, lines: [] };
+  const me = S.household.members.find(m => m.me);
+  const n = S.household.members.length;
+  const lines = S.household.expenses.map(e => {
+    let part = 0;
+    if (e.rule.type === 'iguales') part = Math.floor(e.amount / n);
+    else if (e.rule.type === 'porcentaje') part = Math.floor(e.amount * (e.rule.shares[me.id] || 0) / 100);
+    else if (e.rule.type === 'asignado') part = e.rule.member === me.id ? e.amount : 0;
+    return { name: e.name, part };
+  });
+  return { total: lines.reduce((a, l) => a + l.part, 0), lines };
+}
+
+function baseModel(h) {
+  const income = Array(h).fill(0), expenses = Array(h).fill(0), sporadic = Array(h).fill(null).map(() => []);
+  for (const i of S.incomes) {
+    if (i.kind === 'esporadico') { if (i.month < h) income[i.month] += i.amount; }
+    else for (let k = 0; k < h; k++) income[k] += i.amount;
+  }
+  for (const e of S.expenses) {
+    if (e.kind === 'esporadico') { if (e.month < h) { expenses[e.month] += e.amount; sporadic[e.month].push(e); } }
+    else for (let k = 0; k < h; k++) expenses[k] += e.amount;
+  }
+  const share = myHouseholdShare().total;
+  const household = Array(h).fill(share);
+  const debts = S.debts.map(d => {
+    const sched = Array(h).fill(0);
+    for (let k = 0; k < Math.min(d.remaining, h); k++) sched[k] = d.installment;
+    return { id: d.id, name: d.name, installment: d.installment, remaining: d.remaining, sched };
+  });
+  return { h, income, expenses, household, debts, sporadic, notes: [] };
+}
+const clone = m => ({ ...m, income: [...m.income], expenses: [...m.expenses], household: [...m.household], debts: m.debts.map(d => ({ ...d, sched: [...d.sched] })), notes: [] });
+const endIdx = d => d.remaining - 1; // último mes con cuota, relativo a mes 0
+
+const DECISIONS = {
+  installment_purchase: {
+    name: 'Compra en N cuotas',
+    apply(m, d) {
+      const base = Math.floor(d.total / d.n), last = d.total - base * (d.n - 1);
+      for (let k = 0; k < d.n; k++) { const i = d.start + k; if (i < m.h) m.expenses[i] += (k === d.n - 1 ? last : base); }
+      return `Compra en ${d.n} cuotas de ${fmt(base)} (total ${fmt(d.total)}) desde ${mLong(d.start)} hasta ${mLong(d.start + d.n - 1)}.`;
+    },
+  },
+  fixed_expense: {
+    name: 'Alta o modificación de gasto fijo',
+    apply(m, d) {
+      const to = d.end == null ? m.h - 1 : Math.min(d.end, m.h - 1);
+      let delta = d.amount, text;
+      if (d.target) {
+        const e = S.expenses.find(x => x.id === d.target);
+        delta = d.amount - (e ? e.amount : 0);
+        text = `"${esc(e ? e.name : 'Gasto')}" pasa de ${fmt(e ? e.amount : 0)} a ${fmt(d.amount)} mensuales desde ${mLong(d.start)}${d.end == null ? '' : ' hasta ' + mLong(d.end)}.`;
+      } else {
+        text = `Nuevo gasto fijo "${esc(d.label)}" de ${fmt(d.amount)} mensuales desde ${mLong(d.start)}${d.end == null ? ', sin término' : ' hasta ' + mLong(d.end)}.`;
+      }
+      for (let k = d.start; k <= to; k++) m.expenses[k] += delta;
+      return text;
+    },
+  },
+  one_time_expense: {
+    name: 'Gasto único',
+    apply(m, d) { if (d.month < m.h) m.expenses[d.month] += d.amount; return `Gasto único "${esc(d.label)}" de ${fmt(d.amount)} en ${mLong(d.month)}.`; },
+  },
+  debt_prepayment: {
+    name: 'Adelanto o prepago de deuda',
+    paid: true,
+    apply(m, d) {
+      const debt = m.debts.find(x => x.id === d.debt);
+      if (!debt) return 'La deuda seleccionada ya no existe.';
+      const after = debt.remaining - (d.month + 1); // cuotas pendientes después del mes de aplicación
+      const pending = debt.sched.slice(d.month + 1).reduce((a, b) => a + b, 0) + Math.max(0, after - (m.h - d.month - 1)) * debt.installment;
+      const amount = Math.min(d.amount, pending);
+      if (d.month < m.h) m.expenses[d.month] += amount;
+      const capped = amount < d.amount ? ` El monto se ajusta a ${fmt(amount)}, que es lo que queda por pagar.` : '';
+      if (after <= 0) return `"${esc(debt.name)}" no tiene cuotas pendientes después de ${mLong(d.month)}; el prepago no altera el calendario.`;
+      const fullSched = Array(after).fill(debt.installment);
+      if (d.modality === 'reduce_term') {
+        let left = amount, k = fullSched.length - 1;
+        while (left > 0 && k >= 0) { const take = Math.min(left, fullSched[k]); fullSched[k] -= take; left -= take; if (fullSched[k] === 0) k--; }
+        const alive = fullSched.filter(x => x > 0).length;
+        for (let i = 0; i < after; i++) { const idx = d.month + 1 + i; if (idx < m.h) debt.sched[idx] = fullSched[i]; }
+        const oldEnd = d.month + after, newEnd = d.month + alive;
+        return `Prepago de ${fmt(amount)} a "${esc(debt.name)}" en ${mLong(d.month)}, modalidad <b>reducir plazo</b>: se extinguen cuotas desde la última; la cuota se mantiene en ${fmt(debt.installment)} y el término pasa de ${mLong(oldEnd)} a ${alive ? mLong(newEnd) : mLong(d.month)}.${capped}`;
+      }
+      const rest = after * debt.installment - amount;
+      const inst = Math.floor(rest / after), last = rest - inst * (after - 1);
+      for (let i = 0; i < after; i++) { const idx = d.month + 1 + i; if (idx < m.h) debt.sched[idx] = i === after - 1 ? last : inst; }
+      return `Prepago de ${fmt(amount)} a "${esc(debt.name)}" en ${mLong(d.month)}, modalidad <b>reducir cuota</b>: la cuota pasa de ${fmt(debt.installment)} a ${fmt(inst)} y el término se mantiene en ${mLong(d.month + after)}.${capped}`;
+    },
+  },
+  income_change: {
+    name: 'Variación de ingreso',
+    apply(m, d) {
+      const to = d.end == null ? m.h - 1 : Math.min(d.end, m.h - 1);
+      for (let k = d.start; k <= to; k++) m.income[k] += d.delta;
+      return `El ingreso ${d.delta >= 0 ? 'aumenta' : 'disminuye'} en ${fmt(Math.abs(d.delta))} mensuales desde ${mLong(d.start)}${d.end == null ? ', sin término' : ' hasta ' + mLong(d.end)}.`;
+    },
+  },
+};
+
+function project(m) {
+  let bal = S.opening.amount; const months = [];
+  for (let k = 0; k < m.h; k++) {
+    const debt = m.debts.reduce((a, d) => a + d.sched[k], 0);
+    const commit = m.expenses[k] + m.household[k] + debt;
+    const opening = bal; bal = bal + m.income[k] - commit;
+    months.push({ k, opening, income: m.income[k], expenses: m.expenses[k], household: m.household[k], debt, margin: m.income[k] - commit, closing: bal });
+  }
+  return months;
+}
+function indicators(months) {
+  let min = months[0];
+  for (const x of months) if (x.closing < min.closing) min = x;
+  const brk = months.find(x => x.closing < 0);
+  const f = months[0];
+  return {
+    min: min.closing, minMonth: min.k, breakMonth: brk ? brk.k : null,
+    margin: f.margin, debtLoad: f.income ? Math.round(f.debt * 1000 / f.income) / 10 : null,
+    final: months[months.length - 1].closing,
+  };
+}
+function run(decisions, h = S.horizon) {
+  const m = clone(baseModel(h));
+  const notes = decisions.map(d => DECISIONS[d.type].apply(m, d));
+  const months = project(m);
+  return { months, ind: indicators(months), notes };
+}
+const fmtLoad = v => v == null ? '—' : String(v).replace('.', ',') + ' %';
+
+/* ---------------- explicaciones descriptivas (HU10, HU39) ---------------- */
+function explainBase(r) {
+  const avg = k => Math.round(r.months.reduce((a, x) => a + x[k], 0) / r.months.length);
+  const parts = [`En promedio, cada mes ingresan ${fmt(avg('income'))} y se comprometen ${fmt(avg('expenses'))} en gastos, ${fmt(avg('debt'))} en cuotas`];
+  const share = myHouseholdShare().total;
+  parts[0] += share ? ` y ${fmt(share)} de aporte al hogar.` : '.';
+  const min = r.ind.minMonth, model = baseModel(S.horizon), spor = model.sporadic[min];
+  let s = `El saldo más bajo del período es ${fmt(r.ind.min)}, al cierre de ${mLong(min)}.`;
+  if (spor && spor.length) s += ` Ese mes coinciden gastos esporádicos por ${fmt(spor.reduce((a, e) => a + e.amount, 0))} (${spor.map(e => esc(e.name)).join(', ')}).`;
+  parts.push(s);
+  parts.push(r.ind.breakMonth == null ? `El saldo proyectado no llega a ser negativo dentro de los ${S.horizon} meses.` : `El saldo proyectado pasa a ser negativo en ${mLong(r.ind.breakMonth)}.`);
+  const ends = S.debts.filter(d => d.remaining <= S.horizon).map(d => `"${esc(d.name)}" termina en ${mLong(endIdx(d))}`);
+  if (ends.length) parts.push(`Cuotas que terminan dentro del horizonte: ${ends.join('; ')}.`);
+  return parts;
+}
+function explainScenario(sc, r, base) {
+  const out = [`Este escenario aplica ${sc.decisions.length === 1 ? 'una decisión' : sc.decisions.length + ' decisiones'} sobre tu situación base. La base no se modifica.`];
+  r.notes.forEach(n => out.push(n));
+  out.push(`Saldo más bajo: ${fmt(r.ind.min)} en ${mLong(r.ind.minMonth)} (en la base: ${fmt(base.ind.min)} en ${mLong(base.ind.minMonth)}; diferencia ${diff(r.ind.min - base.ind.min)}).`);
+  if (r.ind.breakMonth != null && base.ind.breakMonth == null) out.push(`Con estas decisiones el saldo pasa a ser negativo en ${mLong(r.ind.breakMonth)}; en la base no ocurre dentro del horizonte.`);
+  else if (r.ind.breakMonth == null && base.ind.breakMonth != null) out.push(`Con estas decisiones el saldo no llega a ser negativo dentro del horizonte; en la base ocurre en ${mLong(base.ind.breakMonth)}.`);
+  else if (r.ind.breakMonth != null) out.push(`El saldo pasa a ser negativo en ${mLong(r.ind.breakMonth)} (en la base: ${mLong(base.ind.breakMonth)}).`);
+  if (sc.decisions.length > 1) {
+    const effects = sc.decisions.map(d => ({ d, e: run([d]).ind.final - base.ind.final }));
+    effects.sort((a, b) => Math.abs(b.e) - Math.abs(a.e));
+    out.push(`La decisión con mayor efecto acumulado sobre el saldo final es "${DECISIONS[effects[0].d.type].name}" (${diff(effects[0].e)} al cierre de ${mLong(S.horizon - 1)}).`);
+  }
+  return out;
+}
+
+/* ---------------- gráfico ---------------- */
+function chart(series, h, opts = {}) {
+  const W = 720, H = opts.height || 240, L = 64, R = 12, T = 12, B = 28;
+  const all = series.flatMap(s => s.values).concat(0);
+  let lo = Math.min(...all), hi = Math.max(...all); if (hi === lo) hi = lo + 1;
+  const pad = (hi - lo) * .08; lo -= pad; hi += pad;
+  const x = i => L + (h === 1 ? 0 : i * (W - L - R) / (h - 1));
+  const y = v => T + (hi - v) * (H - T - B) / (hi - lo);
+  const ticks = [lo + pad, (lo + hi) / 2, hi - pad].map(v => Math.round(v / 10000) * 10000);
+  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label || 'Saldo proyectado por mes')}">`;
+  ticks.forEach(t => { g += `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${t < 0 ? '−' : ''}$${clpFmt.format(Math.abs(Math.round(t / 1000)))} mil</text>`; });
+  g += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ink-2)" stroke-dasharray="4 4" stroke-width="1"/>`;
+  for (let i = 0; i < h; i++) if (h <= 12 || i % 2 === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${mLabel(i).replace(' 20', " '")}</text>`;
+  series.forEach(s => {
+    g += `<polyline fill="none" stroke="${s.color}" stroke-width="${s.width || 2.5}" ${s.dash ? 'stroke-dasharray="6 5"' : ''} points="${s.values.map((v, i) => x(i) + ',' + y(v)).join(' ')}"/>`;
+    s.values.forEach((v, i) => { g += `<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="${s.color}"><title>${esc(s.name)} · ${mLabel(i)}: ${fmt(v)}</title></circle>`; });
+  });
+  return `<div class="chart">${g}</svg></div>` + `<div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('')}<span><i style="background:var(--ink-2)"></i>línea de $0</span></div>`;
+}
+
+/* ---------------- piezas comunes ---------------- */
+const ORIGIN = { real: 'Ingresado por ti', provider_test: 'Prueba del proveedor', demo: 'Demostración' };
+const originTag = o => o === 'real' ? '' : `<span class="tag origin-${o}" title="Origen del dato">${ORIGIN[o]}</span>`;
+const monthOptions = (sel, from = 0, n = S.horizon) => Array.from({ length: n - from }, (_, i) => i + from).map(i => `<option value="${i}" ${+sel === i ? 'selected' : ''}>${mLabel(i)}</option>`).join('');
+const disclaimer = `<p class="disclaimer">Fin de Mes calcula y muestra. No recomienda decisiones, no califica tu situación ni sugiere productos financieros. Las proyecciones dependen de los datos registrados y no constituyen asesoría financiera.</p>`;
+
+function protoBar() {
+  return `<div class="proto-bar" role="region" aria-label="Controles del prototipo">
+    <span><b>Prototipo navegable</b> · datos ficticios guardados solo en este navegador</span>
+    <div class="group">
+      <label>Plan <select data-proto="plan">${Object.entries(PLAN_NAMES).map(([k, v]) => `<option value="${k}" ${S.proto.plan === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label>Suscripción <select data-proto="sub">${Object.entries(SUB_STATES).map(([k, v]) => `<option value="${k}" ${S.proto.sub === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <a href="#/">Sitio público</a> · <a href="#/app/resumen">App</a> · <a href="#/admin">Panel admin</a> · <a href="#/mapa">Mapa</a>
+      <button class="btn small ghost" data-action="reset">Reiniciar datos</button>
+    </div>
+  </div>`;
+}
+
+/* =========================== SITIO PÚBLICO =========================== */
+function sitePublic() {
+  const plans = [
+    ['Registro base y proyección mensual', 'Sí', 'Sí', 'Sí'],
+    ['Simulación de escenarios', 'Hasta 2 guardados', 'Ilimitada', 'Ilimitada'],
+    ['Comparación de escenarios', '1 escenario frente a la base', 'Múltiples', 'Múltiples'],
+    ['Historial de meses', 'Mes vigente', 'Histórico completo', 'Histórico completo'],
+    ['Simulación de prepagos de deuda', 'No', 'Sí', 'Sí'],
+    ['Conexión bancaria (Fintoc)', 'Sí', 'Sí', 'Sí'],
+    ['Perfiles múltiples y espacio común del hogar', 'No', 'No', 'Sí'],
+    ['Precio mensual', 'Gratis', 'Por definir', 'Por definir'],
+  ];
+  return `
+  <header class="site-head">
+    <a class="brand" href="#/"><span class="brand-mark">FM</span>Fin de Mes</a>
+    <nav class="site-nav" aria-label="Sitio">
+      <a href="#/demo">Probar sin cuenta</a><a href="#planes">Planes</a><a href="#privacidad">Privacidad</a><a href="#casos">Casos</a><a href="#contacto">Contacto</a>
+      <a class="btn ghost small" href="#/login">Iniciar sesión</a><a class="btn small" href="#/registro">Crear cuenta</a>
+    </nav>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <h1>Si hago esto, ¿cómo queda mi mes?</h1>
+        <p class="lead">Registra tus ingresos, gastos, deudas y cuotas. Fin de Mes proyecta tu saldo mes a mes y te muestra qué cambia si compras en cuotas, asumes un gasto nuevo o prepagas una deuda.</p>
+        <div class="row"><a class="btn" href="#/demo">Probar con un ejemplo, sin cuenta</a><a class="btn ghost" href="#/registro">Crear cuenta gratis</a></div>
+        <p class="small muted" style="margin-top:.75rem">${hu('HU27', 'HU28', 'HU17')}</p>
+      </div>
+      <div class="card">
+        <div class="row between"><b>Saldo proyectado</b><span class="tag origin-demo">Ejemplo</span></div>
+        ${(() => { const r = run([]); const s = run([{ type: 'installment_purchase', label: 'Notebook', total: 899990, n: 12, start: 1 }]); return chart([{ name: 'Base', values: r.months.map(x => x.closing), color: 'var(--series-base)', dash: true }, { name: 'Con compra en 12 cuotas', values: s.months.map(x => x.closing), color: 'var(--series-a)' }], S.horizon, { height: 200 }); })()}
+      </div>
+    </section>
+
+    <section class="section grid-3">
+      <div class="card"><h3>1. Registra</h3><p class="muted">Ingresos, gastos fijos y variables, deudas con sus cuotas y tu saldo inicial. O conecta tu banco con Fintoc.</p></div>
+      <div class="card"><h3>2. Proyecta</h3><p class="muted">Tu saldo mes a mes, con el mes en que termina cada cuota y el margen que queda libre.</p></div>
+      <div class="card"><h3>3. Simula</h3><p class="muted">Crea escenarios con una o más decisiones y compáralos con tu situación base, con una explicación de qué causa cada resultado.</p></div>
+    </section>
+
+    <section class="section">
+      <div class="notice"><b>Lo que Fin de Mes no hace.</b> No te dice qué decisión tomar, no ordena alternativas por conveniencia, no califica tu situación como buena o mala, no sugiere productos financieros y no mueve dinero. La decisión siempre es tuya. ${hu('HU37')}</div>
+    </section>
+
+    <section class="section" id="planes">
+      <div class="row between"><h2>Planes</h2>${hu('HU18', 'HU30')}</div>
+      <div class="table-wrap card"><table>
+        <thead><tr><th>Capacidad</th><th>Gratuito</th><th>Pagado</th><th>Familiar</th></tr></thead>
+        <tbody>${plans.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody>
+      </table></div>
+      <p class="small muted" style="margin-top:.5rem">Pago con Webpay Plus. Renovación manual por período. Al vencer, tus datos se conservan y vuelves al plan Gratuito.</p>
+    </section>
+
+    <section class="section" id="privacidad">
+      <div class="row between"><h2>Qué datos guardamos y cómo</h2>${hu('HU32')}</div>
+      <div class="grid-2">
+        <div class="card"><h3>Lo que guardamos</h3><p class="muted">Correo, contraseña cifrada con argon2id, tu registro financiero, tus escenarios y, si conectas tu banco, las cuentas y movimientos que entrega Fintoc.</p></div>
+        <div class="card"><h3>Lo que nunca guardamos</h3><p class="muted">Datos de tu tarjeta (los procesa Transbank) ni la clave de tu banco (la ingresas solo en el widget de Fintoc).</p></div>
+        <div class="card"><h3>En un hogar</h3><p class="muted">Los miembros ven los gastos comunes y cuánto aporta cada uno. Nadie, ni quien administra el hogar, ve tus ingresos, deudas o escenarios.</p></div>
+        <div class="card"><h3>Tus derechos</h3><p class="muted">Puedes exportar tus datos o borrar tu cuenta cuando quieras, conforme a la Ley 21.719.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="casos">
+      <div class="row between"><h2>Casos con cifras</h2>${hu('HU33')}</div>
+      <div class="grid-3">
+        <div class="card"><span class="tag origin-demo">Demostración</span><h3 style="margin-top:.5rem">Estudiante</h3><p class="muted">Ingreso de $650.000. Una compra de $300.000 en 6 cuotas deja el saldo más bajo en $42.000 en marzo.</p></div>
+        <div class="card"><span class="tag origin-demo">Demostración</span><h3 style="margin-top:.5rem">Familia</h3><p class="muted">Arriendo dividido 55/45. Cada miembro ve su aporte de $606.500 dentro de su propia proyección.</p></div>
+        <div class="card"><span class="tag origin-demo">Demostración</span><h3 style="margin-top:.5rem">Profesional con deudas</h3><p class="muted">Prepago de $500.000 con reducción de plazo: el crédito termina 5 meses antes y la cuota se mantiene.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="contacto">
+      <div class="row between"><h2>Contacto</h2>${hu('HU34')}</div>
+      <form class="card form-grid" data-form="contact" style="grid-template-columns:1fr 1fr">
+        <div><label class="f" for="c1">Correo</label><input id="c1" type="email" required></div>
+        <div><label class="f" for="c2">Asunto</label><input id="c2" required></div>
+        <div style="grid-column:1/-1"><label class="f" for="c3">Mensaje</label><textarea id="c3" rows="3" required></textarea></div>
+        <div><button class="btn">Enviar</button></div>
+      </form>
+    </section>
+    ${disclaimer}
+  </main>`;
+}
+
+/* ---------------- modo demostración (HU27-29) ---------------- */
+function demoPage() {
+  const d = S.demo, dec = ui.demoDecision || { total: 300000, n: 6 };
+  const sim = (withDec) => {
+    let bal = d.opening; const out = [];
+    for (let k = 0; k < 3; k++) {
+      const extra = withDec && k < dec.n ? Math.floor(dec.total / dec.n) : 0;
+      bal += d.income - d.expense - extra; out.push(bal);
+    }
+    return out;
+  };
+  const base = sim(false), sc = sim(true);
+  const minB = Math.min(...base), minS = Math.min(...sc), cuota = Math.floor(dec.total / dec.n);
+  const brk = sc.findIndex(v => v < 0);
+  return `
+  <header class="site-head"><a class="brand" href="#/"><span class="brand-mark">FM</span>Fin de Mes</a><nav class="site-nav"><a class="btn small" href="#/registro?desde=demo">Crear cuenta y conservar esto</a></nav></header>
+  <main class="wrap stack">
+    <div class="page-head"><div><h1>Modo demostración</h1><p class="muted">Sin correo ni contraseña. Nada de esto se guarda en el servidor. ${hu('HU27', 'HU28')}</p></div><span class="tag origin-demo">Datos de demostración</span></div>
+    <div class="grid-2">
+      <form class="card" data-form="demo">
+        <h3>Tus datos mínimos</h3>
+        <p class="small muted">Precargado con un ejemplo. Cámbialo por tus cifras.</p>
+        <div class="form-grid">
+          <div><label class="f" for="d1">Saldo inicial</label><input id="d1" name="opening" type="number" min="0" step="1000" value="${d.opening}"></div>
+          <div><label class="f" for="d2">Ingreso mensual</label><input id="d2" name="income" type="number" min="0" step="1000" value="${d.income}"></div>
+          <div><label class="f" for="d3">Gasto fijo mensual</label><input id="d3" name="expense" type="number" min="0" step="1000" value="${d.expense}"></div>
+        </div>
+        <h3 style="margin-top:1rem">Una decisión para simular</h3>
+        <div class="form-grid">
+          <div><label class="f" for="d4">Compra total</label><input id="d4" name="total" type="number" min="0" step="1000" value="${dec.total}"></div>
+          <div><label class="f" for="d5">Cuotas</label><input id="d5" name="n" type="number" min="1" max="48" value="${dec.n}"></div>
+          <div><button class="btn">Calcular</button></div>
+        </div>
+      </form>
+      <div class="card">
+        <h3>Proyección de 3 meses</h3>
+        ${chart([{ name: 'Sin la compra', values: base, color: 'var(--series-base)', dash: true }, { name: 'Con la compra', values: sc, color: 'var(--series-a)' }], 3, { height: 190 })}
+        <div class="explain" style="margin-top:.75rem">
+          <p>La compra agrega una cuota de ${fmt(cuota)} durante ${dec.n} meses. El saldo más bajo de los tres meses pasa de ${fmt(minB)} a ${fmt(minS)} (${diff(minS - minB)}).</p>
+          <p>${brk >= 0 ? `Con la compra, el saldo pasa a ser negativo en ${mLong(brk)}.` : 'En ninguno de los tres meses el saldo llega a ser negativo.'}</p>
+        </div>
+      </div>
+    </div>
+    <div class="notice">Con una cuenta puedes registrar más ingresos, gastos y deudas, proyectar hasta 24 meses, guardar escenarios y conectar tu banco. Lo que hiciste aquí se traspasa a tu cuenta al registrarte. ${hu('HU29')}</div>
+    ${disclaimer}
+  </main>`;
+}
+
+/* ---------------- identidad (HU17.x, HU31) ---------------- */
+function authPage(kind) {
+  const titles = { login: 'Iniciar sesión', registro: 'Crear cuenta', recuperar: 'Recuperar acceso', invitacion: 'Te invitaron a un hogar' };
+  const codes = { login: hu('HU17.1'), registro: hu('HU17', 'HU29'), recuperar: hu('HU17.2'), invitacion: hu('HU31') };
+  let body = '';
+  if (kind === 'login') body = `
+    <div><label class="f" for="a1">Correo</label><input id="a1" type="email" value="camila@ejemplo.cl"></div>
+    <div><label class="f" for="a2">Contraseña</label><input id="a2" type="password" value="••••••••••••"></div>
+    <button class="btn" data-action="go" data-to="#/app/resumen">Entrar</button>
+    <p class="small"><a href="#/recuperar">Olvidé mi contraseña</a> · <a href="#/registro">Crear cuenta</a></p>
+    <p class="small muted">Tras varios intentos fallidos, la cuenta espera un tiempo creciente antes de permitir otro intento. Nunca se bloquea de forma permanente.</p>`;
+  if (kind === 'registro') body = `
+    ${location.hash.includes('desde=demo') ? '<div class="notice">Tus datos del modo demostración se traspasarán a la cuenta nueva.</div>' : ''}
+    <div><label class="f" for="r1">Correo</label><input id="r1" type="email"></div>
+    <div><label class="f" for="r2">Contraseña</label><input id="r2" type="password" minlength="10"><p class="small muted">Mínimo 10 caracteres. Se revisa contra una lista local de contraseñas filtradas.</p></div>
+    <label class="small row" style="gap:.4rem"><input type="checkbox"> Leí la <a href="#privacidad">política de privacidad</a> y los términos.</label>
+    <button class="btn" data-action="go" data-to="#/verificar">Crear cuenta</button>`;
+  if (kind === 'recuperar') body = `
+    <div><label class="f" for="p1">Correo</label><input id="p1" type="email"></div>
+    <button class="btn" data-action="toast" data-msg="Si el correo existe, enviamos un enlace de un solo uso válido por 30 minutos.">Enviar enlace</button>
+    <p class="small muted">Por seguridad, la respuesta es la misma exista o no la cuenta.</p>`;
+  if (kind === 'invitacion') body = `
+    <p><b>Camila</b> te invitó al hogar <b>Depto Ñuñoa</b>.</p>
+    <div class="notice small">Al unirte, los miembros verán los gastos comunes y tu nombre visible. Tus ingresos, deudas y escenarios siguen siendo solo tuyos.</div>
+    <div><label class="f" for="v1">Nombre visible en el hogar</label><input id="v1" value="Vale"></div>
+    <div><label class="f" for="v2">Contraseña</label><input id="v2" type="password" minlength="10"></div>
+    <button class="btn" data-action="go" data-to="#/app/hogar">Crear cuenta y unirme</button>`;
+  return `<header class="site-head"><a class="brand" href="#/"><span class="brand-mark">FM</span>Fin de Mes</a></header>
+  <main class="wrap" style="max-width:440px"><div class="card stack"><div class="row between"><h1 style="font-size:1.6rem;margin:0">${titles[kind]}</h1>${codes[kind]}</div>${body}</div></main>`;
+}
+const verifyPage = () => `<header class="site-head"><a class="brand" href="#/"><span class="brand-mark">FM</span>Fin de Mes</a></header>
+  <main class="wrap" style="max-width:440px"><div class="card stack"><h1 style="font-size:1.6rem">Revisa tu correo</h1><p class="muted">Te enviamos un enlace de verificación de un solo uso, válido por 24 horas.</p><button class="btn" data-action="go" data-to="#/app/resumen">Simular clic en el enlace</button></div></main>`;
+
+/* =========================== APLICACIÓN =========================== */
+const NAV = [
+  ['resumen', 'Mi situación', '◐'], ['registro', 'Registro', '☰'], ['bancos', 'Bancos', '⇄'], ['proyeccion', 'Proyección', '↗'],
+  ['escenarios', 'Escenarios', '⑂'], ['comparar', 'Comparar', '⇆'], ['hogar', 'Hogar', '⌂'], ['plan', 'Plan', '★'], ['cuenta', 'Cuenta y privacidad', '⚙'],
+];
+function appShell(page, content) {
+  const sub = S.proto.sub;
+  const banner = sub === 'por_vencer' ? `<div class="notice warn" style="margin-bottom:1rem">Tu plan ${PLAN_NAMES[S.proto.plan]} vence el 15 de noviembre de 2026. <a href="#/app/plan">Renovar</a></div>`
+    : sub === 'vencida' ? `<div class="notice warn" style="margin-bottom:1rem">Tu plan venció. Volviste al plan Gratuito: tus datos se conservan${S.proto.plan === 'family' ? ' y el espacio común del hogar queda en solo lectura' : ''}. ${hu('HU20')}</div>`
+    : sub === 'pendiente' ? `<div class="notice" style="margin-bottom:1rem">Tu pago está pendiente de confirmación con Transbank. Mientras tanto se mantiene tu plan anterior.</div>`
+    : sub === 'fallida' ? `<div class="notice warn" style="margin-bottom:1rem">Transbank rechazó la transacción. Se mantiene tu plan anterior.</div>` : '';
+  return `<div class="app">
+    <nav class="side" aria-label="Aplicación">
+      <a class="brand" href="#/app/resumen"><span class="brand-mark">FM</span>Fin de Mes</a>
+      ${NAV.map(([k, label, ic]) => `<a class="nav ${k === page ? 'active' : ''}" href="#/app/${k}" ${k === page ? 'aria-current="page"' : ''}><span aria-hidden="true">${ic}</span>${label}</a>`).join('')}
+      <div class="who"><b>${esc(S.user.name)}</b><br><span class="muted">Plan ${PLAN_NAMES[effectivePlan()]} · ${SUB_STATES[sub]}</span><br><a href="#/" class="small">Cerrar sesión</a> ${hu('HU17.3')}</div>
+    </nav>
+    <main class="main">${banner}${content}${disclaimer}</main>
+  </div>`;
+}
+const head = (title, sub, codes, right = '') => `<div class="page-head"><div><h1>${title}</h1><p class="muted" style="margin:0">${sub} ${codes}</p></div>${right}</div>`;
+const kpi = (label, value, sub = '') => `<div class="card kpi"><div class="label">${label}</div><div class="value">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+
+/* ---- Mi situación (HU39) ---- */
+function pageResumen() {
+  const r = run([]);
+  const ex = explainBase(r);
+  return head('Mi situación', `Resumen calculado con tu registro actual, a ${mLong(0)}.`, hu('HU39', 'HU10')) + `
+  <div class="grid-4">
+    ${kpi('Saldo mínimo proyectado', fmt(r.ind.min), 'en ' + mLong(r.ind.minMonth))}
+    ${kpi('Mes de quiebre', r.ind.breakMonth == null ? 'No ocurre' : mLabel(r.ind.breakMonth), r.ind.breakMonth == null ? `en los próximos ${S.horizon} meses` : 'primer mes con saldo negativo')}
+    ${kpi('Margen mensual disponible', fmt(r.ind.margin), 'ingresos menos compromisos de ' + mLabel(0))}
+    ${kpi('Carga de deuda sobre ingreso', fmtLoad(r.ind.debtLoad), 'cuotas / ingreso de ' + mLabel(0))}
+  </div>
+  <div class="card" style="margin-top:1rem">
+    <div class="row between"><h2>Saldo proyectado</h2><a href="#/app/proyeccion" class="small">Ver detalle mes a mes</a></div>
+    ${chart([{ name: 'Situación base', values: r.months.map(x => x.closing), color: 'var(--series-a)' }], S.horizon)}
+  </div>
+  <div class="card"><h2>Cómo se obtiene</h2><div class="explain">${ex.map(p => `<p>${p}</p>`).join('')}</div></div>
+  <div class="grid-2" style="margin-top:1rem">
+    <div class="card"><h3>Cuotas pendientes</h3><table><tbody>${S.debts.map(d => `<tr><td>${esc(d.name)}</td><td class="r">${fmt(d.installment)}</td><td class="r">${d.remaining} cuotas</td><td>termina en ${mLabel(endIdx(d))}</td></tr>`).join('')}</tbody></table></div>
+    <div class="card"><h3>Aporte al hogar este mes</h3>${householdVisible() ? `<table><tbody>${myHouseholdShare().lines.map(l => `<tr><td>${esc(l.name)}</td><td class="r">${fmt(l.part)}</td></tr>`).join('')}<tr><td><b>Total</b></td><td class="r"><b>${fmt(myHouseholdShare().total)}</b></td></tr></tbody></table>` : '<p class="muted">No perteneces a un hogar con plan Familiar.</p>'}</div>
+  </div>`;
+}
+
+/* ---- Registro (HU01-04) ---- */
+function pageRegistro() {
+  const kindName = { recurrente: 'Recurrente', esporadico: 'Esporádico', fijo: 'Fijo', variable: 'Variable (estimado)' };
+  const row = (x, coll) => `<tr><td>${esc(x.name)} ${originTag(x.origin)}</td><td>${kindName[x.kind]}${x.kind === 'esporadico' ? ' · ' + mLabel(x.month) : ''}</td><td class="r">${fmt(x.amount)}</td><td class="r"><button class="btn link small" data-action="del" data-coll="${coll}" data-id="${x.id}" aria-label="Eliminar ${esc(x.name)}">Eliminar</button></td></tr>`;
+  const addForm = (coll, kinds) => `<form class="form-grid" data-form="add" data-coll="${coll}" style="margin-top:.75rem">
+      <div><label class="f">Nombre</label><input name="name" required></div>
+      <div><label class="f">Monto mensual (CLP)</label><input name="amount" type="number" min="1" step="1" required></div>
+      <div><label class="f">Tipo</label><select name="kind">${kinds.map(k => `<option value="${k}">${kindName[k]}</option>`).join('')}</select></div>
+      <div><label class="f">Mes (si es esporádico)</label><select name="month">${monthOptions(0)}</select></div>
+      <div><button class="btn small">Agregar</button></div></form>`;
+  return head('Registro', 'Tu estado base. La proyección se recalcula con cada cambio.', hu('HU01', 'HU02', 'HU03', 'HU04')) + `
+  <div class="card"><div class="row between"><h2>Saldo inicial de ${mLong(0)}</h2>${hu('HU04')}</div>
+    <form class="row" data-form="opening"><input name="amount" type="number" step="1" value="${S.opening.amount}" style="max-width:220px" aria-label="Saldo inicial"><button class="btn small">Guardar</button>${originTag(S.opening.origin)}
+    ${S.bank.connected ? `<button type="button" class="btn ghost small" data-action="opening-from-bank">Usar saldo disponible del banco</button>` : ''}</form></div>
+  <div class="card"><div class="row between"><h2>Ingresos</h2>${hu('HU01')}</div>
+    <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Tipo</th><th class="r">Monto</th><th></th></tr></thead><tbody>${S.incomes.map(x => row(x, 'incomes')).join('')}</tbody></table></div>${addForm('incomes', ['recurrente', 'esporadico'])}</div>
+  <div class="card"><div class="row between"><h2>Gastos</h2>${hu('HU02')}</div>
+    <p class="small muted">Los gastos comunes del hogar no van aquí: tu aporte se suma solo desde el espacio común.</p>
+    <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Tipo</th><th class="r">Monto</th><th></th></tr></thead><tbody>${S.expenses.map(x => row(x, 'expenses')).join('')}</tbody></table></div>${addForm('expenses', ['fijo', 'variable', 'esporadico'])}</div>
+  <div class="card"><div class="row between"><h2>Deudas en cuotas</h2>${hu('HU03')}</div>
+    <p class="small muted">Las tarjetas de crédito no se sincronizan con el banco: registra aquí tus compras en cuotas.</p>
+    <div class="table-wrap"><table><thead><tr><th>Deuda</th><th class="r">Cuota</th><th class="r">Cuotas pendientes</th><th>Última cuota</th><th class="r">Total pendiente</th><th></th></tr></thead>
+    <tbody>${S.debts.map(d => `<tr><td>${esc(d.name)} ${originTag(d.origin)}</td><td class="r">${fmt(d.installment)}</td><td class="r">${d.remaining}</td><td>${mLabel(endIdx(d))}</td><td class="r">${fmt(d.installment * d.remaining)}</td><td class="r"><button class="btn link small" data-action="del" data-coll="debts" data-id="${d.id}">Eliminar</button></td></tr>`).join('')}</tbody></table></div>
+    <form class="form-grid" data-form="debt" style="margin-top:.75rem">
+      <div><label class="f">Nombre</label><input name="name" required></div>
+      <div><label class="f">Cuota mensual</label><input name="installment" type="number" min="1" required></div>
+      <div><label class="f">Cuotas pendientes</label><input name="remaining" type="number" min="1" max="360" required></div>
+      <div><button class="btn small">Agregar deuda</button></div></form></div>`;
+}
+
+/* ---- Bancos (HU36, Fintoc) ---- */
+function pageBancos() {
+  const b = S.bank;
+  if (!b.connected) return head('Bancos', 'Trae tus cuentas y movimientos con Fintoc, en modo de prueba durante el proyecto.', hu('HU36')) + `
+    <div class="grid-2">
+      <div class="card stack"><h2>Conecta tu cuenta corriente o vista</h2>
+        <p class="muted">Se abre el widget de Fintoc. Tu clave bancaria la ingresas allí: Fin de Mes nunca la recibe. Solo obtenemos acceso de lectura y puedes desconectar cuando quieras.</p>
+        <div class="row"><button class="btn" data-action="fintoc-open">Conectar con Fintoc</button><button class="btn ghost" data-action="demo-bank">Usar banco de demostración</button></div></div>
+      <div class="card"><h3>Qué se trae y qué no</h3><ul class="muted"><li>Cuentas corrientes y vista, con su saldo disponible.</li><li>Movimientos con fecha, descripción y monto en pesos.</li><li><b>No</b> se traen tarjetas de crédito: tus cuotas se registran a mano.</li><li>Fin de Mes no clasifica sola tus movimientos: tú confirmas cuáles son recurrentes.</li></ul></div>
+    </div>`;
+  const byMonth = {};
+  b.movements.forEach(m => { byMonth[m.month] ??= { in: 0, out: 0 }; if (m.amount > 0) byMonth[m.month].in += m.amount; else byMonth[m.month].out += -m.amount; });
+  return head('Bancos', 'Cuentas conectadas y movimientos recientes.', hu('HU36'), `<button class="btn ghost small" data-action="bank-disconnect">Desconectar y revocar acceso</button>`) + `
+  <div class="grid-2">${b.accounts.map(a => `<div class="card"><div class="row between"><b>${esc(a.bank)}</b>${originTag(a.origin)}</div><p class="muted small">${esc(a.type)} · ${esc(a.number)}</p><div class="kpi"><div class="label">Saldo disponible</div><div class="value">${fmt(a.available)}</div></div><p class="small muted">Sincronizado hace 3 minutos · <button class="btn link small" data-action="toast" data-msg="Sincronización incremental solicitada (updated_since).">Sincronizar ahora</button></p></div>`).join('')}</div>
+  <div class="card"><h2>Totales por mes</h2><table><thead><tr><th>Mes</th><th class="r">Abonos</th><th class="r">Cargos</th></tr></thead><tbody>${Object.entries(byMonth).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="r">${fmt(v.in)}</td><td class="r">${fmt(v.out)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="card"><div class="row between"><h2>Movimientos</h2><span class="small muted">Marca lo que se repite cada mes para llevarlo a tu registro.</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Descripción</th><th class="r">Monto</th><th>¿Recurrente?</th></tr></thead>
+    <tbody>${b.movements.map(m => `<tr><td>${m.date}</td><td>${esc(m.desc)} ${originTag(m.origin)}</td><td class="r">${fmt(m.amount)}</td><td>${m.added ? '<span class="tag">En tu registro</span>' : `<button class="btn ghost small" data-action="mark-recurring" data-id="${m.id}">Marcar como recurrente</button>`}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+function bankData(origin) {
+  const demo = origin === 'demo';
+  const mv = demo ? [
+    ['03-10-2026', 'Remuneración Empresa Andes SpA', 1180000], ['05-10-2026', 'Pago Internet Hogar', -38000], ['06-10-2026', 'Isapre plan de salud', -62000],
+    ['08-10-2026', 'Supermercado', -45210], ['11-10-2026', 'Suscripción streaming', -7990], ['14-10-2026', 'Carga tarjeta transporte', -20000],
+    ['02-09-2026', 'Remuneración Empresa Andes SpA', 1180000], ['05-09-2026', 'Pago Internet Hogar', -38000], ['11-09-2026', 'Suscripción streaming', -7990],
+  ] : [
+    ['07-10-2026', 'Lorem ipsum dolor sit', -2381944], ['06-10-2026', 'Consectetur adipiscing', 4120333], ['04-10-2026', 'Sed do eiusmod tempor', -918442],
+    ['29-09-2026', 'Ut labore et dolore', -3381200], ['21-09-2026', 'Magna aliqua enim', 1210050],
+  ];
+  return {
+    connected: true,
+    accounts: [{ bank: demo ? 'Banco de demostración' : 'Banco de Chile (prueba Fintoc)', type: 'Cuenta corriente', number: '•••• 4821', available: demo ? 612340 : 18342771, origin }],
+    movements: mv.map(([date, desc, amount], i) => ({ id: 'mv' + i, date, desc, amount, origin, month: date.slice(3), added: false })),
+  };
+}
+
+/* ---- Proyección (HU05) ---- */
+function pageProyeccion() {
+  const r = run([]);
+  return head('Proyección', 'Tu saldo mes a mes según tu registro actual.', hu('HU05'), `<label class="row small">Horizonte <select data-action-change="horizon" style="width:auto">${[3, 6, 12, 24].map(n => `<option value="${n}" ${S.horizon === n ? 'selected' : ''}>${n} meses</option>`).join('')}</select></label>`) + `
+  <div class="card">${chart([{ name: 'Saldo al cierre', values: r.months.map(x => x.closing), color: 'var(--series-a)' }], S.horizon)}</div>
+  <div class="card table-wrap"><table><thead><tr><th>Mes</th><th class="r">Saldo inicial</th><th class="r">Ingresos</th><th class="r">Gastos</th><th class="r">Aporte hogar</th><th class="r">Cuotas</th><th class="r">Margen</th><th class="r">Saldo al cierre</th></tr></thead>
+  <tbody>${r.months.map(x => `<tr><td>${mLabel(x.k)}</td><td class="r">${fmt(x.opening)}</td><td class="r">${fmt(x.income)}</td><td class="r">${fmt(x.expenses)}</td><td class="r">${fmt(x.household)}</td><td class="r">${fmt(x.debt)}</td><td class="r">${fmt(x.margin)}</td><td class="r"><b>${fmt(x.closing)}</b></td></tr>`).join('')}</tbody></table>
+  <p class="small muted" style="margin-top:.5rem">El motor es mensual: indica en qué mes ocurre algo, no en qué semana.</p></div>`;
+}
+
+/* ---- Escenarios (HU06-08, HU10, HU11) ---- */
+function decisionForm(lim) {
+  const t = ui.decisionType;
+  const locked = t === 'debt_prepayment' && !lim.prepay;
+  const fields = {
+    installment_purchase: `<div><label class="f">Qué compras</label><input name="label" value="Televisor" required></div><div><label class="f">Monto total</label><input name="total" type="number" min="1" value="480000" required></div><div><label class="f">N.º de cuotas</label><input name="n" type="number" min="1" max="48" value="12" required></div><div><label class="f">Primera cuota</label><select name="start">${monthOptions(1)}</select></div>`,
+    fixed_expense: `<div><label class="f">Gasto</label><select name="target"><option value="">Nuevo gasto fijo</option>${S.expenses.filter(e => e.kind !== 'esporadico').map(e => `<option value="${e.id}">Modificar: ${esc(e.name)} (${fmt(e.amount)})</option>`).join('')}</select></div><div><label class="f">Nombre (si es nuevo)</label><input name="label" value="Gimnasio"></div><div><label class="f">Monto mensual</label><input name="amount" type="number" min="0" value="35000" required></div><div><label class="f">Desde</label><select name="start">${monthOptions(1)}</select></div><div><label class="f">Hasta</label><select name="end"><option value="">Sin término</option>${monthOptions(-1, 1)}</select></div>`,
+    one_time_expense: `<div><label class="f">Qué es</label><input name="label" value="Viaje de vacaciones" required></div><div><label class="f">Monto</label><input name="amount" type="number" min="1" value="400000" required></div><div><label class="f">Mes</label><select name="month">${monthOptions(2)}</select></div>`,
+    debt_prepayment: `<div><label class="f">Deuda</label><select name="debt">${S.debts.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('')}</select></div><div><label class="f">Monto del prepago</label><input name="amount" type="number" min="1" value="300000" required></div><div><label class="f">Mes de aplicación</label><select name="month">${monthOptions(1)}</select></div><div><label class="f">Modalidad (depende de tu institución)</label><select name="modality"><option value="reduce_term">Reducir plazo (cuota igual)</option><option value="reduce_installment">Reducir cuota (plazo igual)</option></select></div>`,
+    income_change: `<div><label class="f">Variación mensual (+/−)</label><input name="delta" type="number" value="-150000" required></div><div><label class="f">Desde</label><select name="start">${monthOptions(1)}</select></div><div><label class="f">Hasta</label><select name="end"><option value="">Sin término</option>${monthOptions(-1, 1)}</select></div>`,
+  };
+  return `<form class="card" data-form="decision">
+    <div class="row between"><h3>Agregar una decisión</h3>${hu('HU07')}</div>
+    <div class="form-grid"><div style="grid-column:1/-1"><label class="f">Tipo de decisión</label><select data-action-change="decision-type">${Object.entries(DECISIONS).map(([k, v]) => `<option value="${k}" ${k === t ? 'selected' : ''}>${v.name}${v.paid && !lim.prepay ? ' · plan Pagado' : ''}</option>`).join('')}</select></div>
+    ${locked ? `<p class="lock" style="grid-column:1/-1">Simular prepagos está disponible en los planes Pagado y Familiar. <a href="#/app/plan">Ver planes</a></p>` : fields[t] + '<div><button class="btn small">Agregar al escenario</button></div>'}</div></form>`;
+}
+function pageEscenarios() {
+  const lim = limits();
+  const base = run([]);
+  const sc = S.scenarios.find(s => s.id === ui.editing);
+  const list = `<div class="card"><div class="row between"><h2>Tus escenarios</h2>${hu('HU06', 'HU11')}</div>
+    <p class="small muted">${lim.saved === Infinity ? 'Escenarios ilimitados en tu plan.' : `Plan Gratuito: ${S.scenarios.length} de ${lim.saved} escenarios guardados.`} Cada escenario guarda solo sus decisiones; tu situación base no cambia.</p>
+    <table><tbody>${S.scenarios.map(s => { const r = run(s.decisions); return `<tr><td><a href="#/app/escenarios/${s.id}">${esc(s.name)}</a><div class="small muted">${s.decisions.length} decisión(es)</div></td><td class="r small">Saldo mínimo<br><b>${fmt(r.ind.min)}</b></td><td class="r"><button class="btn link small" data-action="del-scenario" data-id="${s.id}">Eliminar</button></td></tr>`; }).join('') || '<tr><td class="muted">Aún no tienes escenarios.</td></tr>'}</tbody></table>
+    <form class="row" data-form="new-scenario" style="margin-top:.75rem"><input name="name" placeholder="Nombre del escenario" required style="flex:1;min-width:160px"><button class="btn small" ${S.scenarios.length >= lim.saved ? 'disabled' : ''}>Crear desde mi situación actual</button></form>
+    ${S.scenarios.length >= lim.saved ? `<p class="lock" style="margin-top:.5rem">Llegaste al máximo de escenarios guardados del plan Gratuito. Puedes eliminar uno o <a href="#/app/plan">ver los planes</a>.</p>` : ''}</div>`;
+  if (!sc) return head('Escenarios', 'Variantes hipotéticas de tu situación, comparadas con la base.', hu('HU06', 'HU07', 'HU08')) + list;
+  const r = run(sc.decisions);
+  const row = (label, b, s, d) => `<tr><td>${label}</td><td class="r">${b}</td><td class="r">${s}</td><td class="r">${d}</td></tr>`;
+  const brk = i => i == null ? 'No ocurre' : mLabel(i);
+  return head(esc(sc.name), 'Escenario derivado de tu situación base.', hu('HU07', 'HU08', 'HU10', 'HU11'), `<a class="btn ghost small" href="#/app/escenarios">← Todos los escenarios</a>`) + `
+  <div class="grid-2">
+    <div class="stack">
+      <div class="card"><h3>Decisiones aplicadas</h3>
+        ${sc.decisions.length ? `<ol>${sc.decisions.map((d, i) => `<li style="margin-bottom:.4rem">${r.notes[i]} <button class="btn link small" data-action="del-decision" data-id="${d.id}">Quitar</button></li>`).join('')}</ol>` : '<p class="muted">Sin decisiones todavía: el escenario es igual a la base.</p>'}
+        <form class="row" data-form="rename"><input name="name" value="${esc(sc.name)}" style="flex:1" aria-label="Nombre del escenario"><button class="btn ghost small">Renombrar</button></form>
+      </div>
+      ${decisionForm(limits())}
+    </div>
+    <div class="stack">
+      <div class="card"><div class="row between"><h3>Indicadores</h3>${hu('HU08')}</div>
+        <div class="table-wrap"><table><thead><tr><th>Indicador</th><th class="r">Base</th><th class="r">Escenario</th><th class="r">Diferencia</th></tr></thead><tbody>
+        ${row('Saldo mínimo proyectado', fmt(base.ind.min), fmt(r.ind.min), diff(r.ind.min - base.ind.min))}
+        ${row('Mes de quiebre', brk(base.ind.breakMonth), brk(r.ind.breakMonth), base.ind.breakMonth === r.ind.breakMonth ? 'sin diferencia' : 'cambia')}
+        ${row('Margen mensual (' + mLabel(0) + ')', fmt(base.ind.margin), fmt(r.ind.margin), diff(r.ind.margin - base.ind.margin))}
+        ${row('Carga de deuda sobre ingreso', fmtLoad(base.ind.debtLoad), fmtLoad(r.ind.debtLoad), base.ind.debtLoad == null || r.ind.debtLoad == null ? '—' : (r.ind.debtLoad - base.ind.debtLoad === 0 ? 'sin diferencia' : (r.ind.debtLoad > base.ind.debtLoad ? '+' : '−') + String(Math.abs(Math.round((r.ind.debtLoad - base.ind.debtLoad) * 10) / 10)).replace('.', ',') + ' pp'))}
+        ${row('Saldo al cierre de ' + mLabel(S.horizon - 1), fmt(base.ind.final), fmt(r.ind.final), diff(r.ind.final - base.ind.final))}
+        </tbody></table></div></div>
+      <div class="card">${chart([{ name: 'Base', values: base.months.map(x => x.closing), color: 'var(--series-base)', dash: true }, { name: sc.name, values: r.months.map(x => x.closing), color: 'var(--series-a)' }], S.horizon)}</div>
+      <div class="card"><div class="row between"><h3>Explicación</h3>${hu('HU10')}</div><div class="explain">${explainScenario(sc, r, base).map(p => `<p>${p}</p>`).join('')}</div></div>
+    </div>
+  </div>`;
+}
+
+/* ---- Comparar (HU09) ---- */
+function pageComparar() {
+  const lim = limits(), base = run([]);
+  if (!ui.compare.length) ui.compare = S.scenarios.slice(0, lim.compare === Infinity ? 2 : 1).map(s => s.id);
+  const chosen = S.scenarios.filter(s => ui.compare.includes(s.id));
+  const runs = chosen.map(s => ({ s, r: run(s.decisions) }));
+  const colors = ['var(--series-a)', 'var(--series-b)', 'var(--series-c)'];
+  const brk = i => i == null ? 'No ocurre' : mLabel(i);
+  const rows = [
+    ['Saldo mínimo proyectado', r => fmt(r.ind.min), (r) => diff(r.ind.min - base.ind.min)],
+    ['Mes del saldo mínimo', r => mLabel(r.ind.minMonth), null],
+    ['Mes de quiebre', r => brk(r.ind.breakMonth), null],
+    ['Margen mensual (' + mLabel(0) + ')', r => fmt(r.ind.margin), r => diff(r.ind.margin - base.ind.margin)],
+    ['Carga de deuda sobre ingreso', r => fmtLoad(r.ind.debtLoad), null],
+    ['Saldo al cierre de ' + mLabel(S.horizon - 1), r => fmt(r.ind.final), r => diff(r.ind.final - base.ind.final)],
+  ];
+  return head('Comparar escenarios', 'Indicadores de cada escenario junto a la base.', hu('HU09')) + `
+  <div class="card"><b>Escenarios a comparar</b> <span class="small muted">${lim.compare === Infinity ? 'Hasta 3 a la vez.' : 'Plan Gratuito: 1 escenario frente a la base.'}</span>
+    <div class="row" style="margin-top:.5rem">${S.scenarios.map(s => `<label class="row small" style="gap:.35rem"><input type="checkbox" data-action-change="compare" value="${s.id}" ${ui.compare.includes(s.id) ? 'checked' : ''}>${esc(s.name)}</label>`).join('')}</div></div>
+  <div class="card table-wrap"><table><thead><tr><th>Indicador</th><th class="r">Base</th>${runs.map(x => `<th class="r">${esc(x.s.name)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(([label, f, d]) => `<tr><td>${label}</td><td class="r">${f(base)}</td>${runs.map(x => `<td class="r">${f(x.r)}${d ? `<div class="small muted">${d(x.r)} vs. base</div>` : ''}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <p class="small muted" style="margin-top:.5rem">Los escenarios aparecen en el orden en que los creaste. Fin de Mes no los ordena por conveniencia ni destaca ninguno.</p></div>
+  <div class="card">${chart([{ name: 'Base', values: base.months.map(x => x.closing), color: 'var(--series-base)', dash: true }, ...runs.map((x, i) => ({ name: x.s.name, values: x.r.months.map(m => m.closing), color: colors[i] }))], S.horizon)}</div>`;
+}
+
+/* ---- Hogar (HU12-16, HU31) ---- */
+function pageHogar() {
+  if (!householdVisible()) return head('Hogar', 'Espacio común con perfiles privados.', hu('HU12')) + `<div class="card"><p>El espacio común del hogar está disponible en el plan Familiar.</p><a class="btn" href="#/app/plan">Ver planes</a></div>`;
+  const h = S.household, ro = householdReadOnly(), n = h.members.length, me = h.members.find(m => m.me);
+  const ruleText = e => e.rule.type === 'iguales' ? `Partes iguales (${n})` : e.rule.type === 'porcentaje' ? h.members.map(m => `${esc(m.display)} ${e.rule.shares[m.id] || 0} %`).join(' · ') : 'Asignado a ' + esc(h.members.find(m => m.id === e.rule.member)?.display || '—');
+  const partOf = (e, m) => e.rule.type === 'iguales' ? Math.floor(e.amount / n) : e.rule.type === 'porcentaje' ? Math.floor(e.amount * (e.rule.shares[m.id] || 0) / 100) : (e.rule.member === m.id ? e.amount : 0);
+  return head(esc(h.name), 'Gastos comunes y aportes. Lo individual de cada miembro no se comparte.', hu('HU12', 'HU13', 'HU14', 'HU15', 'HU16')) + `
+  ${ro ? '<div class="notice warn">El espacio común está en solo lectura porque la suscripción Familiar venció. Nada se borró.</div>' : ''}
+  <div class="grid-2" style="margin-top:1rem">
+    <div class="card"><div class="row between"><h3>Miembros</h3>${hu('HU12', 'HU31')}</div>
+      <table><tbody>${h.members.map(m => `<tr><td>${esc(m.display)}${m.me ? ' (tú)' : ''}</td><td>${m.role === 'admin' ? 'Administra' : 'Miembro'}</td></tr>`).join('')}${h.invites.map(i => `<tr><td class="muted">${esc(i.email)}</td><td class="muted">Invitación ${i.status}</td></tr>`).join('')}</tbody></table>
+      ${me.role === 'admin' && !ro ? `<form class="row" data-form="invite" style="margin-top:.75rem"><input type="email" name="email" placeholder="correo@ejemplo.cl" required style="flex:1"><button class="btn small">Invitar</button></form><p class="small muted">El enlace de invitación es de un solo uso. <a href="#/invitacion">Ver lo que recibe el invitado</a></p>` : ''}</div>
+    <div class="card"><div class="row between"><h3>Qué ve cada quien</h3>${hu('HU16')}</div>
+      <table><thead><tr><th></th><th>Miembros del hogar</th><th>Solo tú</th></tr></thead><tbody>
+      <tr><td>Gastos comunes y reglas</td><td>Sí</td><td></td></tr><tr><td>Aporte de cada miembro</td><td>Sí</td><td></td></tr>
+      <tr><td>Tus ingresos y gastos</td><td></td><td>Sí</td></tr><tr><td>Tus deudas</td><td></td><td>Sí</td></tr><tr><td>Tus escenarios</td><td></td><td>Sí</td></tr></tbody></table>
+      <p class="small muted">Esto aplica también a quien administra el hogar. El servidor lo verifica en cada solicitud.</p></div>
+  </div>
+  <div class="card"><div class="row between"><h3>Gastos comunes</h3>${hu('HU13', 'HU14')}</div>
+    <div class="table-wrap"><table><thead><tr><th>Gasto</th><th class="r">Monto</th><th>Regla de aporte</th>${h.members.map(m => `<th class="r">${esc(m.display)}</th>`).join('')}<th>Registró</th></tr></thead>
+    <tbody>${h.expenses.map(e => `<tr><td>${esc(e.name)}</td><td class="r">${fmt(e.amount)}</td><td>${ruleText(e)}</td>${h.members.map(m => `<td class="r">${fmt(partOf(e, m))}</td>`).join('')}<td class="muted">${esc(e.author)}</td></tr>`).join('')}
+    <tr><td><b>Total</b></td><td class="r"><b>${fmt(h.expenses.reduce((a, e) => a + e.amount, 0))}</b></td><td></td>${h.members.map(m => `<td class="r"><b>${fmt(h.expenses.reduce((a, e) => a + partOf(e, m), 0))}</b></td>`).join('')}<td></td></tr></tbody></table></div>
+    ${ro ? '' : `<form class="form-grid" data-form="hh-expense" style="margin-top:.75rem">
+      <div><label class="f">Gasto común</label><input name="name" required></div><div><label class="f">Monto mensual</label><input name="amount" type="number" min="1" required></div>
+      <div><label class="f">Regla</label><select name="rule"><option value="iguales">Partes iguales</option><option value="porcentaje">Porcentajes</option>${h.members.map(m => `<option value="asignado:${m.id}">Asignado a ${esc(m.display)}</option>`).join('')}</select></div>
+      <div><label class="f">% para ti (si es porcentaje)</label><input name="pct" type="number" min="0" max="100" value="50"></div>
+      <div><button class="btn small">Agregar</button></div></form>`}</div>
+  <div class="card"><div class="row between"><h3>Tu aporte en tu proyección</h3>${hu('HU15')}</div><p>Tu aporte de <b>${fmt(myHouseholdShare().total)}</b> mensuales aparece como un compromiso en <a href="#/app/proyeccion">tu proyección individual</a>. Los demás miembros no ven el resto de tu presupuesto.</p></div>`;
+}
+
+/* ---- Plan (HU18-20) ---- */
+function pagePlan() {
+  const { plan, sub } = S.proto;
+  return head('Plan y suscripción', 'Contratación con Webpay Plus, en ambiente de integración durante el proyecto.', hu('HU18', 'HU19', 'HU20')) + `
+  <div class="grid-3">
+    ${['free', 'paid', 'family'].map(p => `<div class="card stack"><div class="row between"><h2>${PLAN_NAMES[p]}</h2>${effectivePlan() === p ? '<span class="tag">Tu plan actual</span>' : ''}</div>
+      <p class="muted small">${p === 'free' ? 'Registro, proyección, hasta 2 escenarios guardados y comparación de 1 escenario frente a la base.' : p === 'paid' ? 'Escenarios ilimitados, comparación múltiple, prepagos e histórico completo.' : 'Todo lo del plan Pagado, más el hogar con espacio común y perfiles privados.'}</p>
+      <div class="kpi"><div class="value">${p === 'free' ? '$0' : 'Precio por definir'}</div><div class="sub">${p === 'free' ? '' : 'por período, renovación manual'}</div></div>
+      ${p === 'free' ? '' : `<button class="btn" data-action="webpay-open" data-plan="${p}">${effectivePlan() === p ? 'Renovar' : 'Contratar'}</button>`}</div>`).join('')}
+  </div>
+  <div class="card"><h3>Estado de tu suscripción</h3>
+    <table><tbody><tr><td>Plan contratado</td><td>${PLAN_NAMES[plan]}</td></tr><tr><td>Estado</td><td>${SUB_STATES[sub]}</td></tr><tr><td>Período</td><td>${sub === 'gratuito' ? '—' : '15-10-2026 al 15-11-2026'}</td></tr></tbody></table>
+    ${['activa', 'por_vencer'].includes(sub) ? '<button class="btn ghost small" data-action="cancel-sub" style="margin-top:.75rem">Cancelar renovación</button><p class="small muted">Si cancelas, mantienes el plan hasta el término del período ya pagado.</p>' : ''}
+    ${sub === 'cancelada' ? '<p class="small muted">Cancelaste la renovación. Mantienes el plan hasta el 15-11-2026.</p>' : ''}
+  </div>
+  <div class="notice small">Fin de Mes no guarda datos de tu tarjeta. La activación se confirma desde nuestro servidor con Transbank: aunque cierres el navegador durante el pago, el resultado queda registrado una sola vez.</div>`;
+}
+
+/* ---- Cuenta y privacidad (HU17.3, HU17.4, HU21) ---- */
+function pageCuenta() {
+  return head('Cuenta y privacidad', 'Tus datos de acceso y tus derechos sobre tus datos personales.', hu('HU17.3', 'HU17.4', 'HU21')) + `
+  <div class="grid-2">
+    <form class="card stack" data-form="noop"><div class="row between"><h3>Cambiar contraseña</h3>${hu('HU17.4')}</div>
+      <div><label class="f">Contraseña actual</label><input type="password"></div><div><label class="f">Nueva contraseña (mín. 10)</label><input type="password" minlength="10"></div>
+      <button class="btn small" data-action="toast" data-msg="Contraseña cambiada. Se cerraron tus otras sesiones." type="button">Guardar</button></form>
+    <div class="card stack"><div class="row between"><h3>Sesiones</h3>${hu('HU17.3')}</div>
+      <table><tbody><tr><td>Chrome · Windows</td><td class="muted">esta sesión</td></tr><tr><td>App Android</td><td class="muted">hace 2 días</td></tr></tbody></table>
+      <div class="row"><a class="btn ghost small" href="#/">Cerrar sesión</a><button class="btn ghost small" data-action="toast" data-msg="Se cerraron todas las demás sesiones.">Cerrar las demás</button></div></div>
+  </div>
+  <div class="card"><div class="row between"><h3>Tus datos</h3>${hu('HU21')}</div>
+    <div class="row"><button class="btn ghost" data-action="toast" data-msg="Preparando tu exportación en JSON. Te avisaremos por correo cuando esté lista.">Exportar mis datos</button>
+    <button class="btn ghost" data-action="toast" data-msg="Puedes corregir cualquier dato desde Registro, Hogar o esta página.">Rectificar</button>
+    <button class="btn ghost" data-action="delete-account">Eliminar mi cuenta</button></div>
+    <p class="small muted" style="margin-top:.75rem">Al eliminar tu cuenta se borran tu registro, tus escenarios y tus datos bancarios, y se revoca el acceso de Fintoc. En el hogar, los gastos que registraste aparecerán como "Ex miembro". Los comprobantes de pago se conservan solo con un identificador seudónimo.</p></div>`;
+}
+
+/* =========================== PANEL ADMIN =========================== */
+function adminPage(tab) {
+  const headHtml = `<div class="admin-head"><div><b>Fin de Mes · Administración</b> <span class="tag">aplicación separada</span></div><div class="small muted"><span class="ok-dot"></span>Conectado por Tailscale · admin.findemes.internal</div></div>`;
+  if (!ui.adminAuthed) return `<div class="admin">${headHtml}<main class="wrap" style="max-width:420px;padding-top:2rem"><div class="card stack">
+    <h2>Acceso de operadores</h2><p class="small muted">Solo accesible dentro de la red privada. No existe en el sitio público. ${hu('HU22')}</p>
+    <div><label class="f">Correo</label><input value="operador@findemes.cl"></div><div><label class="f">Contraseña</label><input type="password" value="••••••••••••"></div>
+    <div><label class="f">Código TOTP (6 dígitos)</label><input inputmode="numeric" maxlength="6" value="482913"></div>
+    <button class="btn" data-action="admin-login">Entrar</button></div></main></div>`;
+  const tabs = [['cuentas', 'Cuentas', 'HU23'], ['auditoria', 'Auditoría', 'HU25'], ['monitoreo', 'Monitoreo', 'HU24'], ['pagos', 'Transacciones', 'HU26']];
+  let body = '';
+  if (tab === 'cuentas') body = `<div class="card"><div class="row between"><h2>Cuentas de usuario</h2>${hu('HU23')}</div>
+    <p class="small muted">Este panel no tiene permiso para leer datos financieros: ni ingresos, ni gastos, ni deudas, ni escenarios.</p>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Correo</th><th>Plan</th><th>Estado</th><th>Alta</th><th></th></tr></thead><tbody>
+    ${[['7f3c…a91e', 'c***@ejemplo.cl', 'Familiar', 'Activa', '12-09-2026'], ['b21d…04f7', 't***@ejemplo.cl', 'Gratuito', 'Activa', '14-09-2026'], ['e9a0…5c22', 'm***@correo.cl', 'Pagado', 'Bloqueo temporal (5 intentos)', '20-09-2026'], ['41be…7d10', 'j***@mail.cl', 'Gratuito', 'Sin verificar', '08-10-2026']]
+      .map(r => `<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td><button class="btn ghost small" data-action="toast" data-msg="Acción registrada en la auditoría.">${r[3].startsWith('Bloqueo') ? 'Desbloquear' : 'Suspender'}</button></td></tr>`).join('')}</tbody></table></div></div>`;
+  if (tab === 'auditoria') body = `<div class="card"><div class="row between"><h2>Traza de auditoría</h2>${hu('HU25')}</div>
+    <p><span class="ok-dot"></span>Cadena verificada: 18.204 registros, sin alteraciones. <span class="small muted">Solo admite inserciones; cada registro incluye el hash del anterior.</span></p>
+    <div class="table-wrap"><table><thead><tr><th>Fecha (servidor)</th><th>Actor</th><th>Acción</th><th>Recurso</th><th>Hash</th></tr></thead><tbody>
+    ${[['10-10-2026 14:02:11', 'usuario 7f3c…', 'scenario.create', 'escenario 2a1f…', '9c41…e0b2'], ['10-10-2026 13:58:40', 'usuario 7f3c…', 'bank.link', 'cuenta 55d0…', '1f7a…3c9d'], ['10-10-2026 12:30:05', 'operador op-01', 'account.unlock', 'usuario e9a0…', 'ab02…77f1'], ['10-10-2026 11:15:47', 'usuario 41be…', 'privacy.export', 'usuario 41be…', '6d3e…c510']]
+      .map(r => `<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td class="mono">${r[2]}</td><td>${r[3]}</td><td class="mono">${r[4]}</td></tr>`).join('')}</tbody></table></div>
+    <p class="small muted">Los detalles no contienen montos, correos ni datos financieros.</p></div>`;
+  if (tab === 'monitoreo') body = `<div class="row between"><h2>Monitoreo</h2>${hu('HU24')}</div><div class="grid-4">
+    ${[['Disponibilidad (30 días)', '99,94 %', 'objetivo OLA-001: > 99 %'], ['Proyección p95', '142 ms', 'objetivo: < 300 ms'], ['Errores 5xx (24 h)', '0,02 %', '3 de 14.880 solicitudes'], ['Último respaldo', 'hoy 03:00', 'retención 30 días']].map(k => `<div class="card kpi"><div class="label">${k[0]}</div><div class="value">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('')}</div>
+    <div class="card" style="margin-top:1rem"><h3>Servicios externos</h3><table><tbody><tr><td><span class="ok-dot"></span>Webpay Plus (integración)</td><td class="muted">operativo</td></tr><tr><td><span class="ok-dot"></span>Fintoc (modo de prueba)</td><td class="muted">operativo · sin SLA</td></tr><tr><td><span class="ok-dot"></span>Correo transaccional</td><td class="muted">operativo</td></tr><tr><td><span class="ok-dot"></span>PostgreSQL</td><td class="muted">operativo</td></tr></tbody></table></div>`;
+  if (tab === 'pagos') body = `<div class="card"><div class="row between"><h2>Transacciones de suscripción</h2>${hu('HU26')}</div>
+    <div class="table-wrap"><table><thead><tr><th>buy_order</th><th>Usuario</th><th>Plan</th><th class="r">Monto</th><th>Estado</th><th>Conciliación</th></tr></thead><tbody>
+    ${[['FDM-000231', '7f3c…', 'Familiar', 'por definir', 'Autorizada', 'Coincide con Transbank'], ['FDM-000230', 'e9a0…', 'Pagado', 'por definir', 'Autorizada', 'Coincide con Transbank'], ['FDM-000229', 'b21d…', 'Pagado', 'por definir', 'Abortada (TBK_TOKEN)', 'Sin cobro'], ['FDM-000228', '91ac…', 'Pagado', 'por definir', 'Rechazada', 'Sin cobro'], ['FDM-000227', '3e7b…', 'Familiar', 'por definir', 'Autorizada', 'amount_mismatch: revisar']]
+      .map(r => `<tr><td class="mono">${r[0]}</td><td class="mono">${r[1]}</td><td>${r[2]}</td><td class="r">${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('')}</tbody></table></div></div>`;
+  return `<div class="admin">${headHtml}<nav class="admin-tabs" aria-label="Administración">${tabs.map(([k, l]) => `<a href="#/admin/${k}" class="${k === tab ? 'active' : ''}">${l}</a>`).join('')}<a href="#/admin" data-action="admin-logout" style="margin-left:auto">Salir</a></nav><main class="wrap" style="padding-top:1.25rem;padding-bottom:3rem">${body}</main></div>`;
+}
+
+/* ---------------- mapa del prototipo ---------------- */
+function mapPage() {
+  const items = [
+    ['Sitio público', '#/', 'HU18, HU30, HU32, HU33, HU34, HU37'], ['Modo demostración', '#/demo', 'HU27, HU28, HU29'],
+    ['Crear cuenta / iniciar sesión / recuperar', '#/registro', 'HU17, HU17.1, HU17.2'], ['Invitación a un hogar', '#/invitacion', 'HU31'],
+    ['Mi situación', '#/app/resumen', 'HU39, HU10'], ['Registro', '#/app/registro', 'HU01–HU04'], ['Bancos (Fintoc / demostración)', '#/app/bancos', 'HU36'],
+    ['Proyección', '#/app/proyeccion', 'HU05'], ['Escenarios', '#/app/escenarios', 'HU06–HU08, HU10, HU11'], ['Comparar', '#/app/comparar', 'HU09'],
+    ['Hogar', '#/app/hogar', 'HU12–HU16'], ['Plan y suscripción', '#/app/plan', 'HU18–HU20'], ['Cuenta y privacidad', '#/app/cuenta', 'HU17.3, HU17.4, HU21'],
+    ['Panel de administración', '#/admin', 'HU22–HU26'],
+  ];
+  return `<header class="site-head"><a class="brand" href="#/"><span class="brand-mark">FM</span>Fin de Mes</a></header><main class="wrap stack">
+    <h1>Mapa del prototipo</h1><p class="muted">Cada pantalla y las historias de usuario que muestra. Usa la barra amarilla para cambiar plan y estado de la suscripción.</p>
+    <div class="card table-wrap"><table><thead><tr><th>Pantalla</th><th>Historias</th></tr></thead><tbody>${items.map(i => `<tr><td><a href="${i[1]}">${i[0]}</a></td><td class="mono">${i[2]}</td></tr>`).join('')}</tbody></table></div>
+    <div class="card"><h3>Fuera del MVP (no aparecen)</h3><p class="muted">HU35 boletín, HU37 recomendaciones (excluida por diseño), HU38 renovación automática, alertas avanzadas y reportes, importación de cartolas, aplicación de escritorio.</p></div></main>`;
+}
+
+/* =========================== MODALES =========================== */
+function modalHtml() {
+  const m = ui.modal; if (!m) return '';
+  if (m.kind === 'fintoc') return `<div class="modal-bg" data-action="modal-close-bg"><div class="modal fintoc" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <div class="row between"><b id="mt">Fintoc</b><span class="tag origin-provider_test">Modo de prueba</span></div>
+    ${m.step === 1 ? `<p class="small muted">Elige tu banco. Esta ventana es de Fintoc: Fin de Mes no ve lo que escribes aquí.</p><div class="bank-list">${['BancoEstado', 'Banco de Chile', 'Santander', 'Itaú', 'BICE', 'Scotiabank', 'BCI'].map(b => `<button class="btn ghost" data-action="fintoc-bank">${b}</button>`).join('')}</div>`
+      : `<div class="stack"><div><label class="f">RUT</label><input value="11.111.111-1"></div><div><label class="f">Clave del banco</label><input type="password" value="••••••"></div><button class="btn" data-action="fintoc-done">Conectar</button></div>`}
+    <button class="btn link small" data-action="modal-close" style="margin-top:.75rem">Cancelar</button></div></div>`;
+  if (m.kind === 'webpay') return `<div class="modal-bg"><div class="modal webpay" role="dialog" aria-modal="true" aria-labelledby="mw">
+    <div class="row between"><b id="mw">Webpay Plus</b><span class="tag">Ambiente de integración</span></div>
+    <p>Plan ${PLAN_NAMES[m.plan]} · monto por definir</p><p class="small muted">Aquí el usuario ingresa su tarjeta en el sitio de Transbank. Simula el resultado:</p>
+    <div class="stack"><button class="btn" data-action="webpay-result" data-r="ok">Pago aprobado</button><button class="btn ghost" data-action="webpay-result" data-r="rejected">Pago rechazado</button><button class="btn ghost" data-action="webpay-result" data-r="abort">Abandonar el pago (TBK_TOKEN)</button></div></div></div>`;
+  if (m.kind === 'toast') return `<div class="modal-bg" data-action="modal-close-bg"><div class="modal" role="alertdialog" aria-modal="true"><p>${esc(m.msg)}</p><button class="btn small" data-action="modal-close">Entendido</button></div></div>`;
+  if (m.kind === 'confirm-delete') return `<div class="modal-bg"><div class="modal" role="alertdialog" aria-modal="true"><h3>¿Eliminar tu cuenta?</h3><p class="muted">Se borrarán de forma efectiva tus datos individuales. Esta acción no se puede deshacer.</p><div class="row"><button class="btn" data-action="toast" data-msg="(Prototipo) La cuenta se eliminaría y se cerraría la sesión.">Eliminar definitivamente</button><button class="btn ghost" data-action="modal-close">Volver</button></div></div></div>`;
+  return '';
+}
+
+/* =========================== ROUTER =========================== */
+function render() {
+  const hash = location.hash.replace(/^#/, '') || '/';
+  const parts = hash.split('?')[0].split('/').filter(Boolean);
+  let html;
+  if (parts[0] === 'app') {
+    const page = parts[1] || 'resumen';
+    if (page === 'escenarios') ui.editing = parts[2] || null;
+    const pages = { resumen: pageResumen, registro: pageRegistro, bancos: pageBancos, proyeccion: pageProyeccion, escenarios: pageEscenarios, comparar: pageComparar, hogar: pageHogar, plan: pagePlan, cuenta: pageCuenta };
+    html = appShell(page, (pages[page] || pageResumen)());
+  } else if (parts[0] === 'admin') html = adminPage(parts[1] || 'cuentas');
+  else if (parts[0] === 'demo') html = demoPage();
+  else if (['login', 'registro', 'recuperar', 'invitacion'].includes(parts[0])) html = authPage(parts[0]);
+  else if (parts[0] === 'verificar') html = verifyPage();
+  else if (parts[0] === 'mapa') html = mapPage();
+  else html = sitePublic();
+  document.getElementById('root').innerHTML = protoBar() + html + modalHtml();
+  document.title = 'Fin de Mes · Prototipo';
+}
+const rerender = () => { save(); render(); };
+window.addEventListener('hashchange', () => {
+  ui.modal = null; render();
+  const anchor = location.hash.match(/^#(planes|privacidad|casos|contacto)$/);
+  if (anchor) document.getElementById(anchor[1])?.scrollIntoView(); else window.scrollTo(0, 0);
+});
+
+/* ---------------- eventos ---------------- */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-action]'); if (!a) return;
+  const act = a.dataset.action;
+  if (act === 'modal-close-bg' && e.target !== a) return;
+  if (a.tagName === 'A' && act !== 'admin-logout') e.preventDefault();
+  const id = a.dataset.id;
+  switch (act) {
+    case 'go': location.hash = a.dataset.to; return;
+    case 'reset': S = SEED(); ui.compare = []; ui.adminAuthed = false; return rerender();
+    case 'toast': ui.modal = { kind: 'toast', msg: a.dataset.msg }; return render();
+    case 'modal-close': case 'modal-close-bg': ui.modal = null; return render();
+    case 'del': S[a.dataset.coll] = S[a.dataset.coll].filter(x => x.id !== id); return rerender();
+    case 'del-scenario': S.scenarios = S.scenarios.filter(s => s.id !== id); ui.compare = ui.compare.filter(x => x !== id); return rerender();
+    case 'del-decision': { const sc = S.scenarios.find(s => s.id === ui.editing); sc.decisions = sc.decisions.filter(d => d.id !== id); return rerender(); }
+    case 'fintoc-open': ui.modal = { kind: 'fintoc', step: 1 }; return render();
+    case 'fintoc-bank': ui.modal.step = 2; return render();
+    case 'fintoc-done': S.bank = bankData('provider_test'); ui.modal = null; return rerender();
+    case 'demo-bank': S.bank = bankData('demo'); return rerender();
+    case 'bank-disconnect': S.bank = { connected: false, accounts: [], movements: [] }; ui.modal = { kind: 'toast', msg: 'Banco desconectado. El acceso de Fintoc fue revocado. Lo que ya llevaste a tu registro se mantiene.' }; return rerender();
+    case 'mark-recurring': {
+      const m = S.bank.movements.find(x => x.id === id); m.added = true;
+      const coll = m.amount > 0 ? 'incomes' : 'expenses';
+      S[coll].push({ id: uid('b'), name: m.desc, amount: Math.abs(m.amount), kind: m.amount > 0 ? 'recurrente' : 'fijo', origin: m.origin });
+      return rerender();
+    }
+    case 'opening-from-bank': S.opening = { amount: S.bank.accounts[0].available, origin: S.bank.accounts[0].origin }; return rerender();
+    case 'webpay-open': ui.modal = { kind: 'webpay', plan: a.dataset.plan }; return render();
+    case 'webpay-result': {
+      const r = a.dataset.r;
+      if (r === 'ok') { S.proto = { plan: ui.modal.plan, sub: 'activa' }; ui.modal = { kind: 'toast', msg: 'El servidor confirmó el pago con Transbank (commit). Plan activado una sola vez, aunque el navegador vuelva dos veces.' }; }
+      else if (r === 'rejected') { S.proto.sub = S.proto.sub === 'gratuito' ? 'fallida' : S.proto.sub; ui.modal = { kind: 'toast', msg: 'Transbank rechazó la transacción. Se mantiene tu plan anterior.' }; }
+      else ui.modal = { kind: 'toast', msg: 'Volviste sin pagar (TBK_TOKEN). No hubo cobro y tu plan no cambia.' };
+      return rerender();
+    }
+    case 'cancel-sub': S.proto.sub = 'cancelada'; return rerender();
+    case 'delete-account': ui.modal = { kind: 'confirm-delete' }; return render();
+    case 'admin-login': ui.adminAuthed = true; location.hash = '#/admin/cuentas'; return render();
+    case 'admin-logout': ui.adminAuthed = false; return render();
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.proto) { S.proto[t.dataset.proto] = t.value; return rerender(); }
+  const act = t.dataset.actionChange;
+  if (act === 'horizon') { S.horizon = +t.value; return rerender(); }
+  if (act === 'decision-type') { ui.decisionType = t.value; return render(); }
+  if (act === 'compare') {
+    const max = limits().compare === Infinity ? 3 : 1;
+    if (t.checked) { ui.compare.push(t.value); while (ui.compare.length > max) ui.compare.shift(); }
+    else ui.compare = ui.compare.filter(x => x !== t.value);
+    return render();
+  }
+});
+document.addEventListener('submit', e => {
+  const f = e.target; const kind = f.dataset.form; if (!kind) return;
+  e.preventDefault();
+  const v = Object.fromEntries(new FormData(f));
+  const int = k => Math.trunc(Number(v[k]) || 0);
+  switch (kind) {
+    case 'contact': ui.modal = { kind: 'toast', msg: 'Mensaje enviado. Respondemos dentro de 24 horas hábiles.' }; return render();
+    case 'demo': S.demo = { opening: int('opening'), income: int('income'), expense: int('expense') }; ui.demoDecision = { total: int('total'), n: Math.max(1, int('n')) }; return rerender();
+    case 'opening': S.opening = { amount: int('amount'), origin: 'real' }; return rerender();
+    case 'add': S[f.dataset.coll].push({ id: uid('r'), name: v.name, amount: int('amount'), kind: v.kind, month: int('month'), origin: 'real' }); return rerender();
+    case 'debt': S.debts.push({ id: uid('d'), name: v.name, installment: int('installment'), remaining: int('remaining'), origin: 'real' }); return rerender();
+    case 'new-scenario': { const id = uid('s'); S.scenarios.push({ id, name: v.name, decisions: [] }); save(); location.hash = '#/app/escenarios/' + id; return; }
+    case 'rename': S.scenarios.find(s => s.id === ui.editing).name = v.name; return rerender();
+    case 'decision': {
+      const sc = S.scenarios.find(s => s.id === ui.editing), t = ui.decisionType, d = { id: uid('x'), type: t };
+      if (t === 'installment_purchase') Object.assign(d, { label: v.label, total: int('total'), n: Math.max(1, int('n')), start: int('start') });
+      if (t === 'fixed_expense') Object.assign(d, { target: v.target || null, label: v.label, amount: int('amount'), start: int('start'), end: v.end === '' ? null : int('end') });
+      if (t === 'one_time_expense') Object.assign(d, { label: v.label, amount: int('amount'), month: int('month') });
+      if (t === 'debt_prepayment') Object.assign(d, { debt: v.debt, amount: int('amount'), month: int('month'), modality: v.modality });
+      if (t === 'income_change') Object.assign(d, { delta: int('delta'), start: int('start'), end: v.end === '' ? null : int('end') });
+      if (d.end != null && d.end < d.start) d.end = d.start;
+      sc.decisions.push(d); return rerender();
+    }
+    case 'invite': S.household.invites.push({ email: v.email.replace(/^(.).*@/, '$1***@'), status: 'pendiente' }); return rerender();
+    case 'hh-expense': {
+      let rule = { type: 'iguales' };
+      if (v.rule === 'porcentaje') { const p = Math.min(100, Math.max(0, int('pct'))); rule = { type: 'porcentaje', shares: { m1: p, m2: 100 - p } }; }
+      if (v.rule.startsWith('asignado:')) rule = { type: 'asignado', member: v.rule.split(':')[1] };
+      S.household.expenses.push({ id: uid('h'), name: v.name, amount: int('amount'), rule, author: S.user.display }); return rerender();
+    }
+  }
+});
+render();
+</script>
+</body>
+</html>
