@@ -5,7 +5,10 @@ Proyecto de Título (Ingeniería en Informática). Equipo: Joaquín Varas (app F
 Maximiliano Lizana (backend, motor, API, pagos). Fecha de cierre fija: 01-12-2026.
 
 La especificación es el informe `Varas_Lizana_Informe_corregido (1).docx` (43 HU en el Anexo A,
-29 RNF en el Anexo B). El informe **no se versiona** (está en `.gitignore`). Cada funcionalidad
+29 RNF en el Anexo B). El informe **no se versiona** (está en `.gitignore`). Para leerlo se usa
+su conversión `informe/informe.md` (también fuera del repositorio), con las figuras en
+`informe/imagenes-informes/` y una descripción textual bajo cada una; se regenera si cambia el
+.docx. Cada funcionalidad
 se traza a su HU o RNF. Si el informe parece incorrecto, se consulta antes de desviarse.
 El calendario de sprints del informe (Tabla 36) es simulado y no se usa para planificar.
 
@@ -101,8 +104,14 @@ Ver `docs/adr/001-technical-stack.md`.
   `.ts` y solo se permite sintaxis borrable (`erasableSyntaxOnly`: sin `enum` ni `namespace`).
 - Comandos: `pnpm check` (lint, tipos, capas, pruebas), `pnpm --filter @findemes/backend dev:api`,
   `openapi:generate` tras cambiar una ruta (una prueba falla si `docs/openapi.yaml` queda desfasado).
-- Base de datos local: PostgreSQL en Docker Desktop (`docker compose`), misma versión que CI y
-  producción.
+- Base de datos: `docker compose up -d`, luego en `backend/`: `pnpm db:migrate` (aplica migraciones y
+  crea los roles de login con los valores de `.env.local`; ver `.env.example`) y `pnpm test:db`
+  (pruebas de integración con RLS real). Modelo y roles en `docs/adr/003-data-model-and-database-security.md`.
+- Migraciones: nunca editar una ya aplicada en un ambiente compartido; agregar una nueva. Toda
+  función nueva en el esquema `app` debe sumarse a la lista de privilegios de
+  `test/db/individual-privacy.test.ts`. Las pruebas de base de datos usan `TEST_DATABASE_URL` (solo local).
+- Base de datos local: PostgreSQL 18 en Docker Desktop (`docker compose`), misma versión que CI y
+  producción, sin extensiones.
 - App: Flutter (una base de código para web, Android e iOS). Manejo de estado: Riverpod.
   Cliente de la API generado desde `docs/openapi.yaml`.
 - CI: GitHub Actions. Remoto: `github.com/joaqovrs/findemes`.

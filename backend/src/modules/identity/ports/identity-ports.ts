@@ -32,16 +32,16 @@ export interface AccessTokenService {
  * Revoking all sessions of a user invalidates every stored token.
  */
 export interface RefreshTokenStore {
-  /** Starts a new token family at login. */
-  create(userId: UserId, tokenHash: string, expiresAt: Date): Promise<void>;
+  /** Starts a new token family at login. Hashes are the 32-byte SHA-256 of the opaque token. */
+  create(userId: UserId, tokenHash: Uint8Array, expiresAt: Date): Promise<void>;
   /**
    * Atomically consumes `oldHash` and stores `newHash` in the same family (one transaction).
    * - `reused`: `oldHash` was already consumed, so the token leaked; the whole family is revoked.
    * - `invalid`: unknown or expired token.
    */
   rotate(
-    oldHash: string,
-    newHash: string,
+    oldHash: Uint8Array,
+    newHash: Uint8Array,
     expiresAt: Date,
   ): Promise<{ readonly status: 'rotated'; readonly userId: UserId } | { readonly status: 'reused' | 'invalid' }>;
   /** Password change or logout everywhere (HU17.2). */
