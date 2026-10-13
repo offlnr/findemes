@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:,">
 <title>Fin de Mes · Tus gastos, a la vista</title>
-<meta name="description" content="Fin de Mes reúne tus ingresos, gastos, deudas y cuotas, proyecta tu saldo mes a mes y te muestra qué cambia con una compra en cuotas antes de que decidas.">
+<meta name="description" content="Conecta tu banco y Fin de Mes ordena tu sueldo y tus gastos, proyecta tu saldo mes a mes y te muestra qué cambia con una compra en cuotas antes de que decidas.">
 <link rel="preconnect" href="https://api.fontshare.com">
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
 <link href="https://api.fontshare.com/v2/css?f[]=erode@400,500,600,700&display=swap" rel="stylesheet">
@@ -20,14 +20,15 @@
   --field-1-pale: #9fd1cc;
 
   --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
-  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
-  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
-  --step-stmt: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem);
-  --step-xl: clamp(2.5rem, 1.4rem + 4.6vw, 5.25rem);
-  --step-display: clamp(4rem, 14vw, 13.75rem);
+  --step-body: clamp(1rem, 0.96rem + 0.15vw, 1.0625rem);
+  --step-lead: clamp(1.125rem, 1.05rem + 0.3vw, 1.3125rem);
+  --step-stmt: clamp(1.25rem, 1.1rem + 0.55vw, 1.625rem);
+  --step-xl: clamp(2rem, 1.4rem + 2.2vw, 3.25rem);
+  --step-display: clamp(3.25rem, 8.5vw, 8rem);
 
   --margin: clamp(16px, 3vw, 48px);
-  --gap-section: clamp(80px, 9vw, 144px);
+  --gap-section: clamp(64px, 7vw, 112px);
+  --gutter: max(var(--margin), calc((100vw - 1240px) / 2));
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --font: "Erode", Georgia, "Times New Roman", serif;
 }
@@ -48,14 +49,14 @@ p { text-wrap: pretty; }
 ::selection { background: var(--ink); color: var(--bg); }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .num { font-variant-numeric: tabular-nums lining-nums; }
-.wrap { padding: 0 var(--margin); }
+.wrap { padding: 0 var(--gutter); }
 .section { padding-top: var(--gap-section); }
 h2.xl { font-size: var(--step-xl); }
 
-/* ---------- botones: una forma, esquinas rectas ---------- */
+/* ---------- botones: una forma, en píldora ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; min-height: 48px;
-  padding: 0 1.25em; border: 2px solid currentColor; border-radius: 0;
+  padding: 0 1.25em; border: 2px solid currentColor; border-radius: 999px;
   font: 600 var(--step-body)/1 var(--font); text-decoration: none; cursor: pointer;
   transition: background-color 160ms ease, color 160ms ease, transform 120ms var(--ease-out);
 }
@@ -69,7 +70,7 @@ h2.xl { font-size: var(--step-xl); }
 .corner {
   position: fixed; inset: 0 0 auto 0; z-index: 20;
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 18px var(--margin); color: var(--field-1-ink); background: var(--field-1);
+  padding: 16px var(--gutter); color: var(--field-1-ink); background: var(--field-1);
   transition: color 300ms ease, background-color 300ms ease, transform 320ms var(--ease-out);
 }
 .corner.away { transform: translateY(-100%); }
@@ -89,8 +90,8 @@ h2.xl { font-size: var(--step-xl); }
 
 /* ---------- hero ---------- */
 .hero {
-  min-height: 100svh; background: var(--field-1); color: var(--field-1-ink);
-  padding: 0 var(--margin); display: grid; grid-template-rows: 15svh auto 1fr auto;
+  min-height: clamp(560px, 80svh, 760px); background: var(--field-1); color: var(--field-1-ink);
+  padding: 0 var(--gutter); display: grid; grid-template-rows: clamp(96px, 14svh, 140px) auto minmax(48px, 1fr) auto;
 }
 .hero h1 { grid-row: 2; font-size: var(--step-display); line-height: 0.84; letter-spacing: -0.035em; margin-left: -0.04em; }
 .hero h1 .l1 { display: block; color: var(--field-1-pale); }
@@ -100,110 +101,161 @@ h2.xl { font-size: var(--step-xl); }
 .hero-foot .actions { grid-column: 8 / 13; justify-self: end; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: flex-end; }
 .hero-foot .actions a:not(.btn) { padding: 12px 0; }
 @media (max-width: 760px) {
-  .hero h1 { font-size: 16vw; line-height: 0.88; }
+  .hero h1 { font-size: 13.5vw; line-height: 0.9; }
   .hero-foot p, .hero-foot .actions { grid-column: 1 / -1; justify-self: start; justify-content: flex-start; }
 }
 
 /* ---------- cómo funciona: cada etapa lleva su texto dentro ---------- */
-.stages-head { margin-bottom: 40px; }
+/* cabecera de cada módulo: ícono, título y de qué trata */
+.sec-head { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: clamp(16px, 2vw, 28px); row-gap: 16px; margin-bottom: clamp(36px, 4vw, 56px); }
+.sec-icon { width: clamp(44px, 3.4vw, 56px); aspect-ratio: 1; border-radius: var(--r); background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: clamp(24px, 1.9vw, 30px); }
+.sec-sub { grid-column: 2; font-size: var(--step-lead); line-height: 1.35; max-width: 54ch; color: var(--muted); }
+.sec-head.stack { grid-template-columns: 1fr; align-items: start; }
+.sec-head.stack .sec-sub { grid-column: 1; }
+.includes .sec-icon { background: var(--field-1-ink); color: var(--field-1); }
+.includes .sec-sub { color: var(--field-1-ink); }
+@media (max-width: 760px) { .sec-sub { grid-column: 1 / -1; } }
+.ico { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.with-ico { display: flex; align-items: flex-start; gap: 0.4em; }
+.with-ico .ico { width: 0.95em; height: 0.95em; margin-top: 0.08em; }
+/* menú: el módulo que estás leyendo queda marcado */
+.corner nav a[aria-current="true"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.4em; }
 .bar { display: flex; gap: 6px; }
-.bar > div { flex-basis: 0; min-height: 200px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
-.bar .s1 { flex-grow: 1; background: var(--surface); color: var(--ink); }
-.bar .s2 { flex-grow: 1.4; background: var(--muted); color: var(--bg); }
-.bar .s3 { flex-grow: 1.2; background: var(--ink); color: var(--bg); }
+.bar > div { flex-basis: 0; min-height: 340px; padding: 22px; display: flex; flex-direction: column; gap: 10px; }
+.bar .s1 { flex-grow: 1.35; background: var(--ink); color: var(--bg); }
+.bar .s2 { flex-grow: 1.2; background: var(--muted); color: var(--bg); }
+.bar .s3 { flex-grow: 1; background: var(--surface); color: var(--ink); }
 .bar h3 { font-size: var(--step-stmt); font-weight: 500; line-height: 1.1; }
 .bar p { max-width: 34ch; }
+.bar .fig { margin-top: auto; padding-top: 24px; }
+/* 1: el registro como una boleta */
+/* 1: los movimientos llegan solos desde el banco */
+.linked { display: flex; align-items: center; gap: 8px; font-size: var(--step-small); font-weight: 600; margin-bottom: 10px; }
+.linked .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--bg); flex: none; }
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--step-small); }
+.feed li { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; background: var(--bg); color: var(--ink); padding: 10px 12px; }
+.feed b { font-weight: 600; }
+.feed em { grid-column: 1 / -1; font-style: normal; color: var(--muted); }
+.bar .connect { margin-top: 16px; width: 100%; background: var(--bg); color: var(--ink); border-color: var(--bg); }
+.bar .connect:hover { background: transparent; color: var(--bg); }
+/* 2: doce meses en barras */
+.months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end; height: 120px; }
+.months i { display: block; height: var(--h); background: var(--bg); transform-origin: bottom; }
+.months i.loan { opacity: 0.5; }
+.months-x { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 6px; font-size: var(--step-small); text-align: center; }
+.fig-cap { margin-top: 12px; font-size: var(--step-small); }
+/* 3: la copia se separa de la base */
+.copies { display: grid; padding: 0 40px 72px 0; }
+.copies > div { grid-area: 1 / 1; padding: 16px; display: grid; gap: 4px; min-height: 104px; align-content: start; }
+.copies .base { border: 2px solid var(--ink); }
+.copies .copy { background: var(--ink); color: var(--bg); transform: translate(40px, 72px); }
+.copies b { font-size: var(--step-lead); font-weight: 600; line-height: 1.1; }
+.copies span { font-size: var(--step-small); }
 @media (max-width: 760px) {
   .bar { flex-direction: column; }
   .bar > div { flex-basis: auto; min-height: 0; padding: 20px; gap: 10px; }
 }
 
-/* ---------- simulador + proyección ---------- */
-.sim h2 { margin-bottom: 32px; }
-.sim-input {
-  display: block; width: 100%; border: 0; padding: 0; margin: 0; background: transparent; color: var(--ink);
-  font: 500 var(--step-xl)/1.1 var(--font); letter-spacing: -0.03em; caret-color: var(--ink); border-radius: 0; outline-offset: 8px;
-}
-.sim-hint { margin-top: 10px; font-size: var(--step-small); color: var(--muted); }
-.examples { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px 24px; }
-.examples button {
-  font: 400 var(--step-body)/1.3 var(--font); color: var(--ink); background: none; border: 0; padding: 10px 0;
-  cursor: pointer; text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 0.06em;
-  transition: color 150ms ease, transform 120ms var(--ease-out);
-}
-.examples button:hover { color: var(--muted); }
-.examples button:active { transform: translateY(1px); }
-.sim-grid { margin-top: 40px; display: grid; grid-template-columns: 5fr 7fr; gap: 6px; align-items: stretch; }
-.answer, .table-panel { background: var(--surface); padding: 28px; }
 .tag { display: inline-block; font-size: var(--step-small); background: var(--ink); color: var(--bg); padding: 2px 8px; margin-bottom: 16px; }
-.answer dl { display: grid; grid-template-columns: 1fr auto; gap: 10px 24px; margin: 0; }
-.answer dt { color: var(--muted); }
-.answer dd { margin: 0; text-align: right; font-weight: 600; }
-.answer .why { margin-top: 24px; }
-.answer .profile { margin-top: 24px; font-size: var(--step-small); color: var(--muted); }
-.table-panel h3 { font-size: var(--step-lead); font-weight: 500; line-height: 1.2; margin-bottom: 16px; }
-.proj { width: 100%; border-collapse: collapse; line-height: 1.6; }
-.proj th { font-weight: 400; text-align: left; color: var(--muted); font-size: var(--step-small); padding: 0 12px 8px 0; }
-.proj td { padding: 0 12px 0 0; }
-.proj .r { text-align: right; padding-right: 0; }
-.proj tr.neg td { font-weight: 600; }
-.proj .flag { font-weight: 400; font-size: var(--step-small); color: var(--muted); margin-left: 0.5em; }
-.proj .mshort { display: none; }
-@media (max-width: 900px) {
-  .sim-grid { grid-template-columns: 1fr; }
-  .answer, .table-panel { padding: 20px; }
-}
-@media (max-width: 520px) {
-  .sim-input { font-size: 9vw; }
-  .examples { gap: 8px; }
-  .examples button { background: var(--surface); padding: 0 14px; min-height: 44px; text-decoration: none; }
-  .proj .hide-sm { display: none; }
-  .proj .mlong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .proj .mshort { display: inline; }
-  .proj .flag { display: block; margin-left: 0; }
-}
 
 /* ---------- qué incluye: campo de color, título y texto juntos ---------- */
-.includes { margin-top: var(--gap-section); background: var(--field-1); color: var(--field-1-ink); padding: clamp(64px, 8vw, 120px) var(--margin); }
-.includes .lead { font-size: var(--step-stmt); line-height: 1.3; font-weight: 500; max-width: 46ch; }
-.inc-grid { margin-top: clamp(48px, 6vw, 88px); display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(40px, 5vw, 72px) clamp(24px, 6vw, 96px); }
-.inc-grid h3 { font-size: var(--step-stmt); font-weight: 600; line-height: 1.1; margin-bottom: 12px; }
-.inc-grid p { max-width: 44ch; color: var(--field-1-ink); }
+.includes { margin-top: var(--gap-section); background: var(--field-1); color: var(--field-1-ink); padding: clamp(56px, 6vw, 96px) var(--gutter); }
+.inc-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; counter-reset: none; }
+.inc { border: 2px solid var(--field-1-ink); border-radius: var(--r-lg); padding: clamp(20px, 2.2vw, 32px); }
+.inc-head { display: flex; align-items: center; gap: 14px; font-size: var(--step-stmt); font-weight: 600; line-height: 1.15; margin-bottom: 20px; }
+.inc-n { flex: none; width: 2em; height: 2em; border-radius: 50%; background: var(--field-1-ink); color: var(--field-1); display: grid; place-items: center; font-size: 0.8em; }
+.inc-grid .cap { margin-top: 14px; max-width: 46ch; font-size: var(--step-small); }
+/* cada cifra, explicada: la cuenta del mes */
+.sum { width: 100%; max-width: 480px; border-collapse: collapse; }
+.sum td { padding: 6px 10px; }
+.sum td + td { text-align: right; }
+.sum .cause td { background: var(--field-1-ink); color: var(--field-1); font-weight: 600; }
+.sum .total td { padding-top: 14px; font-size: var(--step-stmt); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+/* escenarios lado a lado, del mismo tamaño */
+.scen { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.scen li { border: 2px solid var(--field-1-ink); padding: 14px; display: grid; gap: 2px; align-content: start; }
+.scen b { font-weight: 600; margin-bottom: 10px; line-height: 1.2; }
+.scen .k { font-size: var(--step-small); }
+.scen .v { font-weight: 600; margin-bottom: 8px; }
+@media (max-width: 520px) { .scen { grid-template-columns: 1fr; } .scen li { grid-template-columns: 1fr auto; column-gap: 12px; } .scen b { grid-column: 1 / -1; } }
+/* cuotas como casillas */
+.dots { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; max-width: 520px; }
+.dots i { aspect-ratio: 1; border: 2px solid var(--field-1-ink); }
+.dots i.paid { background: var(--field-1-ink); }
+.dots i.last { position: relative; }
+.dots i.last::after { content: ""; position: absolute; inset: 4px; border: 2px solid var(--field-1-ink); }
+.dots-legend { max-width: 520px; display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: var(--step-small); }
+/* tu banco: la clave llega solo a Fintoc */
+.route { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr auto 1fr auto; align-items: center; gap: 8px; max-width: 560px; }
+.route .node { border: 2px solid var(--field-1-ink); padding: 10px 12px; font-weight: 600; line-height: 1.15; text-align: center; }
+.route .node.mid { background: var(--field-1-ink); color: var(--field-1); }
+.route .arrow { display: grid; justify-items: center; font-size: var(--step-small); line-height: 1.2; text-align: center; }
+.route .arrow::after { content: "→"; font-size: var(--step-lead); line-height: 1; }
 @media (max-width: 760px) { .inc-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) {
+  .route { grid-template-columns: 1fr; justify-items: start; }
+  .route .arrow { justify-items: start; padding-left: 12px; grid-auto-flow: column; gap: 8px; align-items: center; }
+  .route .arrow::after { content: "↓"; order: -1; }
+}
 
 
 /* ---------- plan familiar ---------- */
-.hogar-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 40px 24px; align-items: start; }
-.hogar-text { grid-column: 1 / 6; }
-.hogar-lead { font-size: var(--step-lead); line-height: 1.35; margin: 20px 0 40px; max-width: 52ch; }
-.hogar-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
-.hogar-steps li { max-width: 44ch; }
-.hogar-steps b { display: block; font-size: var(--step-lead); font-weight: 600; line-height: 1.2; margin-bottom: 4px; }
-.hogar-panel { grid-column: 7 / 13; background: var(--surface); padding: 28px; }
-.hogar-panel h3 { font-size: var(--step-lead); font-weight: 500; line-height: 1.2; }
-.hogar-panel .sub { font-size: var(--step-small); color: var(--muted); margin: 4px 0 16px; }
-.split { width: 100%; border-collapse: collapse; line-height: 1.45; }
-.split th { font-weight: 400; text-align: left; color: var(--muted); font-size: var(--step-small); padding: 0 12px 8px 0; }
-.split td { padding: 6px 12px 6px 0; vertical-align: top; }
-.split .r { text-align: right; padding-right: 0; padding-left: 14px; white-space: nowrap; }
-.split .rule { color: var(--muted); font-size: var(--step-small); }
-.split tfoot td { font-weight: 600; padding-top: 14px; }
-.hogar-panel .flow { margin-top: 20px; font-size: var(--step-small); color: var(--ink); }
-.privacy { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.privacy > div { padding: 28px; }
-.privacy .shared { background: var(--surface); color: var(--ink); }
-.privacy .own { background: var(--ink); color: var(--bg); }
-.privacy h3 { font-size: var(--step-stmt); font-weight: 600; line-height: 1.1; margin-bottom: 12px; }
-.privacy ul { margin: 0; padding-left: 1.1em; }
-.privacy li { margin-top: 4px; }
-.hogar-note { margin-top: 20px; max-width: 70ch; }
+/* cuatro pasos en una fila, cada uno con su número */
+.h-steps { list-style: none; margin: 0 0 6px; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.h-steps li { background: var(--surface); padding: 20px; display: grid; gap: 6px; align-content: start; }
+.h-steps .n { font-size: var(--step-stmt); font-weight: 500; line-height: 0.9; letter-spacing: -0.03em; }
+.h-steps b { font-size: var(--step-lead); font-weight: 600; line-height: 1.15; margin-top: 8px; }
+.h-steps span:last-child { font-size: var(--step-small); }
+.hogar-grid { display: grid; grid-template-columns: 7fr 5fr; gap: 6px; align-items: stretch; }
+.hogar-panel { background: var(--surface); padding: 28px; }
+.hogar-panel h3, .peek h3 { font-size: var(--step-lead); font-weight: 600; line-height: 1.2; }
+.hogar-panel .sub { font-size: var(--step-small); color: var(--muted); margin: 4px 0 20px; }
+/* reparto: cada gasto es una barra partida entre los dos */
+.who { display: flex; gap: 20px; font-size: var(--step-small); margin-bottom: 14px; }
+.who i { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; border: 2px solid var(--ink); }
+.who .ca i { background: var(--ink); }
+.sbars { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.sbars .name { display: flex; justify-content: space-between; gap: 12px; font-size: var(--step-small); margin-bottom: 4px; }
+.sbars .name b { font-weight: 600; font-size: var(--step-body); }
+.track { display: flex; min-height: 40px; }
+.track > span { display: flex; align-items: center; padding: 0 10px; white-space: nowrap; font-size: var(--step-small); font-weight: 600; }
+.track .a { flex: 0 0 var(--a); background: var(--ink); color: var(--bg); transform-origin: left; }
+.track .b { flex: 1 1 auto; border: 2px solid var(--ink); justify-content: flex-end; }
+.track .a:empty { display: none; }
+.totals { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.totals div { display: grid; gap: 2px; }
+.totals span { font-size: var(--step-small); color: var(--muted); }
+.totals b { font-size: var(--step-stmt); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+/* lo que el hogar ve de cada persona */
+.peek { background: var(--ink); color: var(--bg); padding: 28px; display: flex; flex-direction: column; }
+.peek .sub { font-size: var(--step-small); margin: 4px 0 20px; }
+.peek dl { margin: 0; display: grid; gap: 6px; }
+.peek dl > div { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 14px; border: 2px solid var(--bg); }
+.peek dt { font-weight: 500; }
+.peek dd { margin: 0; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.peek .hidden dt { opacity: 0.85; }
+.peek .x { display: inline-block; width: clamp(56px, 7vw, 96px); height: 14px; background: var(--bg); opacity: 0.4; transform-origin: right; }
+.peek .x + span { font-size: var(--step-small); font-weight: 400; }
+.oneway { margin-top: auto; padding-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; text-align: center; font-weight: 600; }
+.oneway .common { grid-column: 1 / -1; background: var(--bg); color: var(--ink); padding: 12px; }
+.oneway .person { border: 2px solid var(--bg); padding: 10px; }
+.oneway .down { font-size: var(--step-lead); line-height: 1; }
+.js .rise .oneway .down { opacity: 0; transform: translateY(-8px); transition: opacity 500ms var(--ease-out), transform 500ms var(--ease-out); transition-delay: 900ms; }
+.js .rise.in .oneway .down { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .js .rise .oneway .down { opacity: 1; transform: none; transition: none; } }
+.peek .flowline { padding-top: 16px; font-size: var(--step-small); }
+.hogar-note { margin-top: 24px; max-width: 70ch; font-size: var(--step-small); color: var(--muted); }
 @media (max-width: 900px) {
-  .hogar-text, .hogar-panel { grid-column: 1 / -1; }
-  .hogar-panel { padding: 20px; }
-  .privacy { grid-template-columns: 1fr; }
-  .privacy > div { padding: 20px; }
+  .h-steps { grid-template-columns: 1fr 1fr; }
+  .hogar-grid { grid-template-columns: 1fr; }
+  .hogar-panel, .peek { padding: 20px; }
 }
-@media (max-width: 520px) { .split .rule-col { display: none; } }
+@media (max-width: 520px) {
+  .h-steps { grid-template-columns: 1fr; }
+  .h-steps li { grid-template-columns: auto 1fr; column-gap: 16px; padding: 16px; }
+  .h-steps .n { grid-row: span 2; font-size: var(--step-stmt); }
+  .h-steps b { margin-top: 0; }
+}
 
 /* ---------- planes ---------- */
 .plans-wrap { overflow-x: auto; }
@@ -219,11 +271,13 @@ h2.xl { font-size: var(--step-xl); }
 .plans tfoot td { padding-top: 24px; }
 .plans tfoot .btn { width: 100%; }
 .plans-note { margin-top: 20px; max-width: 70ch; }
+.plans .yes::before, .plans .no::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 10px; border: 2px solid currentColor; vertical-align: 0; }
+.plans .yes::before { background: currentColor; }
+.plans .no { color: var(--muted); }
 .plans-cards { display: none; }
 @media (max-width: 900px) {
   .plans-wrap { display: none; }
   .plans-cards { display: grid; gap: 40px; }
-  .plans-cards > h2 { margin-bottom: -8px; }
   .plan-card { background: var(--surface); padding: 24px 16px; }
   .plan-card h3 { font-size: var(--step-stmt); font-weight: 600; }
   .plan-card .price { font-size: var(--step-stmt); line-height: 1.1; margin-top: 6px; }
@@ -236,18 +290,34 @@ h2.xl { font-size: var(--step-xl); }
 
 /* ---------- preguntas ---------- */
 .faq .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; }
-.faq .grid > h2 { grid-column: 1 / 5; font-size: var(--step-xl); }
-.faq .cols { grid-column: 5 / 13; columns: 2; column-gap: 56px; }
-.faq .cols p { break-inside: avoid; margin-bottom: 20px; line-height: 1.55; }
-.faq .cols b { font-weight: 600; }
+.faq .grid > .sec-head { grid-column: 1 / 5; align-self: start; padding-right: 24px; }
+/* cada pregunta se abre al hacer clic; la respuesta se despliega con animación */
+.qa { grid-column: 5 / 13; display: grid; gap: 6px; }
+.qa .q { background: var(--surface); }
+.qa h3 { font-size: var(--step-lead); font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+.qa button {
+  width: 100%; min-height: 48px; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px;
+  background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; outline-offset: -4px;
+}
+.qa button::after { content: "+"; flex: none; font-size: var(--step-stmt); font-weight: 400; line-height: 1; transition: transform 360ms var(--ease-out); }
+.qa button:hover::after { transform: scale(1.15); }
+.qa button[aria-expanded="true"]::after { transform: rotate(45deg); }
+.qa .ans p { padding: 0 24px 24px; max-width: 62ch; line-height: 1.55; }
+/* con script: la respuesta se despliega con su altura y aparece desde arriba */
+.js .qa .ans { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 420ms var(--ease-out), visibility 0s linear 420ms; }
+.js .qa .ans > div { overflow: hidden; }
+.js .qa .ans p { opacity: 0; transform: translateY(-8px); transition: opacity 300ms ease, transform 420ms var(--ease-out); }
+.js .qa .q.open .ans { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows 420ms var(--ease-out), visibility 0s; }
+.js .qa .q.open .ans p { opacity: 1; transform: none; transition-delay: 80ms; }
+@media (prefers-reduced-motion: reduce) { .qa button::after, .js .qa .ans, .js .qa .ans p { transition: none; } }
 @media (max-width: 900px) {
-  .faq .grid > h2, .faq .cols { grid-column: 1 / -1; }
-  .faq .grid > h2 { margin-bottom: 28px; }
-  .faq .cols { columns: 1; }
+  .faq .grid > .sec-head, .qa { grid-column: 1 / -1; }
+  .qa button { padding: 16px 18px; }
+  .qa .ans p { padding: 0 18px 20px; }
 }
 
 /* ---------- cierre ---------- */
-.cta { margin-top: var(--gap-section); background: var(--field-1); color: var(--field-1-ink); padding: clamp(64px, 8vw, 120px) var(--margin); }
+.cta { margin-top: var(--gap-section); background: var(--field-1); color: var(--field-1-ink); padding: clamp(56px, 6vw, 96px) var(--gutter); }
 .cta-inner { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: end; }
 .cta h2 { grid-column: 1 / 8; }
 .cta p { grid-column: 1 / 7; font-size: var(--step-lead); line-height: 1.35; max-width: 38ch; }
@@ -260,7 +330,7 @@ h2.xl { font-size: var(--step-xl); }
 
 /* ---------- pie ---------- */
 .page { position: relative; background: var(--bg); }
-.foot { background: var(--bg); color: var(--ink); padding: clamp(48px, 6vw, 88px) var(--margin) 24px; }
+.foot { background: var(--bg); color: var(--ink); padding: clamp(48px, 6vw, 88px) var(--gutter) 24px; }
 .foot-top { display: grid; grid-template-columns: repeat(12, 1fr); gap: 40px 24px; }
 .foot-brand { grid-column: 1 / 5; }
 .foot-name { font-size: var(--step-stmt); font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
@@ -308,6 +378,36 @@ html[data-palette="rosa"] { --bg:#fbf7f8; --surface:#f3e8eb; --ink:#3a1020; --mu
 .palette-picker i { width: 14px; height: 14px; display: inline-block; }
 @media (max-width: 760px) { .palette-picker { grid-template-columns: 1fr 1fr 1fr; } .palette-picker button { font-size: 0; gap: 0; min-height: 36px; padding: 0 10px; justify-content: center; } .palette-picker i { width: 16px; height: 16px; } }
 
+/* ---------- esquinas redondeadas: una escala para toda la página ---------- */
+:root { --r-lg: 20px; --r: 14px; --r-sm: 8px; }
+.corner .btn { border-radius: 999px; }
+.tag { border-radius: 999px; padding: 3px 10px; }
+.bar > div, .h-steps li, .hogar-panel, .peek, .plan-card { border-radius: var(--r-lg); }
+.copies > div, .scen li, .qa .q { border-radius: var(--r); }
+.feed li, .route .node, .peek dl > div, .oneway .common, .oneway .person { border-radius: var(--r-sm); }
+.months i { border-radius: 4px 4px 0 0; }
+.dots i { border-radius: 5px; }
+.dots i.last::after { border-radius: 2px; }
+.who i, .plans .yes::before, .plans .no::before { border-radius: 3px; }
+.peek .x { border-radius: 999px; }
+.sum .cause td:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.sum .cause td:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.track { border-radius: var(--r-sm); overflow: hidden; }
+.track .b { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.track .a:empty + .b { border-radius: var(--r-sm); }
+.plans tbody tr th { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.plans tbody tr td:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.qa button { border-radius: var(--r); }
+.palette-picker { border-radius: var(--r) 0 0 var(--r); }
+.palette-picker button { border-radius: var(--r-sm); }
+.palette-picker i { border-radius: 50%; }
+/* planes: tres columnas iguales, todo centrado en su columna */
+.plans { table-layout: fixed; }
+.plans thead th:first-child { width: 34%; }
+.plans thead th:not(:first-child), .plans tbody td, .plans tfoot td { text-align: center; }
+.plans tfoot td { padding-left: 16px; padding-right: 16px; }
+.plans tfoot .btn { width: 100%; max-width: 240px; }
+
 /* ---------- movimiento ---------- */
 .js .rise { opacity: 0; transform: translateY(24px); transition: opacity 700ms var(--ease-out), transform 700ms var(--ease-out); transition-delay: calc(var(--i, 0) * 75ms); }
 .js .rise.in { opacity: 1; transform: none; }
@@ -316,20 +416,58 @@ html[data-palette="rosa"] { --bg:#fbf7f8; --surface:#f3e8eb; --ink:#3a1020; --mu
 .js .hero-foot > * { opacity: 0; animation: fade 700ms var(--ease-out) 420ms forwards; }
 @keyframes up { to { opacity: 1; transform: none; } }
 @keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-.answer.flash dd { animation: tick 360ms var(--ease-out); }
-@keyframes tick { from { opacity: 0.35; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+/* las figuras se arman cuando entran en pantalla */
+.js .rise .feed li { opacity: 0; transform: translateY(-14px); transition: opacity 500ms var(--ease-out), transform 500ms var(--ease-out); transition-delay: calc(300ms + var(--k, 0) * 110ms); }
+.js .rise.in .feed li { opacity: 1; transform: none; }
+.js .rise .months i { transform: scaleY(0); transition: transform 700ms var(--ease-out); transition-delay: calc(300ms + var(--k, 0) * 55ms); }
+.js .rise.in .months i { transform: none; }
+.js .rise .copies .copy { transform: none; transition: transform 900ms var(--ease-out) 500ms; }
+.js .rise.in .copies .copy { transform: translate(40px, 72px); }
+.js .rise .sum tr { opacity: 0; transform: translateY(8px); transition: opacity 450ms var(--ease-out), transform 450ms var(--ease-out); }
+.js .rise .sum tr:nth-child(2) { transition-delay: 120ms; } .js .rise .sum tr:nth-child(3) { transition-delay: 240ms; }
+.js .rise .sum tr:nth-child(4) { transition-delay: 360ms; } .js .rise .sum tr:nth-child(5) { transition-delay: 560ms; }
+.js .rise.in .sum tr { opacity: 1; transform: none; }
+.js .rise .dots i.paid { opacity: 0; transform: scale(0.96); transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out); transition-delay: calc(250ms + var(--k, 0) * 80ms); }
+.js .rise.in .dots i.paid { opacity: 1; transform: none; }
+.js .rise .route > li { opacity: 0; transform: translateX(-10px); transition: opacity 450ms var(--ease-out), transform 450ms var(--ease-out); transition-delay: calc(200ms + var(--k, 0) * 130ms); }
+.js .rise.in .route > li { opacity: 1; transform: none; }
+.js .rise .track .a { transform: scaleX(0); transition: transform 800ms var(--ease-out); transition-delay: calc(200ms + var(--k, 0) * 90ms); }
+.js .rise.in .track .a { transform: none; }
+.js .rise .peek .x { transform: scaleX(0); transition: transform 600ms var(--ease-out); transition-delay: calc(500ms + var(--k, 0) * 140ms); }
+.js .rise.in .peek .x { transform: none; }
+.scen li, .h-steps li { transition: transform 160ms var(--ease-out); }
+.scen li:hover, .h-steps li:hover { transform: translateY(-3px); }
 @media (prefers-reduced-motion: reduce) {
   .js .rise, .js .hero h1 .l1, .js .hero h1 .l2, .js .hero-foot > * { opacity: 1; transform: none; animation: none; transition: opacity 200ms linear; }
-  .answer.flash dd { animation: none; }
+  .js .rise .feed li, .js .rise .months i, .js .rise .sum tr, .js .rise .dots i.paid, .js .rise .route > li, .js .rise .track .a, .js .rise .peek .x { opacity: 1; transform: none; transition: none; }
+  .js .rise .copies .copy { transform: translate(40px, 72px); transition: none; }
+  .scen li:hover, .h-steps li:hover { transform: none; }
 }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-steps" viewBox="0 0 24 24"><path d="M3.5 19.5h5v-5h5v-5h5v-5"/><path d="M3.5 19.5h17"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 9.5 12 4l9 5.5"/><path d="M5.5 10v8M10 10v8M14 10v8M18.5 10v8"/><path d="M3 20h18"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6.5 16v-2M10.5 16v-5M14.5 16v-7M18.5 16V5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.5"/><path d="M15.5 8.5V6.5A2.5 2.5 0 0 0 13 4H6.5A2.5 2.5 0 0 0 4 6.5V13a2.5 2.5 0 0 0 2.5 2.5h2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 6.5 5.6 8 8.5 5M4 12.5 5.6 14 8.5 11M4 18.5 5.6 20l2.9-3"/><path d="M11.5 6.5H20M11.5 12.5H20M11.5 18.5H20"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><path d="M12 14.5v2"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/></symbol>
+  <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="5" width="5" height="14" rx="1.5"/><rect x="9.5" y="5" width="5" height="14" rx="1.5"/><rect x="16" y="5" width="5" height="14" rx="1.5"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-split" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5V12l6 6"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 12s3.5-6 9-6c1.9 0 3.6.7 5 1.7M21 12s-3.5 6-9 6c-1.9 0-3.6-.7-5-1.7"/><path d="M9.8 14.2a3 3 0 0 1 4.4-4.4"/><path d="M4 20 20 4"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8 8a1.5 1.5 0 0 1 0 2.1l-7 7a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8" cy="8" r="1.5"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.6"/><path d="M12 17h.01"/></symbol>
+</svg>
 <header class="corner" data-ink="paper">
   <a class="wordmark" href="#inicio">Fin de Mes</a>
   <nav aria-label="Sitio">
     <a class="hide-sm" href="#como">Cómo funciona</a>
-    <a class="hide-sm" href="#hogar">Hogar</a>
+    <a class="hide-sm" href="#incluye">Qué incluye</a>
+    <a class="hide-sm" href="#hogar">Plan Familiar</a>
     <a class="hide-sm" href="#planes">Planes</a>
     <a class="hide-sm" href="#preguntas">Preguntas</a>
     <a href="../#/login">Entrar</a>
@@ -342,127 +480,184 @@ html[data-palette="rosa"] { --bg:#fbf7f8; --surface:#f3e8eb; --ink:#3a1020; --mu
   <section class="hero" id="inicio" data-chapter="paper" aria-labelledby="t-hero">
     <h1 id="t-hero"><span class="l1">Tus gastos,</span> <span class="l2">a la vista.</span></h1>
     <div class="hero-foot on-field">
-      <p>Fin de Mes reúne tus ingresos, gastos, deudas y cuotas, proyecta tu saldo mes a mes y te muestra qué cambia con una compra en cuotas antes de que decidas.</p>
+      <p>Conecta tu banco y tu sueldo y tus gastos llegan solos. Fin de Mes proyecta tu saldo mes a mes y te muestra qué cambia con una compra en cuotas antes de que decidas.</p>
       <div class="actions">
-        <a class="btn btn-solid" href="#simula">Probar con un ejemplo</a>
-        <a href="#como">Ver cómo funciona</a>
+        <a class="btn btn-solid" href="../#/registro?conectar=fintoc">Conectar mi banco</a>
+        <a href="../#/demo">Probar con un ejemplo</a>
       </div>
     </div>
   </section>
 
   <section class="section wrap" id="como" data-chapter="ink" aria-labelledby="t-como">
-    <h2 class="xl stages-head rise" id="t-como">Cómo funciona</h2>
+    <header class="sec-head rise">
+      <span class="sec-icon" aria-hidden="true"><svg class="ico" aria-hidden="true"><use href="#i-steps"/></svg></span>
+      <h2 class="xl" id="t-como">Cómo funciona</h2>
+      <p class="sec-sub">Tres pasos: conectas tu banco, ves tus próximos doce meses y pruebas una compra antes de decidir.</p>
+    </header>
     <div class="bar">
-      <div class="s1 rise" style="--i:0"><h3>Registras una vez</h3><p>Ingresos, gastos fijos y deudas con sus cuotas. O conectas tu cuenta con Fintoc.</p></div>
-      <div class="s2 rise" style="--i:1"><h3>Ves tus próximos doce meses</h3><p>Tu saldo al cierre de cada mes, el mes en que termina cada cuota y el margen que queda libre.</p></div>
-      <div class="s3 rise" style="--i:2"><h3>Pruebas antes de decidir</h3><p>Simulas una compra o un prepago sobre una copia. Tu situación registrada no cambia.</p></div>
+      <div class="s1 rise" style="--i:0">
+        <h3 class="with-ico"><svg class="ico" aria-hidden="true"><use href="#i-bank"/></svg><span>Conectas tu banco</span></h3>
+        <p>Tu sueldo y tus gastos llegan solos. No escribes nada.</p>
+        <div class="fig">
+          <p class="linked"><span class="dot" aria-hidden="true"></span>Cuenta corriente conectada con Fintoc</p>
+          <ul class="feed num" aria-label="Movimientos de ejemplo que llegan desde el banco">
+            <li style="--k:0"><span>Abono de sueldo</span><b>+$1.150.000</b><em>Se repite cada mes</em></li>
+            <li style="--k:1"><span>Pago de arriendo</span><b>−$650.000</b><em>Se repite cada mes</em></li>
+            <li style="--k:2"><span>Supermercado</span><b>−$54.300</b><em>Gasto del mes</em></li>
+          </ul>
+          <a class="btn connect" href="../#/registro?conectar=fintoc">Conectar mi banco</a>
+          <p class="fig-cap">Tú confirmas qué se repite. Lo que el banco no entrega, como las cuotas de tarjeta, lo agregas a mano.</p>
+        </div>
+      </div>
+      <div class="s2 rise" style="--i:1">
+        <h3 class="with-ico"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg><span>Ves tus próximos doce meses</span></h3>
+        <p>Con lo que se repite, Fin de Mes arma tu saldo al cierre de cada mes.</p>
+        <figure class="fig" style="margin:0" role="img" aria-label="Saldo al cierre de cada mes, de noviembre a octubre: sube 40.000 pesos al mes hasta marzo, mientras se paga el crédito, y 260.000 pesos al mes desde abril.">
+          <div class="months" aria-hidden="true">
+            <i class="loan" style="--h:7.5%;--k:0"></i><i class="loan" style="--h:9.3%;--k:1"></i><i class="loan" style="--h:11.2%;--k:2"></i><i class="loan" style="--h:13.1%;--k:3"></i><i class="loan" style="--h:15%;--k:4"></i><i style="--h:27.1%;--k:5"></i><i style="--h:39.3%;--k:6"></i><i style="--h:51.4%;--k:7"></i><i style="--h:63.6%;--k:8"></i><i style="--h:75.7%;--k:9"></i><i style="--h:87.9%;--k:10"></i><i style="--h:100%;--k:11"></i>
+          </div>
+          <div class="months-x" aria-hidden="true"><span>N</span><span>D</span><span>E</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span></div>
+          <figcaption class="fig-cap" aria-hidden="true">Las barras claras pagan la cuota del crédito. En abril termina.</figcaption>
+        </figure>
+      </div>
+      <div class="s3 rise" style="--i:2">
+        <h3 class="with-ico"><svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span>Pruebas antes de decidir</span></h3>
+        <p>Cada simulación se hace sobre una copia.</p>
+        <div class="fig copies" role="img" aria-label="Tu situación queda sin cambios; la compra se aplica a una copia.">
+          <div class="base" aria-hidden="true"><b>Tu situación</b><span>Sin cambios</span></div>
+          <div class="copy" aria-hidden="true"><b>Copia</b><span>+ Notebook en 12 cuotas</span></div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="section wrap sim" id="simula" data-chapter="ink" aria-labelledby="t-sim">
-    <h2 class="xl rise" id="t-sim">Escribe una compra</h2>
-    <label class="vh" for="decision">Compra a simular, por ejemplo: Notebook de $899.990 en 12 cuotas</label>
-    <input class="sim-input rise" style="--i:1" id="decision" type="text" autocomplete="off" spellcheck="false"
-           value="Notebook de $899.990 en 12 cuotas" maxlength="60" aria-describedby="sim-hint">
-    <p class="sim-hint rise" style="--i:2" id="sim-hint">Escribe el monto y el número de cuotas. Sin cuotas, se calcula como un pago único este mes.</p>
-    <div class="examples rise" style="--i:2" aria-label="Otros ejemplos">
-      <button type="button" data-ex="Bicicleta de $450.000 en 6 cuotas">Bicicleta de $450.000 en 6 cuotas</button>
-      <button type="button" data-ex="Celular de $699.990 en 24 cuotas">Celular de $699.990 en 24 cuotas</button>
-      <button type="button" data-ex="Pasajes de $380.000 al contado">Pasajes de $380.000 al contado</button>
-    </div>
-
-    <div class="sim-grid">
-      <div class="answer rise" style="--i:3" aria-live="polite" id="answer" data-ui>
-        <span class="tag">Datos de ejemplo</span>
-        <dl>
-          <dt>Cuota mensual</dt><dd class="num" id="a-cuota"></dd>
-          <dt>Saldo más bajo</dt><dd class="num" id="a-min"></dd>
-          <dt>Primer mes con saldo negativo</dt><dd id="a-break"></dd>
-          <dt>Saldo más bajo frente a no comprar</dt><dd class="num" id="a-diff"></dd>
-        </dl>
-        <p class="why" id="a-why"></p>
-        <p class="profile">Perfil de ejemplo: ingreso de $1.150.000, gastos fijos de $890.000, un crédito de consumo con 5 cuotas de $220.000 por pagar y $120.000 de saldo inicial.</p>
-      </div>
-      <div class="table-panel rise" style="--i:4" data-ui>
-        <h3>Tus próximos doce meses</h3>
-        <table class="proj num">
-          <thead><tr><th scope="col">Mes</th><th scope="col" class="hide-sm">Sin la compra</th><th scope="col">Con la compra</th><th scope="col" class="r">Diferencia</th></tr></thead>
-          <tbody id="proj-body"></tbody>
+  <section class="includes" id="incluye" data-chapter="paper" aria-labelledby="t-inc">
+    <header class="sec-head rise">
+      <span class="sec-icon" aria-hidden="true"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span>
+      <h2 class="xl" id="t-inc">Qué incluye</h2>
+      <p class="sec-sub">Cuatro piezas, en el orden en que las usas. Fin de Mes no te dice qué hacer: te muestra qué ocurre, en qué mes y qué lo causa.</p>
+    </header>
+    <ol class="inc-grid">
+      <li class="inc rise" style="--i:0">
+        <h3 class="inc-head"><span class="inc-n" aria-hidden="true">1</span><span>Tu banco, sin tu clave</span></h3>
+        <ol class="route" aria-label="Recorrido de tu clave bancaria">
+          <li class="node" style="--k:0">Tú</li>
+          <li class="arrow" style="--k:1">tu clave</li>
+          <li class="node mid" style="--k:2">Fintoc</li>
+          <li class="arrow" style="--k:3">movimientos</li>
+          <li class="node" style="--k:4">Fin de Mes</li>
+        </ol>
+        <p class="cap">Tus movimientos llegan sin que Fin de Mes reciba nunca tu clave. En esta etapa, Fintoc opera en modo de prueba y esos datos aparecen rotulados.</p>
+      </li>
+      <li class="inc rise" style="--i:1">
+        <h3 class="inc-head"><span class="inc-n" aria-hidden="true">2</span><span>Cada cifra, explicada</span></h3>
+        <table class="sum num">
+          <caption class="vh">Cuenta de noviembre con el notebook en 12 cuotas</caption>
+          <tr><td>Sueldo</td><td>$1.150.000</td></tr>
+          <tr><td>Gastos fijos</td><td>−$890.000</td></tr>
+          <tr><td>Cuota del crédito</td><td>−$220.000</td></tr>
+          <tr class="cause"><td>Cuota del notebook</td><td>−$74.999</td></tr>
+          <tr class="total"><td>Noviembre</td><td>−$34.999</td></tr>
         </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="includes" data-chapter="paper" aria-labelledby="t-inc">
-    <h2 class="vh" id="t-inc">Lo que incluye</h2>
-    <p class="lead rise">Fin de Mes no te dice qué hacer. Te muestra qué ocurre con tu saldo, en qué mes y qué lo causa. No ordena alternativas ni sugiere productos financieros. La decisión es tuya.</p>
-    <div class="inc-grid">
-      <div class="rise" style="--i:0"><h3>Cada cifra, explicada</h3><p>Junto a cada indicador va una explicación en lenguaje simple: qué ocurre, en qué mes y qué compromiso lo causa.</p></div>
-      <div class="rise" style="--i:1"><h3>Tu base no se toca</h3><p>Cada escenario guarda solo sus decisiones. Pruebas, comparas y borras sin cambiar lo que registraste.</p></div>
-      <div class="rise" style="--i:2"><h3>Tus cuotas, hasta la última</h3><p>Cada deuda en cuotas muestra cuántas quedan y en qué mes termina, para que veas cuándo se libera ese monto.</p></div>
-      <div class="rise" style="--i:3"><h3>Tu banco, sin tu clave</h3><p>Conecta tu cuenta con Fintoc: tu clave la recibe solo su widget. En esta etapa opera en modo de prueba, y esos datos aparecen rotulados.</p></div>
-    </div>
+        <p class="cap">Cada resultado trae su cuenta. Aquí, la cuota nueva se suma a la del crédito hasta marzo.</p>
+      </li>
+      <li class="inc rise" style="--i:2">
+        <h3 class="inc-head"><span class="inc-n" aria-hidden="true">3</span><span>Tus cuotas, hasta la última</span></h3>
+        <div class="dots" role="img" aria-label="Crédito de consumo: 7 de 12 cuotas pagadas. Quedan 5; la última es en marzo de 2027.">
+          <i class="paid" style="--k:0"></i><i class="paid" style="--k:1"></i><i class="paid" style="--k:2"></i><i class="paid" style="--k:3"></i><i class="paid" style="--k:4"></i><i class="paid" style="--k:5"></i><i class="paid" style="--k:6"></i><i></i><i></i><i></i><i></i><i class="last"></i>
+        </div>
+        <div class="dots-legend" aria-hidden="true"><span>7 pagadas, quedan 5</span><span>Última: marzo de 2027</span></div>
+        <p class="cap">Ves en qué mes se libera cada cuota.</p>
+      </li>
+      <li class="inc rise" style="--i:3">
+        <h3 class="inc-head"><span class="inc-n" aria-hidden="true">4</span><span>Escenarios lado a lado</span></h3>
+        <ul class="scen num">
+          <li><b>Sin la compra</b><span class="k">Saldo más bajo</span><span class="v">$160.000</span><span class="k">Primer mes negativo</span><span class="v">Ninguno</span></li>
+          <li><b>Notebook en 12 cuotas</b><span class="k">Saldo más bajo</span><span class="v">−$54.995</span><span class="k">Primer mes negativo</span><span class="v">Febrero</span></li>
+          <li><b>Notebook en 6 cuotas</b><span class="k">Saldo más bajo</span><span class="v">−$429.990</span><span class="k">Primer mes negativo</span><span class="v">Diciembre</span></li>
+        </ul>
+        <p class="cap">Del mismo tamaño y en el orden en que los creaste. Ninguno aparece como preferible.</p>
+      </li>
+    </ol>
   </section>
 
 
   <section class="section wrap" id="hogar" data-chapter="ink" aria-labelledby="t-hogar">
-    <h2 class="xl rise" id="t-hogar">Los gastos de la casa, en común</h2>
-    <p class="hogar-lead rise" style="--i:1">Con el plan Familiar, dos o más personas organizan juntas los gastos del hogar. Cada una mantiene privadas sus finanzas personales.</p>
+    <header class="sec-head rise">
+      <span class="sec-icon" aria-hidden="true"><svg class="ico" aria-hidden="true"><use href="#i-home"/></svg></span>
+      <h2 class="xl" id="t-hogar">Plan Familiar</h2>
+      <p class="sec-sub">Los gastos de la casa, en común. Dos o más personas los organizan juntas y cada una mantiene privadas sus finanzas personales.</p>
+    </header>
+    <ol class="h-steps">
+      <li class="rise" style="--i:0"><span class="n" aria-hidden="true">1</span><b>Crean el hogar</b><span>Quien contrata invita a los demás, con enlaces de un solo uso.</span></li>
+      <li class="rise" style="--i:1"><span class="n" aria-hidden="true">2</span><b>Anotan los gastos comunes</b><span>Todos ven cada gasto y quién lo anotó.</span></li>
+      <li class="rise" style="--i:2"><span class="n" aria-hidden="true">3</span><b>Acuerdan el reparto</b><span>En partes iguales, por porcentaje o a una persona.</span></li>
+      <li class="rise" style="--i:3"><span class="n" aria-hidden="true">4</span><b>Cada aporte llega a su mes</b><span>Aparece en la proyección de cada uno.</span></li>
+    </ol>
+
     <div class="hogar-grid">
-      <div class="hogar-text">
-        <ol class="hogar-steps">
-          <li class="rise" style="--i:1"><b>Crean el hogar</b>Quien contrata el plan invita a los demás. Cada invitación sirve una sola vez, y antes de aceptar la persona ve qué será visible para el hogar y qué no.</li>
-          <li class="rise" style="--i:2"><b>Anotan los gastos comunes</b>Arriendo, cuentas, supermercado. Todos ven cada gasto y quién lo registró.</li>
-          <li class="rise" style="--i:3"><b>Acuerdan cómo se reparte</b>Cada gasto se divide en partes iguales, por porcentajes o se asigna a una persona.</li>
-          <li class="rise" style="--i:4"><b>Cada aporte llega a su mes</b>Lo que te toca aportar aparece en tu propia proyección como un compromiso más, junto a tus ingresos y tus cuotas.</li>
-        </ol>
-      </div>
-
-      <div class="hogar-panel rise" style="--i:2" data-ui>
+      <div class="hogar-panel rise" data-ui>
         <span class="tag">Datos de ejemplo</span>
-        <h3>Hogar de Camila y Diego</h3>
-        <p class="sub">Gastos comunes de noviembre y lo que aporta cada uno.</p>
-        <table class="split num">
-          <thead><tr><th scope="col">Gasto</th><th scope="col" class="rule-col">Cómo se reparte</th><th scope="col" class="r">Camila</th><th scope="col" class="r">Diego</th></tr></thead>
-          <tbody>
-            <tr><td>Arriendo<br><span class="rule">$650.000</span></td><td class="rule rule-col">55 % y 45 %</td><td class="r">$357.500</td><td class="r">$292.500</td></tr>
-            <tr><td>Supermercado<br><span class="rule">$320.000</span></td><td class="rule rule-col">Partes iguales</td><td class="r">$160.000</td><td class="r">$160.000</td></tr>
-            <tr><td>Gastos comunes del edificio<br><span class="rule">$85.000</span></td><td class="rule rule-col">Partes iguales</td><td class="r">$42.500</td><td class="r">$42.500</td></tr>
-            <tr><td>Luz y agua<br><span class="rule">$64.000</span></td><td class="rule rule-col">55 % y 45 %</td><td class="r">$35.200</td><td class="r">$28.800</td></tr>
-            <tr><td>Internet<br><span class="rule">$38.000</span></td><td class="rule rule-col">Asignado a Diego</td><td class="r">$0</td><td class="r">$38.000</td></tr>
-          </tbody>
-          <tfoot><tr><td>Aporte del mes</td><td class="rule-col"></td><td class="r">$595.200</td><td class="r">$561.800</td></tr></tfoot>
-        </table>
-        <p class="flow">Los $595.200 de Camila aparecen en su proyección como un compromiso mensual. Diego ve ese monto, pero no el sueldo, las deudas ni los escenarios de Camila.</p>
+        <h3 class="with-ico"><svg class="ico" aria-hidden="true"><use href="#i-split"/></svg><span>Hogar de Camila y Diego</span></h3>
+        <p class="sub">Gastos comunes de noviembre y cómo se reparten.</p>
+        <p class="who" aria-hidden="true"><span class="ca"><i></i>Camila</span><span><i></i>Diego</span></p>
+        <ul class="sbars num">
+          <li><p class="name"><b>Arriendo</b><span>$650.000, 55 % y 45 %</span></p><p class="track" style="--a:55%"><span class="a" style="--k:0"><span class="vh">Camila </span>$357.500</span><span class="b"><span class="vh">Diego </span>$292.500</span></p></li>
+          <li><p class="name"><b>Supermercado</b><span>$320.000, partes iguales</span></p><p class="track" style="--a:50%"><span class="a" style="--k:1"><span class="vh">Camila </span>$160.000</span><span class="b"><span class="vh">Diego </span>$160.000</span></p></li>
+          <li><p class="name"><b>Gastos comunes del edificio</b><span>$85.000, partes iguales</span></p><p class="track" style="--a:50%"><span class="a" style="--k:2"><span class="vh">Camila </span>$42.500</span><span class="b"><span class="vh">Diego </span>$42.500</span></p></li>
+          <li><p class="name"><b>Luz y agua</b><span>$64.000, 55 % y 45 %</span></p><p class="track" style="--a:55%"><span class="a" style="--k:3"><span class="vh">Camila </span>$35.200</span><span class="b"><span class="vh">Diego </span>$28.800</span></p></li>
+          <li><p class="name"><b>Internet</b><span>$38.000, asignado a Diego</span></p><p class="track" style="--a:0%"><span class="a"></span><span class="b"><span class="vh">Diego </span>$38.000</span></p></li>
+        </ul>
+        <div class="totals num">
+          <div><span>Camila aporta</span><b>$595.200</b></div>
+          <div><span>Diego aporta</span><b>$561.800</b></div>
+        </div>
+      </div>
+
+      <div class="peek rise" style="--i:1">
+        <h3 class="with-ico"><svg class="ico" aria-hidden="true"><use href="#i-eye-off"/></svg><span>Lo que Diego ve de Camila</span></h3>
+        <p class="sub">Lo común baja a cada perfil. Lo personal no sube al hogar.</p>
+        <dl class="num">
+          <div><dt>Aporte al hogar</dt><dd>$595.200</dd></div>
+          <div class="hidden"><dt>Sueldo</dt><dd><span class="x" style="--k:0" aria-hidden="true"></span><span>Privado</span></dd></div>
+          <div class="hidden"><dt>Deudas y cuotas</dt><dd><span class="x" style="--k:1" aria-hidden="true"></span><span>Privado</span></dd></div>
+          <div class="hidden"><dt>Escenarios</dt><dd><span class="x" style="--k:2" aria-hidden="true"></span><span>Privado</span></dd></div>
+        </dl>
+        <div class="oneway" role="img" aria-label="La información fluye del espacio común hacia Camila y Diego, nunca al revés.">
+          <span class="common" aria-hidden="true">Espacio común</span>
+          <span class="down" aria-hidden="true">↓</span><span class="down" aria-hidden="true">↓</span>
+          <span class="person" aria-hidden="true">Camila</span><span class="person" aria-hidden="true">Diego</span>
+        </div>
+        <p class="flowline">La información baja del espacio común a cada perfil. Nunca sube. Lo mismo al revés: Camila ve el aporte de Diego y nada más.</p>
       </div>
     </div>
-
-    <div class="privacy">
-      <div class="shared rise"><h3>Lo que ve todo el hogar</h3><ul><li>Los gastos comunes y quién los registró</li><li>Cómo se reparte cada gasto</li><li>Cuánto aporta cada persona</li></ul></div>
-      <div class="own rise" style="--i:1"><h3>Lo que solo ves tú</h3><ul><li>Tus ingresos y tus gastos personales</li><li>Tus deudas y tus cuotas</li><li>Tus escenarios y simulaciones</li></ul></div>
-    </div>
-    <p class="hogar-note rise">Quien administra el hogar puede invitar y quitar miembros, pero tampoco ve los datos personales de nadie. Si el plan vence, el espacio común queda en solo lectura y no se borra nada.</p>
+    <p class="hogar-note rise">Quien administra el hogar invita y quita miembros, pero tampoco ve datos personales. Si el plan vence, el espacio común queda en solo lectura y no se borra nada.</p>
   </section>
 
   <section class="section wrap" id="planes" data-chapter="ink" aria-labelledby="t-planes">
+    <header class="sec-head rise">
+      <span class="sec-icon" aria-hidden="true"><svg class="ico" aria-hidden="true"><use href="#i-tag"/></svg></span>
+      <h2 class="xl" id="t-planes">Planes</h2>
+      <p class="sec-sub">Todos incluyen la conexión con tu banco y la proyección mensual. Cambian los escenarios que guardas y comparas, la simulación de prepagos y el hogar.</p>
+    </header>
     <div class="plans-wrap rise">
       <table class="plans">
         <thead>
           <tr>
-            <th scope="col" id="t-planes">Planes</th>
+            <th scope="col"><span class="vh">Qué incluye cada plan</span></th>
             <th scope="col"><span class="pname">Gratuito</span><span class="price num">$0</span><span class="per">sin plazo</span></th>
             <th scope="col"><span class="pname">Individual</span><span class="price">Por definir</span><span class="per">por período, renovación manual</span></th>
             <th scope="col"><span class="pname">Familiar</span><span class="price">Por definir</span><span class="per">por período, renovación manual</span></th>
           </tr>
         </thead>
         <tbody>
-          <tr><th scope="row">Registro y proyección mensual</th><td>Incluido</td><td>Incluido</td><td>Incluido</td></tr>
+          <tr><th scope="row">Conexión con tu banco (Fintoc)</th><td><span class="yes">Incluida</span></td><td><span class="yes">Incluida</span></td><td><span class="yes">Incluida</span></td></tr>
+          <tr><th scope="row">Registro y proyección mensual</th><td><span class="yes">Incluido</span></td><td><span class="yes">Incluido</span></td><td><span class="yes">Incluido</span></td></tr>
           <tr><th scope="row">Escenarios guardados</th><td>Hasta 2</td><td>Sin límite</td><td>Sin límite</td></tr>
           <tr><th scope="row">Comparación con tu situación base</th><td>1 escenario a la vez</td><td>Varios a la vez</td><td>Varios a la vez</td></tr>
           <tr><th scope="row">Historial de meses</th><td>Mes en curso</td><td>Completo</td><td>Completo</td></tr>
-          <tr><th scope="row">Simulación de prepagos de deuda</th><td>No incluida</td><td>Incluida</td><td>Incluida</td></tr>
-          <tr><th scope="row">Conexión con tu banco (Fintoc)</th><td>Incluida</td><td>Incluida</td><td>Incluida</td></tr>
-          <tr><th scope="row">Hogar con espacio común y perfiles privados</th><td>No incluido</td><td>No incluido</td><td>Incluido</td></tr>
+          <tr><th scope="row">Simulación de prepagos de deuda</th><td><span class="no">No incluida</span></td><td><span class="yes">Incluida</span></td><td><span class="yes">Incluida</span></td></tr>
+          <tr><th scope="row">Hogar con espacio común y perfiles privados</th><td><span class="no">No incluido</span></td><td><span class="no">No incluido</span></td><td><span class="yes">Incluido</span></td></tr>
         </tbody>
         <tfoot>
           <tr><td></td>
@@ -474,15 +669,14 @@ html[data-palette="rosa"] { --bg:#fbf7f8; --surface:#f3e8eb; --ink:#3a1020; --mu
     </div>
 
     <div class="plans-cards">
-      <h2 class="xl">Planes</h2>
       <article class="plan-card"><h3>Gratuito</h3><p class="price num">$0</p><p class="per">sin plazo</p>
-        <dl><dt>Escenarios guardados</dt><dd>Hasta 2</dd><dt>Comparación con tu situación base</dt><dd>1 escenario a la vez</dd><dt>Historial de meses</dt><dd>Mes en curso</dd><dt>Simulación de prepagos</dt><dd>No incluida</dd><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Hogar</dt><dd>No incluido</dd></dl>
+        <dl><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Escenarios guardados</dt><dd>Hasta 2</dd><dt>Comparación con tu situación base</dt><dd>1 escenario a la vez</dd><dt>Historial de meses</dt><dd>Mes en curso</dd><dt>Simulación de prepagos</dt><dd>No incluida</dd><dt>Hogar</dt><dd>No incluido</dd></dl>
         <a class="btn btn-solid" href="../#/registro">Crear cuenta gratis</a></article>
       <article class="plan-card"><h3>Individual</h3><p class="price">Por definir</p><p class="per">por período, renovación manual</p>
-        <dl><dt>Escenarios guardados</dt><dd>Sin límite</dd><dt>Comparación con tu situación base</dt><dd>Varios a la vez</dd><dt>Historial de meses</dt><dd>Completo</dd><dt>Simulación de prepagos</dt><dd>Incluida</dd><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Hogar</dt><dd>No incluido</dd></dl>
+        <dl><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Escenarios guardados</dt><dd>Sin límite</dd><dt>Comparación con tu situación base</dt><dd>Varios a la vez</dd><dt>Historial de meses</dt><dd>Completo</dd><dt>Simulación de prepagos</dt><dd>Incluida</dd><dt>Hogar</dt><dd>No incluido</dd></dl>
         <a class="btn" href="../#/registro?plan=individual">Elegir Individual</a></article>
       <article class="plan-card"><h3>Familiar</h3><p class="price">Por definir</p><p class="per">por período, renovación manual</p>
-        <dl><dt>Escenarios guardados</dt><dd>Sin límite</dd><dt>Comparación con tu situación base</dt><dd>Varios a la vez</dd><dt>Historial de meses</dt><dd>Completo</dd><dt>Simulación de prepagos</dt><dd>Incluida</dd><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Hogar</dt><dd>Espacio común y perfiles privados</dd></dl>
+        <dl><dt>Conexión con tu banco</dt><dd>Incluida</dd><dt>Escenarios guardados</dt><dd>Sin límite</dd><dt>Comparación con tu situación base</dt><dd>Varios a la vez</dd><dt>Historial de meses</dt><dd>Completo</dd><dt>Simulación de prepagos</dt><dd>Incluida</dd><dt>Hogar</dt><dd>Espacio común y perfiles privados</dd></dl>
         <a class="btn" href="../#/registro?plan=familiar">Elegir Familiar</a></article>
     </div>
 
@@ -491,25 +685,29 @@ html[data-palette="rosa"] { --bg:#fbf7f8; --surface:#f3e8eb; --ink:#3a1020; --mu
 
   <section class="section wrap faq" id="preguntas" data-chapter="ink" aria-labelledby="t-faq">
     <div class="grid">
-      <h2 id="t-faq" class="rise">Preguntas</h2>
-      <div class="cols">
-        <p class="rise"><b>¿Me dice qué decisión tomar?</b> No. Muestra qué ocurre con tu saldo con y sin la decisión, y qué lo causa. Los escenarios aparecen lado a lado, sin ordenarlos ni destacar uno.</p>
-        <p class="rise"><b>¿Mueve mi dinero o paga mis deudas?</b> No. Fin de Mes no hace transferencias ni pagos. Solo registra, proyecta y simula.</p>
-        <p class="rise"><b>¿Tengo que conectar mi banco?</b> No. Puedes registrar todo a mano. Las tarjetas de crédito y las compras en cuotas se registran a mano en cualquier caso.</p>
-        <p class="rise"><b>¿Qué ven los demás miembros de mi hogar?</b> Los gastos comunes y cuánto aporta cada uno. Tus ingresos, deudas y escenarios son solo tuyos.</p>
-        <p class="rise"><b>¿Qué pasa si dejo de pagar el plan?</b> Vuelves al plan Gratuito y no se borra nada. En un hogar, el espacio común queda en solo lectura hasta que renueves.</p>
-        <p class="rise"><b>¿Puedo llevarme o borrar mis datos?</b> Sí. Puedes exportarlos o eliminar tu cuenta con borrado efectivo, conforme a la Ley 21.719.</p>
+      <header class="sec-head stack rise">
+      <span class="sec-icon" aria-hidden="true"><svg class="ico" aria-hidden="true"><use href="#i-help"/></svg></span>
+      <h2 class="xl" id="t-faq">Preguntas</h2>
+      <p class="sec-sub">Sobre tu banco, tu hogar y tus datos. Toca una pregunta para ver la respuesta.</p>
+    </header>
+      <div class="qa">
+        <div class="q rise" style="--i:0"><h3><button type="button" id="q1" aria-expanded="false" aria-controls="r1">¿Me dice qué decisión tomar?</button></h3><div class="ans" id="r1" role="region" aria-labelledby="q1"><div><p>No. Muestra qué ocurre con tu saldo con y sin la decisión, y qué lo causa. Los escenarios aparecen lado a lado, sin ordenarlos ni destacar uno.</p></div></div></div>
+        <div class="q rise" style="--i:1"><h3><button type="button" id="q2" aria-expanded="false" aria-controls="r2">¿Mueve mi dinero o paga mis deudas?</button></h3><div class="ans" id="r2" role="region" aria-labelledby="q2"><div><p>No. Fin de Mes no hace transferencias ni pagos. Solo registra, proyecta y simula.</p></div></div></div>
+        <div class="q rise" style="--i:2"><h3><button type="button" id="q3" aria-expanded="false" aria-controls="r3">¿Y si no quiero conectar mi banco?</button></h3><div class="ans" id="r3" role="region" aria-labelledby="q3"><div><p>Puedes registrar todo a mano. Conectar el banco evita escribir tu sueldo y cada movimiento, y mantiene tu proyección al día. Las tarjetas de crédito y las compras en cuotas se agregan a mano en ambos casos, porque Fintoc entrega solo cuentas corrientes y vista.</p></div></div></div>
+        <div class="q rise" style="--i:3"><h3><button type="button" id="q4" aria-expanded="false" aria-controls="r4">¿Qué ven los demás miembros de mi hogar?</button></h3><div class="ans" id="r4" role="region" aria-labelledby="q4"><div><p>Los gastos comunes y cuánto aporta cada uno. Tus ingresos, deudas y escenarios son solo tuyos.</p></div></div></div>
+        <div class="q rise" style="--i:4"><h3><button type="button" id="q5" aria-expanded="false" aria-controls="r5">¿Qué pasa si dejo de pagar el plan?</button></h3><div class="ans" id="r5" role="region" aria-labelledby="q5"><div><p>Vuelves al plan Gratuito y no se borra nada. En un hogar, el espacio común queda en solo lectura hasta que renueves.</p></div></div></div>
+        <div class="q rise" style="--i:5"><h3><button type="button" id="q6" aria-expanded="false" aria-controls="r6">¿Puedo llevarme o borrar mis datos?</button></h3><div class="ans" id="r6" role="region" aria-labelledby="q6"><div><p>Sí. Puedes exportarlos o eliminar tu cuenta con borrado efectivo, conforme a la Ley 21.719.</p></div></div></div>
       </div>
     </div>
   </section>
 
   <section class="cta on-field" data-chapter="paper" aria-labelledby="t-cta">
     <div class="cta-inner">
-      <h2 class="xl rise" id="t-cta">Prueba con un ejemplo</h2>
-      <p class="rise" style="--i:1">Arma un mes de ejemplo y simula una compra, sin crear cuenta. Lo que hagas no se guarda, salvo que después decidas crear tu cuenta.</p>
+      <h2 class="xl rise" id="t-cta">Conecta tu banco</h2>
+      <p class="rise" style="--i:1">Crea tu cuenta gratis, conecta tu banco con Fintoc y ve tus próximos doce meses. Si antes quieres mirar, prueba con un ejemplo sin cuenta.</p>
       <div class="cta-actions rise" style="--i:2">
-        <a class="btn btn-solid" href="../#/demo">Probar sin cuenta</a>
-        <a class="btn" href="../#/registro">Crear cuenta gratis</a>
+        <a class="btn btn-solid" href="../#/registro?conectar=fintoc">Conectar mi banco</a>
+        <a class="btn" href="../#/demo">Probar sin cuenta</a>
       </div>
     </div>
   </section>
@@ -523,8 +721,8 @@ html[data-palette="rosa"] { --bg:#fbf7f8; --surface:#f3e8eb; --ink:#3a1020; --mu
       <p class="foot-desc">Registra, proyecta y simula tus gastos mes a mes. Solo o en hogar.</p>
     </div>
     <div class="cols">
-      <ul><li>Producto</li><li><a href="#como">Cómo funciona</a></li><li><a href="#simula">Probar una compra</a></li><li><a href="#hogar">Plan Familiar</a></li><li><a href="#planes">Planes</a></li></ul>
-      <ul><li>Cuenta</li><li><a href="../#/registro">Crear cuenta</a></li><li><a href="../#/login">Entrar</a></li><li><a href="../#/demo">Modo de prueba</a></li></ul>
+      <ul><li>Producto</li><li><a href="#como">Cómo funciona</a></li><li><a href="#hogar">Plan Familiar</a></li><li><a href="#planes">Planes</a></li></ul>
+      <ul><li>Cuenta</li><li><a href="../#/registro">Crear cuenta</a></li><li><a href="../#/login">Entrar</a></li><li><a href="../#/registro?conectar=fintoc">Conectar mi banco</a></li><li><a href="../#/demo">Modo de prueba</a></li></ul>
       <ul><li>Tus datos</li><li><a href="../#privacidad">Qué datos guardamos</a></li><li><a href="#preguntas">Preguntas</a></li><li><a href="../#contacto">Contacto</a></li></ul>
     </div>
   </div>
@@ -568,88 +766,30 @@ document.documentElement.classList.add('js');
   btns.forEach(b => b.addEventListener('click', () => apply(b.dataset.p)));
 })();
 (() => {
-  // Perfil de ejemplo. En la aplicación real, el cálculo lo hace el servidor (POST /v1/demo/projection).
-  const P = { income: 1150000, fixed: 890000, loan: 220000, loanLeft: 5, opening: 120000, months: 12, start: { y: 2026, m: 10 } };
-  const MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const nf = new Intl.NumberFormat('es-CL');
-  const money = n => (n < 0 ? '−$' : '$') + nf.format(Math.abs(n));
-  const signed = n => n === 0 ? 'sin diferencia' : (n > 0 ? '+$' : '−$') + nf.format(Math.abs(n));
-  const label = k => { const t = P.start.m + k; return { m: MES[t % 12], y: P.start.y + Math.floor(t / 12) }; };
-  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-
-  function parse(text) {
-    const t = text.toLowerCase();
-    const amt = t.match(/\$?\s*(\d{1,3}(?:[.\s]\d{3})+|\d+)/);
-    if (!amt) return null;
-    const total = parseInt(amt[1].replace(/[.\s]/g, ''), 10);
-    if (!Number.isSafeInteger(total) || total < 1000 || total > 100000000) return null;
-    const c = t.match(/(\d{1,2})\s*cuotas?/);
-    let n = c ? parseInt(c[1], 10) : 1;
-    if (c && c.index <= amt.index) n = 1;
-    if (!(n >= 1 && n <= 48)) return null;
-    return { total, n };
-  }
-
-  function project(dec) {
-    let bal = P.opening; const out = [];
-    for (let k = 0; k < P.months; k++) {
-      let move = P.income - P.fixed - (k < P.loanLeft ? P.loan : 0);
-      if (dec && k < dec.n) move -= k === dec.n - 1 ? dec.total - Math.floor(dec.total / dec.n) * (dec.n - 1) : Math.floor(dec.total / dec.n);
-      bal += move; out.push(bal);
-    }
-    return out;
-  }
-
-  const $ = id => document.getElementById(id);
-  const input = $('decision'), answer = $('answer'), body = $('proj-body');
-
-  function render() {
-    const dec = parse(input.value);
-    const base = project(null), sc = dec ? project(dec) : base;
-    const minI = sc.indexOf(Math.min(...sc)), minB = Math.min(...base);
-    const brk = sc.findIndex(v => v < 0);
-    if (dec) {
-      const q = Math.floor(dec.total / dec.n);
-      const lm = label(minI);
-      $('a-cuota').textContent = dec.n === 1 ? 'Pago único de ' + money(dec.total) : dec.n + ' cuotas de ' + money(q);
-      $('a-min').textContent = money(sc[minI]) + ' en ' + lm.m;
-      $('a-break').textContent = brk < 0 ? 'Ningún mes de los próximos 12' : label(brk).m + ' de ' + label(brk).y;
-      $('a-diff').textContent = signed(sc[minI] - minB);
-      const what = dec.n === 1 ? 'el pago de ' + money(dec.total) + ' en ' + label(0).m : 'la cuota de ' + money(q);
-      const overlap = dec.n > 1 && P.loanLeft > 0 ? ', que se suma a la cuota del crédito de consumo hasta ' + label(Math.min(dec.n, P.loanLeft) - 1).m : '';
-      $('a-why').textContent = brk < 0
-        ? 'El saldo se mantiene positivo los 12 meses. El más bajo es ' + money(sc[minI]) + ' en ' + lm.m + ', por ' + what + overlap + '.'
-        : 'El saldo pasa a negativo en ' + label(brk).m + ' de ' + label(brk).y + '. Lo causa ' + what + overlap + '. Desde ' + label(P.loanLeft).m + ', cuando ese crédito termina, el saldo vuelve a subir.';
-    } else {
-      $('a-cuota').textContent = 'Falta el monto';
-      $('a-min').textContent = money(Math.min(...base)) + ' sin compra';
-      $('a-break').textContent = '—';
-      $('a-diff').textContent = '—';
-      $('a-why').textContent = 'Escribe un monto entre $1.000 y $100.000.000 y, si quieres, el número de cuotas (hasta 48).';
-    }
-    answer.classList.remove('flash'); void answer.offsetWidth; answer.classList.add('flash');
-    body.innerHTML = sc.map((v, k) => {
-      const l = label(k), d = v - base[k];
-      return '<tr class="' + (v < 0 ? 'neg' : '') + '"><td><span class="mlong">' + cap(l.m) + ' ' + l.y + '</span><span class="mshort" aria-hidden="true">' + cap(l.m.slice(0, 3)) + ' ' + String(l.y).slice(2) + '</span></td><td class="hide-sm">' + money(base[k]) +
-        '</td><td>' + money(v) + (v < 0 ? '<span class="flag">saldo negativo</span>' : '') + '</td><td class="r">' + signed(d) + '</td></tr>';
-    }).join('');
-    if (window.__revealRows) window.__revealRows();
-  }
-  input.addEventListener('input', render);
-  document.querySelectorAll('[data-ex]').forEach(b => b.addEventListener('click', () => { input.value = b.dataset.ex; render(); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }));
-  render();
-
   // Entradas por sección, una vez.
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
   document.querySelectorAll('.rise').forEach(el => io.observe(el));
-  let rowsShown = false;
-  window.__revealRows = () => {
-    if (reduce || !rowsShown) return;
-    body.querySelectorAll('tr').forEach((tr, i) => { if (!tr.dataset.seen) { tr.dataset.seen = 1; tr.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: i * 45, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' }); } });
+  // Preguntas: al hacer clic, la respuesta se despliega con animación. Sin script, todas quedan visibles.
+  document.querySelectorAll(".qa .q").forEach(q => {
+    const btn = q.querySelector("button");
+    btn.addEventListener("click", () => {
+      const open = btn.getAttribute("aria-expanded") !== "true";
+      btn.setAttribute("aria-expanded", String(open));
+      q.classList.toggle("open", open);
+    });
+  });
+
+  // Menú: marca el módulo que está en pantalla.
+  const navLinks = [...document.querySelectorAll('.corner nav a[href^="#"]')];
+  const mods = navLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const markNav = () => {
+    const line = innerHeight * 0.35;
+    let cur = null; mods.forEach(m => { if (m.getBoundingClientRect().top <= line) cur = m; });
+    if (cur && cur.getBoundingClientRect().bottom < line) cur = null;
+    navLinks.forEach(a => { if (cur && a.getAttribute('href') === '#' + cur.id) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
   };
-  const rowsIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { rowsShown = true; window.__revealRows(); rowsIO.disconnect(); } }), { threshold: 0.2 });
-  rowsIO.observe(body);
+  addEventListener('scroll', () => requestAnimationFrame(markNav), { passive: true }); markNav();
 
   // Color por capítulo: la barra superior toma el color de la sección que tiene debajo.
   const corner = document.querySelector('.corner');
