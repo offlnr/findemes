@@ -1,0 +1,43 @@
+@startuml cu-3-hogar
+!include ../uml-style.iuml
+title Casos de uso · Hogar, gastos comunes y reglas de aporte (E5)
+left to right direction
+
+actor "Visitante" as V
+actor "Miembro del hogar" as M
+actor "Administrador de hogar" as AH
+actor "Proveedor de correo" <<sistema externo>> as MAIL
+
+M <|-- AH
+
+rectangle "Fin de Mes" {
+  usecase "Crear un hogar\n<size:9>HU12</size>" as HU12 <<S>>
+  usecase "Invitar miembros\n<size:9>HU12</size>" as INV <<S>>
+  usecase "Registrar gastos comunes\n<size:9>HU13</size>" as HU13 <<S>>
+  usecase "Configurar las reglas\nde aporte\n<size:9>HU14</size>" as HU14 <<S>>
+  usecase "Consultar los gastos\ncomunes\n<size:9>HU13</size>" as HU13C <<S>>
+  usecase "Ver mi aporte en mi\nproyección individual\n<size:9>HU15</size>" as HU15 <<S>>
+  usecase "Mantener privados ingresos,\ndeudas y escenarios\n<size:9>HU16</size>" as HU16 <<M>>
+  usecase "Aceptar una invitación\ny crear la cuenta\n<size:9>HU31</size>" as HU31 <<S>>
+  usecase "Crear una cuenta\n<size:9>HU17 (ver cu-1)</size>" as HU17 <<M>>
+}
+
+AH -- HU12
+AH -- INV
+AH -- HU13
+AH -- HU14
+M -- HU13C
+M -- HU15
+M -- HU16
+V -- HU31
+
+HU31 ..> HU17 : <<include>>
+INV -- MAIL
+
+legend right
+  Reglas de aporte (HU14): partes iguales, porcentajes que suman 100 % o gasto asignado a un miembro.
+  Privacidad (HU16): la información fluye del espacio común a los perfiles individuales, nunca al revés.
+  Invitación (HU31): enlace de un solo uso con vigencia máxima de 7 días.
+  Prioridad MoSCoW: <back:#9CC3EE> M </back> imprescindible · <back:#DCEBFA> S </back> importante · <back:#F4F6F8> C </back> deseable
+end legend
+@enduml

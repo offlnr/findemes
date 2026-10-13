@@ -1,0 +1,46 @@
+@startuml cu-2-registro-proyeccion-escenarios
+!include ../uml-style.iuml
+title Casos de uso · Registro financiero, proyección y escenarios (E1-E4)
+left to right direction
+
+actor "Usuario registrado" as U
+actor "Fintoc" <<sistema externo>> as FIN
+
+rectangle "Fin de Mes" {
+  usecase "Registrar ingresos\nrecurrentes y esporádicos\n<size:9>HU01</size>" as HU01 <<M>>
+  usecase "Registrar gastos\nfijos y variables\n<size:9>HU02</size>" as HU02 <<M>>
+  usecase "Registrar deudas con\nsus cuotas pendientes\n<size:9>HU03</size>" as HU03 <<M>>
+  usecase "Registrar el saldo inicial\n<size:9>HU04</size>" as HU04 <<M>>
+  usecase "Sincronizar movimientos\nbancarios\n<size:9>HU36</size>" as HU36 <<S>>
+  usecase "Ver la proyección del\nflujo de caja mensual\n<size:9>HU05</size>" as HU05 <<M>>
+  usecase "Ver la salud financiera\n<size:9>HU39</size>" as HU39 <<M>>
+  usecase "Crear un escenario\n<size:9>HU06</size>" as HU06 <<M>>
+  usecase "Aplicar decisiones\nsobre un escenario\n<size:9>HU07</size>" as HU07 <<M>>
+  usecase "Comparar escenarios\n<size:9>HU09</size>" as HU09 <<S>>
+  usecase "Ver los indicadores\nde un escenario\n<size:9>HU08</size>" as HU08 <<M>>
+  usecase "Recibir la explicación\ndel resultado\n<size:9>HU10</size>" as HU10 <<M>>
+  usecase "Editar y eliminar\nescenarios\n<size:9>HU11</size>" as HU11 <<S>>
+}
+
+U -- HU01
+U -- HU02
+U -- HU03
+U -- HU04
+U -- HU36
+U -- HU05
+U -- HU39
+U -- HU06
+U -- HU07
+U -- HU09
+U -- HU08
+U -- HU11
+
+HU08 .[norank].> HU10 : <<include>>
+HU09 .[norank].> HU08 : <<include>>
+HU36 -- FIN
+
+legend right
+  HU37 (recomendar qué decisión tomar) está excluida por diseño: el sistema describe, no recomienda.
+  Prioridad MoSCoW: <back:#9CC3EE> M </back> imprescindible · <back:#DCEBFA> S </back> importante · <back:#F4F6F8> C </back> deseable
+end legend
+@enduml

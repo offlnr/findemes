@@ -1,0 +1,60 @@
+@startuml cu-1-sitio-publico-e-identidad
+!include ../uml-style.iuml
+title Casos de uso · Sitio público, demostración e identidad (E6, E9)
+left to right direction
+
+actor "Visitante" as V
+actor "Usuario registrado" as U
+actor "Proveedor de correo" <<sistema externo>> as MAIL
+
+rectangle "Fin de Mes" {
+  usecase "Probar el simulador con\nun caso de ejemplo\n<size:9>HU27</size>" as HU27 <<M>>
+  usecase "Ingresar datos mínimos y\nver la proyección\n<size:9>HU28</size>" as HU28 <<M>>
+  usecase "Revisar casos resueltos\ncon cifras concretas\n<size:9>HU33</size>" as HU33 <<C>>
+  usecase "Conocer los planes y\nsus capacidades\n<size:9>HU30</size>" as HU30 <<S>>
+  usecase "Conocer qué datos se\nalmacenan y cómo se tratan\n<size:9>HU32</size>" as HU32 <<S>>
+  usecase "Contactar al equipo\n<size:9>HU34</size>" as HU34 <<C>>
+  usecase "Crear una cuenta\n<size:9>HU17</size>" as HU17 <<M>>
+  usecase "Verificar el correo\n<size:9>HU17</size>" as VERIFY <<M>>
+  usecase "Conservar lo trabajado\nen la demostración\n<size:9>HU29</size>" as HU29 <<S>>
+  usecase "Iniciar sesión\n<size:9>HU17.1</size>" as HU171 <<M>>
+  usecase "Recuperar el acceso\n<size:9>HU17.2</size>" as HU172 <<M>>
+  usecase "Cerrar sesión\n<size:9>HU17.3</size>" as HU173 <<S>>
+  usecase "Cambiar la contraseña\n<size:9>HU17.4</size>" as HU174 <<S>>
+  usecase "Ejercer derechos sobre\nlos datos personales\n<size:9>HU21</size>" as HU21 <<S>>
+}
+
+V -- HU27
+V -- HU28
+V -- HU33
+V -- HU30
+V -- HU32
+V -- HU34
+V -- HU17
+V -- HU171
+V -- HU172
+
+U -- HU173
+U -- HU174
+U -- HU21
+
+HU17 ..> VERIFY : <<include>>
+HU29 .[norank].> HU17 : <<extend>>
+HU33 .[norank].> HU27 : <<extend>>
+
+VERIFY -- MAIL
+HU172 -- MAIL
+HU174 -- MAIL
+
+note right of HU21
+  Exportar en formato estructurado,
+  rectificar y eliminar la cuenta
+  con borrado efectivo (Ley 21.719).
+end note
+
+note "Fuera del alcance (prioridad W):\nHU35 boletín de educación financiera." as OUT
+
+legend right
+  Prioridad MoSCoW: <back:#9CC3EE> M </back> imprescindible · <back:#DCEBFA> S </back> importante · <back:#F4F6F8> C </back> deseable
+end legend
+@enduml

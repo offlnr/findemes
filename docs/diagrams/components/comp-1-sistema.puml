@@ -1,0 +1,59 @@
+@startuml comp-1-sistema
+!include ../uml-style.iuml
+title Diagrama de componentes · Sistema Fin de Mes
+top to bottom direction
+
+package "Clientes (dispositivo del usuario)" {
+  component "Aplicación Fin de Mes\n<size:10>Flutter · web, Android e iOS</size>" as APP
+  component "Widget de Fintoc\n<size:10>JavaScript del proveedor</size>" <<externo>> as WID
+}
+
+package "Plano de administración (solo Tailscale)" {
+  component "Panel de administración\n<size:10>aplicación web</size>" <<administración>> as PAN
+  component "API de administración\n<size:10>Node.js 24 · Fastify</size>" <<administración>> as AAPI
+  interface "API REST de administración\n<size:10>HTTPS · JSON · TOTP</size>" as IADM
+}
+
+package "Backend (App Platform)" {
+  component "API pública\n<size:10>Node.js 24 · TypeScript · Fastify</size>" as API
+  component "Motor de simulación\n<size:10>núcleo puro, en proceso</size>" <<núcleo>> as CORE
+  component "Migrador\n<size:10>Kysely + SQL versionado</size>" as MIG
+  interface "API REST /v1\n<size:10>HTTPS · JSON · JWT · OpenAPI</size>" as IREST
+  interface "Simulación\n<size:10>proyectar, simular, indicadores, explicar</size>" as ISIM
+}
+
+package "Datos" {
+  database "PostgreSQL 18\n<size:10>esquema app · RLS</size>" as DB
+  interface "SQL sobre TLS\n<size:10>rol por servicio</size>" as ISQL
+}
+
+package "Servicios externos" {
+  component "Transbank Webpay Plus" <<externo>> as TBK
+  component "Fintoc" <<externo>> as FIN
+  component "Proveedor de correo" <<externo>> as MAIL
+}
+
+API -up- IREST
+APP .down.> IREST : usa
+APP .right.> WID : abre
+WID .down.> FIN : clave bancaria del usuario\n(nunca pasa por Fin de Mes)
+CORE -up- ISIM
+API .right.> ISIM : usa
+DB -up- ISQL
+API .down.> ISQL : rol app_api
+MIG .down.> ISQL : rol dueño
+AAPI .right.> ISQL : rol app_admin
+AAPI -up- IADM
+PAN .down.> IADM : usa
+
+API .right.> TBK : crea y confirma\n(HTTPS saliente)
+API .right.> FIN : lee movimientos\n(HTTPS saliente)
+API .right.> MAIL : envía correos\n(HTTPS saliente)
+
+legend right
+  <b>Notación UML 2.5</b>
+  Círculo (bola) = interfaz provista por el componente unido con línea continua.
+  Flecha discontinua «usa» = interfaz requerida (dependencia).
+  <back:#FFE699> núcleo </back> sin dependencias externas · <back:#FDEBD0> administración </back> despliegue separado · <back:#ECEAF0> externo </back> fuera de Fin de Mes
+end legend
+@enduml
