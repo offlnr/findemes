@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_as_is" targetNamespace="https://findemes.cl/bpmn" exporter="generate_bpmn.py">
+<bpmn:collaboration id="collab_as_is">
+<bpmn:participant id="pool_persona" name="Persona" processRef="proc_persona"/>
+<bpmn:participant id="pool_hogar" name="Integrantes del hogar"/>
+<bpmn:messageFlow id="mp1" name="Ingresos y deudas personales" sourceRef="p_coordina" targetRef="pool_hogar"/>
+</bpmn:collaboration>
+<bpmn:process id="proc_persona" isExecutable="false">
+<bpmn:startEvent id="p_start" name="Surge una necesidad de gasto o crédito"><bpmn:outgoing>fp1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:manualTask id="p_mental" name="Comparar mentalmente la cuota con el ingreso"><bpmn:incoming>fp1</bpmn:incoming><bpmn:outgoing>fp2</bpmn:outgoing></bpmn:manualTask>
+<bpmn:exclusiveGateway id="p_compara" name="¿Compara alternativas?"><bpmn:incoming>fp2</bpmn:incoming><bpmn:outgoing>fp3</bpmn:outgoing><bpmn:outgoing>fp4</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:manualTask id="p_planilla" name="Armar y editar una planilla de cálculo"><bpmn:incoming>fp3</bpmn:incoming><bpmn:outgoing>fp5</bpmn:outgoing></bpmn:manualTask>
+<bpmn:exclusiveGateway id="p_merge1" name=""><bpmn:incoming>fp4</bpmn:incoming><bpmn:incoming>fp5</bpmn:incoming><bpmn:outgoing>fp6</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:manualTask id="p_decide" name="Decidir con información incompleta"><bpmn:incoming>fp6</bpmn:incoming><bpmn:outgoing>fp7</bpmn:outgoing></bpmn:manualTask>
+<bpmn:exclusiveGateway id="p_hogar" name="¿Afecta gastos del hogar?"><bpmn:incoming>fp7</bpmn:incoming><bpmn:outgoing>fp8</bpmn:outgoing><bpmn:outgoing>fp9</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:manualTask id="p_coordina" name="Coordinar conversando con el hogar"><bpmn:incoming>fp8</bpmn:incoming><bpmn:outgoing>fp10</bpmn:outgoing></bpmn:manualTask>
+<bpmn:exclusiveGateway id="p_merge2" name=""><bpmn:incoming>fp9</bpmn:incoming><bpmn:incoming>fp10</bpmn:incoming><bpmn:outgoing>fp11</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:manualTask id="p_ejecuta" name="Ejecutar la decisión"><bpmn:incoming>fp11</bpmn:incoming><bpmn:outgoing>fp12</bpmn:outgoing></bpmn:manualTask>
+<bpmn:intermediateCatchEvent id="p_finmes" name="Llega el fin de mes"><bpmn:incoming>fp12</bpmn:incoming><bpmn:outgoing>fp13</bpmn:outgoing><bpmn:timerEventDefinition id="p_finmes_def"/></bpmn:intermediateCatchEvent>
+<bpmn:manualTask id="p_detecta" name="Detectar el desajuste cuando ya ocurrió"><bpmn:incoming>fp13</bpmn:incoming><bpmn:outgoing>fp14</bpmn:outgoing></bpmn:manualTask>
+<bpmn:endEvent id="p_fin" name="Desajuste asumido sin anticipación"><bpmn:incoming>fp14</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="fp1" name="" sourceRef="p_start" targetRef="p_mental"/>
+<bpmn:sequenceFlow id="fp2" name="" sourceRef="p_mental" targetRef="p_compara"/>
+<bpmn:sequenceFlow id="fp3" name="Sí (rara vez)" sourceRef="p_compara" targetRef="p_planilla"/>
+<bpmn:sequenceFlow id="fp4" name="No" sourceRef="p_compara" targetRef="p_merge1"/>
+<bpmn:sequenceFlow id="fp5" name="" sourceRef="p_planilla" targetRef="p_merge1"/>
+<bpmn:sequenceFlow id="fp6" name="" sourceRef="p_merge1" targetRef="p_decide"/>
+<bpmn:sequenceFlow id="fp7" name="" sourceRef="p_decide" targetRef="p_hogar"/>
+<bpmn:sequenceFlow id="fp8" name="Sí" sourceRef="p_hogar" targetRef="p_coordina"/>
+<bpmn:sequenceFlow id="fp9" name="No" sourceRef="p_hogar" targetRef="p_merge2"/>
+<bpmn:sequenceFlow id="fp10" name="" sourceRef="p_coordina" targetRef="p_merge2"/>
+<bpmn:sequenceFlow id="fp11" name="" sourceRef="p_merge2" targetRef="p_ejecuta"/>
+<bpmn:sequenceFlow id="fp12" name="" sourceRef="p_ejecuta" targetRef="p_finmes"/>
+<bpmn:sequenceFlow id="fp13" name="" sourceRef="p_finmes" targetRef="p_detecta"/>
+<bpmn:sequenceFlow id="fp14" name="" sourceRef="p_detecta" targetRef="p_fin"/>
+<bpmn:textAnnotation id="n_mental"><bpmn:text>No considera los compromisos vigentes ni las cuotas pendientes.</bpmn:text></bpmn:textAnnotation>
+<bpmn:association id="n_mental_a" sourceRef="n_mental" targetRef="p_mental"/>
+<bpmn:textAnnotation id="n_coordina"><bpmn:text>Para coordinar se expone información personal.</bpmn:text></bpmn:textAnnotation>
+<bpmn:association id="n_coordina_a" sourceRef="n_coordina" targetRef="p_coordina"/>
+</bpmn:process>
+<bpmndi:BPMNDiagram id="dia_as_is"><bpmndi:BPMNPlane id="plane_as_is" bpmnElement="collab_as_is">
+<bpmndi:BPMNShape id="pool_persona_di" bpmnElement="pool_persona" isHorizontal="true"><dc:Bounds x="0" y="0" width="1880" height="260"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="pool_hogar_di" bpmnElement="pool_hogar" isHorizontal="true"><dc:Bounds x="0" y="300" width="1880" height="90"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_start_di" bpmnElement="p_start" ><dc:Bounds x="60" y="102" width="36" height="36"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_mental_di" bpmnElement="p_mental" ><dc:Bounds x="140" y="85" width="120" height="70"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_compara_di" bpmnElement="p_compara" isMarkerVisible="true"><dc:Bounds x="305" y="95" width="50" height="50"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_planilla_di" bpmnElement="p_planilla" ><dc:Bounds x="390" y="170" width="120" height="70"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_merge1_di" bpmnElement="p_merge1" isMarkerVisible="true"><dc:Bounds x="545" y="95" width="50" height="50"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_decide_di" bpmnElement="p_decide" ><dc:Bounds x="630" y="85" width="120" height="70"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_hogar_di" bpmnElement="p_hogar" isMarkerVisible="true"><dc:Bounds x="795" y="95" width="50" height="50"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_coordina_di" bpmnElement="p_coordina" ><dc:Bounds x="880" y="170" width="120" height="70"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_merge2_di" bpmnElement="p_merge2" isMarkerVisible="true"><dc:Bounds x="1035" y="95" width="50" height="50"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_ejecuta_di" bpmnElement="p_ejecuta" ><dc:Bounds x="1120" y="85" width="120" height="70"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_finmes_di" bpmnElement="p_finmes" ><dc:Bounds x="1292" y="102" width="36" height="36"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_detecta_di" bpmnElement="p_detecta" ><dc:Bounds x="1380" y="85" width="120" height="70"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="p_fin_di" bpmnElement="p_fin" ><dc:Bounds x="1552" y="102" width="36" height="36"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="n_mental_di" bpmnElement="n_mental" ><dc:Bounds x="140" y="20" width="220" height="45"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="n_coordina_di" bpmnElement="n_coordina" ><dc:Bounds x="1020" y="210" width="200" height="40"/></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="fp1_di" bpmnElement="fp1"><di:waypoint x="96" y="120"/><di:waypoint x="140" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp2_di" bpmnElement="fp2"><di:waypoint x="260" y="120"/><di:waypoint x="305" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp3_di" bpmnElement="fp3"><di:waypoint x="330" y="145"/><di:waypoint x="330" y="205"/><di:waypoint x="390" y="205"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp4_di" bpmnElement="fp4"><di:waypoint x="355" y="120"/><di:waypoint x="545" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp5_di" bpmnElement="fp5"><di:waypoint x="510" y="205"/><di:waypoint x="570" y="205"/><di:waypoint x="570" y="145"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp6_di" bpmnElement="fp6"><di:waypoint x="595" y="120"/><di:waypoint x="630" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp7_di" bpmnElement="fp7"><di:waypoint x="750" y="120"/><di:waypoint x="795" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp8_di" bpmnElement="fp8"><di:waypoint x="820" y="145"/><di:waypoint x="820" y="205"/><di:waypoint x="880" y="205"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp9_di" bpmnElement="fp9"><di:waypoint x="845" y="120"/><di:waypoint x="1035" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp10_di" bpmnElement="fp10"><di:waypoint x="1000" y="205"/><di:waypoint x="1060" y="205"/><di:waypoint x="1060" y="145"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp11_di" bpmnElement="fp11"><di:waypoint x="1085" y="120"/><di:waypoint x="1120" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp12_di" bpmnElement="fp12"><di:waypoint x="1240" y="120"/><di:waypoint x="1292" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp13_di" bpmnElement="fp13"><di:waypoint x="1328" y="120"/><di:waypoint x="1380" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fp14_di" bpmnElement="fp14"><di:waypoint x="1500" y="120"/><di:waypoint x="1552" y="120"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="mp1_di" bpmnElement="mp1"><di:waypoint x="940" y="240"/><di:waypoint x="940" y="300"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="n_mental_a_di" bpmnElement="n_mental_a"><di:waypoint x="220" y="65"/><di:waypoint x="200" y="85"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="n_coordina_a_di" bpmnElement="n_coordina_a"><di:waypoint x="1020" y="230"/><di:waypoint x="1000" y="205"/></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>

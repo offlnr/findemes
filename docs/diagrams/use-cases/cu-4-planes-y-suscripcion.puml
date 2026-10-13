@@ -1,0 +1,42 @@
+@startuml cu-4-planes-y-suscripcion
+!include ../uml-style.iuml
+title Casos de uso · Planes, suscripción y pago en línea (E7)
+left to right direction
+
+actor "Usuario registrado" as U
+actor "Transbank Webpay Plus" <<sistema externo>> as TBK
+
+rectangle "Fin de Mes" {
+  usecase "Conocer las capacidades\nde cada plan\n<size:9>HU18</size>" as HU18 <<S>>
+  usecase "Contratar un plan pagado\n<size:9>HU19</size>" as HU19 <<S>>
+  usecase "Confirmar la transacción\ndesde el servidor\n<size:9>HU19</size>" as COMMIT <<S>>
+  usecase "Conservar los datos al\nvencer la suscripción\n<size:9>HU20</size>" as HU20 <<S>>
+}
+
+U -- HU18
+U -- HU19
+U -- HU20
+
+HU19 ..> COMMIT : <<include>>
+HU19 -- TBK
+COMMIT -- TBK
+
+note right of COMMIT
+  Commit contra Transbank, verificación
+  del monto contra el plan y activación
+  idempotente (buy_order único). No
+  depende del retorno del navegador.
+  Nunca se almacenan datos de tarjeta.
+end note
+
+note right of HU20
+  Al vencer, el usuario vuelve al
+  plan gratuito sin perder datos.
+end note
+
+note "Fuera del alcance (prioridad W):\nHU38 renovación automática (Oneclick)." as OUT
+
+legend right
+  Prioridad MoSCoW: <back:#9CC3EE> M </back> imprescindible · <back:#DCEBFA> S </back> importante · <back:#F4F6F8> C </back> deseable
+end legend
+@enduml

@@ -1,0 +1,33 @@
+@startuml cu-5-administracion
+!include ../uml-style.iuml
+title Casos de uso · Administración y monitoreo de la plataforma (E8)
+left to right direction
+
+actor "Administrador de la plataforma" as AP
+actor "Transbank Webpay Plus" <<sistema externo>> as TBK
+
+rectangle "Fin de Mes · panel de administración (solo por Tailscale)" {
+  usecase "Acceder al panel con\nsegundo factor (TOTP)\n<size:9>HU22</size>" as HU22 <<S>>
+  usecase "Consultar y gestionar el\nestado de las cuentas\n<size:9>HU23</size>" as HU23 <<S>>
+  usecase "Consultar la traza\nde auditoría\n<size:9>HU25</size>" as HU25 <<S>>
+  usecase "Monitorear disponibilidad\ny desempeño\n<size:9>HU24</size>" as HU24 <<C>>
+  usecase "Revisar y conciliar las\ntransacciones de suscripción\n<size:9>HU26</size>" as HU26 <<C>>
+}
+
+AP -- HU23
+AP -- HU25
+AP -- HU24
+AP -- HU26
+
+HU23 ..> HU22 : <<include>>
+HU25 ..> HU22 : <<include>>
+HU24 ..> HU22 : <<include>>
+HU26 ..> HU22 : <<include>>
+HU26 -- TBK
+
+legend right
+  HU23: suspender y reactivar cuentas; el rol de administración no lee datos financieros.
+  HU25: traza de solo inserción, encadenada por hash.
+  Prioridad MoSCoW: <back:#9CC3EE> M </back> imprescindible · <back:#DCEBFA> S </back> importante · <back:#F4F6F8> C </back> deseable
+end legend
+@enduml

@@ -1,0 +1,81 @@
+' Common style for the UML diagrams of Fin de Mes (PlantUML).
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam linetype polyline
+skinparam nodesep 25
+skinparam ranksep 60
+skinparam ArrowColor #4D4D4D
+skinparam ArrowFontSize 10
+skinparam ArrowFontColor #404040
+skinparam TitleFontSize 18
+skinparam TitleFontStyle bold
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #D6B656
+skinparam NoteFontSize 10
+skinparam PackageBorderColor #8C8C8C
+skinparam PackageFontStyle bold
+skinparam RectangleBorderColor #5B6770
+skinparam RectangleFontStyle bold
+
+skinparam actor {
+  BorderColor #083F75
+  BackgroundColor #FFFFFF
+  FontStyle bold
+}
+skinparam actor<<sistema externo>> {
+  BorderColor #736782
+}
+
+' Use cases colored by MoSCoW priority.
+skinparam usecase {
+  BorderColor #1061B0
+  BackgroundColor #DCEBFA
+  StereotypeFontSize 9
+  StereotypeFontColor #555555
+}
+skinparam usecase<<M>> {
+  BackgroundColor #9CC3EE
+  BorderColor #0D5091
+}
+skinparam usecase<<S>> {
+  BackgroundColor #DCEBFA
+  BorderColor #1061B0
+}
+skinparam usecase<<C>> {
+  BackgroundColor #F4F6F8
+  BorderColor #8C8C8C
+}
+
+skinparam component {
+  BackgroundColor #E4F3FB
+  BorderColor #0E7DAD
+  StereotypeFontSize 9
+  StereotypeFontColor #555555
+}
+skinparam component<<externo>> {
+  BackgroundColor #ECEAF0
+  BorderColor #736782
+}
+skinparam component<<núcleo>> {
+  BackgroundColor #FFE699
+  BorderColor #B8860B
+}
+skinparam component<<previsto>> {
+  BackgroundColor #FFFFFF
+  BorderStyle dashed
+}
+skinparam component<<administración>> {
+  BackgroundColor #FDEBD0
+  BorderColor #D68910
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #2086C9
+  StereotypeFontSize 9
+}
+skinparam database {
+  BackgroundColor #E4F3FB
+  BorderColor #0E7DAD
+}
