@@ -21,15 +21,34 @@ export interface PaymentGateway {
   commit(token: string): Promise<PaymentCommitResult>;
 }
 
+export type SettlementResult =
+  | 'activated'
+  | 'already_activated'
+  /** The order already has a final outcome (rejected, aborted or amount_mismatch). */
+  | 'already_settled'
+  /** Flagged for reconciliation (HU26); the plan is not activated. */
+  | 'amount_mismatch'
+  | 'rejected'
+  | 'aborted'
+  /** Unknown order, or an order that belongs to another user. */
+  | 'unknown_order';
+
 /**
- * Plan activation, confirmed by the backend after `commit` (rule 6). Idempotent: backed by a
- * unique `buy_order`, so a repeated confirmation never activates or extends a plan twice.
- * The adapter checks that `amount` matches the price of the plan bought with that order.
+ * Records the provider's outcome for an order, confirmed by the backend after `commit`
+ * (rule 6). Idempotent: backed by a unique `buy_order`, so a repeated confirmation never
+ * activates or extends a plan twice. Checks the amount against the order and the plan price.
  */
-export interface SubscriptionActivator {
-  activateOnce(
+export interface PaymentSettlement {
+  settle(
     userId: UserId,
     buyOrder: string,
-    amount: Clp,
-  ): Promise<'activated' | 'already_activated' | 'amount_mismatch' | 'unknown_order'>;
+    outcome:
+      | { readonly status: 'authorized'; readonly amount: Clp; readonly responseCode: string }
+      | { readonly status: 'rejected' | 'aborted'; readonly responseCode: string },
+  ): Promise<SettlementResult>;
+}
+
+/** Tabla 14 "Cancelada": stops the renewal; access lasts until the end of the paid period. */
+export interface SubscriptionCanceller {
+  cancelRenewal(userId: UserId): Promise<boolean>;
 }

@@ -2,6 +2,7 @@
 *.docx
 *.doc
 ~$*
+informe/
 
 # Secrets and local environment
 .env

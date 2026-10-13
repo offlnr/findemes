@@ -6,14 +6,11 @@ export interface ScenarioRepository {
   listForActor(actor: Actor): Promise<readonly Scenario[]>;
   findForActor(actor: Actor, id: ScenarioId): Promise<Scenario | null>;
   /**
-   * Creates the scenario only if the actor has fewer than `maxScenarios`, atomically (one
-   * transaction or constraint), so concurrent requests cannot exceed the plan limit (Tabla 13).
+   * Creates the scenario only while the actor is under the limit of the plan in force
+   * (Tabla 13). The database reads the plan and serializes concurrent requests, so the limit
+   * cannot be exceeded.
    */
-  createIfUnderLimit(
-    actor: Actor,
-    draft: ScenarioDraft,
-    maxScenarios: number,
-  ): Promise<'created' | 'limit_reached'>;
+  createIfUnderLimit(actor: Actor, draft: ScenarioDraft): Promise<'created' | 'limit_reached'>;
   /** Returns false when the scenario does not exist for this actor. */
   updateForActor(actor: Actor, draft: ScenarioDraft): Promise<boolean>;
   deleteForActor(actor: Actor, id: ScenarioId): Promise<boolean>;

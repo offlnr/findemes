@@ -3,7 +3,9 @@ import type { Actor, HouseholdId, UserId } from '../../shared/actor.ts';
 export interface HouseholdMembership {
   readonly householdId: HouseholdId;
   readonly memberId: UserId;
-  readonly role: 'owner' | 'member';
+  readonly role: 'admin' | 'member';
+  /** Name shown to the other members; their email is never exposed. */
+  readonly displayName: string;
 }
 
 /**

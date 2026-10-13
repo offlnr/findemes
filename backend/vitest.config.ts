@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    // Database tests run separately with `pnpm test:db` (they need PostgreSQL).
+    exclude: ['test/db/**', '**/node_modules/**'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
