@@ -18,16 +18,12 @@ lleguen solos; el registro manual queda como complemento para lo que el banco no
 cuotas de tarjeta. Cada módulo explica su contenido con figuras hechas con datos de ejemplo, en vez
 de bloques de texto.
 
-![Primera pantalla de la landing](docs/images/landing/inicio.jpg)
+![Primera pantalla de la landing](docs/images/landing/inicio-bosque.jpg)
 
 <details>
-<summary>Ver la página completa, la versión móvil y la paleta Oliva</summary>
+<summary>Ver la página completa</summary>
 
-| Página completa | Móvil |
-|---|---|
-| ![Landing completa](docs/images/landing/pagina-completa.jpg) | ![Landing en móvil](docs/images/landing/movil.jpg) |
-
-![Primera pantalla con la paleta Oliva](docs/images/landing/inicio-oliva.jpg)
+![Landing completa](docs/images/landing/pagina-completa-bosque.jpg)
 
 </details>
 
