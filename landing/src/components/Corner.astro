@@ -1,0 +1,41 @@
+---
+import { appLink } from '../lib/app-link';
+---
+<header class="corner" data-ink="paper">
+  <a class="wordmark" href="#inicio">Fin de Mes</a>
+  <nav aria-label="Sitio">
+    <a class="hide-sm" href="#como">Cómo funciona</a>
+    <a class="hide-sm" href="#incluye">Qué incluye</a>
+    <a class="hide-sm" href="#hogar">Plan Familiar</a>
+    <a class="hide-sm" href="#planes">Planes</a>
+    <a class="hide-sm" href="#preguntas">Preguntas</a>
+    <a href={appLink('/login')}>Entrar</a>
+    <a class="btn" href={appLink('/registro')}><span>Crear cuenta</span></a>
+  </nav>
+</header>
+
+<style is:global>
+/* barra superior: toma el color del capítulo */
+.corner {
+  position: fixed; inset: 0 0 auto 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 16px var(--gutter); color: var(--field-1-ink); background: var(--field-1);
+  transition: color 300ms ease, background-color 300ms ease, transform 320ms var(--ease-out);
+}
+.corner.away { transform: translateY(-100%); }
+.corner:focus-within { transform: none; }
+@media (prefers-reduced-motion: reduce) { .corner { transition: color 300ms ease, background-color 300ms ease; } }
+.corner[data-ink="ink"] { color: var(--ink); }
+.corner .wordmark { font-size: var(--step-lead); font-weight: 600; text-decoration: none; letter-spacing: -0.015em; }
+.corner nav { display: flex; align-items: center; gap: clamp(14px, 2.4vw, 36px); font-size: var(--step-body); }
+.corner nav a:not(.btn) { text-decoration: none; padding: 12px 0; }
+.corner nav a:not(.btn):hover { text-decoration: underline; }
+/* menú: el módulo que estás leyendo queda marcado */
+.corner nav a[aria-current="true"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.4em; }
+.corner .btn { min-height: 48px; font-size: var(--step-body); background: currentColor; border-radius: 999px; }
+.corner .btn span { color: var(--field-1); transition: color 300ms ease; }
+.corner[data-ink="ink"] .btn span { color: var(--bg); }
+.corner .btn:hover { background: transparent; }
+.corner .btn:hover span, .corner[data-ink="ink"] .btn:hover span { color: currentColor; }
+@media (max-width: 900px) { .corner nav a.hide-sm { display: none; } }
+</style>

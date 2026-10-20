@@ -1,0 +1,26 @@
+---
+import { appLink } from '../lib/app-link';
+---
+<section class="cta on-field" data-chapter="paper" aria-labelledby="t-cta">
+  <div class="cta-inner">
+    <h2 class="xl rise" id="t-cta">Conecta tu banco</h2>
+    <p class="rise" style="--i:1">Crea tu cuenta gratis, conecta tu banco con Fintoc y ve tus próximos doce meses. Si antes quieres mirar, prueba con un ejemplo sin cuenta.</p>
+    <div class="cta-actions rise" style="--i:2">
+      <a class="btn btn-solid" href={appLink('/registro', { conectar: 'fintoc' })}>Conectar mi banco</a>
+      <a class="btn" href={appLink('/demo')}>Probar sin cuenta</a>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+.cta { margin-top: var(--gap-section); background: var(--field-1); color: var(--field-1-ink); padding: clamp(56px, 6vw, 96px) var(--gutter); }
+.cta-inner { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: end; }
+.cta h2 { grid-column: 1 / 8; }
+.cta p { grid-column: 1 / 7; font-size: var(--step-lead); line-height: 1.35; max-width: 38ch; }
+.cta-actions { grid-column: 8 / 13; grid-row: 2; justify-self: end; display: flex; flex-wrap: wrap; gap: 12px; }
+.cta .btn:not(.btn-solid) { color: var(--field-1-ink); }
+.cta .btn:not(.btn-solid):hover { background: var(--field-1-ink); color: var(--field-1); }
+@media (max-width: 900px) {
+  .cta h2, .cta p, .cta-actions { grid-column: 1 / -1; grid-row: auto; justify-self: start; }
+}
+</style>

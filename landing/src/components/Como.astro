@@ -1,0 +1,105 @@
+---
+import { appLink } from '../lib/app-link';
+import Icon from './Icon.astro';
+import SectionHead from './SectionHead.astro';
+
+// Datos de ejemplo de la figura: movimientos que llegan del banco.
+const feed = [
+  { label: 'Abono de sueldo', amount: '+$1.150.000', note: 'Se repite cada mes' },
+  { label: 'Pago de arriendo', amount: '−$650.000', note: 'Se repite cada mes' },
+  { label: 'Supermercado', amount: '−$54.300', note: 'Gasto del mes' },
+];
+
+// Saldo al cierre de cada mes (% del máximo). Los cinco primeros pagan la cuota del crédito.
+const months = [7.5, 9.3, 11.2, 13.1, 15, 27.1, 39.3, 51.4, 63.6, 75.7, 87.9, 100];
+const loanMonths = 5;
+const monthInitials = ['N', 'D', 'E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O'];
+---
+<section class="section wrap" id="como" data-chapter="ink" aria-labelledby="t-como">
+  <SectionHead id="t-como" icon="steps" title="Cómo funciona">
+    Tres pasos: conectas tu banco, ves tus próximos doce meses y pruebas una compra antes de decidir.
+  </SectionHead>
+  <div class="bar">
+    <div class="s1 rise" style="--i:0">
+      <h3 class="with-ico"><Icon name="bank" /><span>Conectas tu banco</span></h3>
+      <p>Tu sueldo y tus gastos llegan solos. No escribes nada.</p>
+      <div class="fig">
+        <p class="linked"><span class="dot" aria-hidden="true"></span>Cuenta corriente conectada con Fintoc</p>
+        <ul class="feed num" aria-label="Movimientos de ejemplo que llegan desde el banco">
+          {feed.map((m, k) => <li style={`--k:${k}`}><span>{m.label}</span><b>{m.amount}</b><em>{m.note}</em></li>)}
+        </ul>
+        <a class="btn connect" href={appLink('/registro', { conectar: 'fintoc' })}>Conectar mi banco</a>
+        <p class="fig-cap">Tú confirmas qué se repite. Lo que el banco no entrega, como las cuotas de tarjeta, lo agregas a mano.</p>
+      </div>
+    </div>
+    <div class="s2 rise" style="--i:1">
+      <h3 class="with-ico"><Icon name="chart" /><span>Ves tus próximos doce meses</span></h3>
+      <p>Con lo que se repite, Fin de Mes arma tu saldo al cierre de cada mes.</p>
+      <figure class="fig" style="margin:0" role="img" aria-label="Saldo al cierre de cada mes, de noviembre a octubre: sube 40.000 pesos al mes hasta marzo, mientras se paga el crédito, y 260.000 pesos al mes desde abril.">
+        <div class="months" aria-hidden="true">
+          {months.map((h, k) => <i class:list={{ loan: k < loanMonths }} style={`--h:${h}%;--k:${k}`}></i>)}
+        </div>
+        <div class="months-x" aria-hidden="true">{monthInitials.map((m) => <span>{m}</span>)}</div>
+        <figcaption class="fig-cap" aria-hidden="true">Las barras claras pagan la cuota del crédito. En abril termina.</figcaption>
+      </figure>
+    </div>
+    <div class="s3 rise" style="--i:2">
+      <h3 class="with-ico"><Icon name="copy" /><span>Pruebas antes de decidir</span></h3>
+      <p>Cada simulación se hace sobre una copia.</p>
+      <div class="fig copies" role="img" aria-label="Tu situación queda sin cambios; la compra se aplica a una copia.">
+        <div class="base" aria-hidden="true"><b>Tu situación</b><span>Sin cambios</span></div>
+        <div class="copy" aria-hidden="true"><b>Copia</b><span>+ Notebook en 12 cuotas</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+/* cada etapa lleva su texto dentro */
+.bar { display: flex; gap: 6px; }
+.bar > div { flex-basis: 0; min-height: 340px; padding: 22px; display: flex; flex-direction: column; gap: 10px; border-radius: var(--r-lg); }
+.bar .s1 { flex-grow: 1.35; background: var(--ink); color: var(--bg); }
+.bar .s2 { flex-grow: 1.2; background: var(--muted); color: var(--bg); }
+.bar .s3 { flex-grow: 1; background: var(--surface); color: var(--ink); }
+.bar h3 { font-size: var(--step-stmt); font-weight: 500; line-height: 1.1; }
+.bar p { max-width: 34ch; }
+.bar .fig { margin-top: auto; padding-top: 24px; }
+/* 1: los movimientos llegan solos desde el banco */
+.linked { display: flex; align-items: center; gap: 8px; font-size: var(--step-small); font-weight: 600; margin-bottom: 10px; }
+.linked .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--bg); flex: none; }
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--step-small); }
+.feed li { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; background: var(--bg); color: var(--ink); padding: 10px 12px; border-radius: var(--r-sm); }
+.feed b { font-weight: 600; }
+.feed em { grid-column: 1 / -1; font-style: normal; color: var(--muted); }
+.bar .connect { margin-top: 16px; width: 100%; background: var(--bg); color: var(--ink); border-color: var(--bg); }
+.bar .connect:hover { background: transparent; color: var(--bg); }
+/* 2: doce meses en barras */
+.months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end; height: 120px; }
+.months i { display: block; height: var(--h); background: var(--bg); transform-origin: bottom; border-radius: 4px 4px 0 0; }
+.months i.loan { opacity: 0.5; }
+.months-x { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 6px; font-size: var(--step-small); text-align: center; }
+.fig-cap { margin-top: 12px; font-size: var(--step-small); }
+/* 3: la copia se separa de la base */
+.copies { display: grid; padding: 0 40px 72px 0; }
+.copies > div { grid-area: 1 / 1; padding: 16px; display: grid; gap: 4px; min-height: 104px; align-content: start; border-radius: var(--r); }
+.copies .base { border: 2px solid var(--ink); }
+.copies .copy { background: var(--ink); color: var(--bg); transform: translate(40px, 72px); }
+.copies b { font-size: var(--step-lead); font-weight: 600; line-height: 1.1; }
+.copies span { font-size: var(--step-small); }
+@media (max-width: 760px) {
+  .bar { flex-direction: column; }
+  .bar > div { flex-basis: auto; min-height: 0; padding: 20px; gap: 10px; }
+}
+
+/* las figuras se arman cuando entran en pantalla */
+.js .rise .feed li { opacity: 0; transform: translateY(-14px); transition: opacity 500ms var(--ease-out), transform 500ms var(--ease-out); transition-delay: calc(300ms + var(--k, 0) * 110ms); }
+.js .rise.in .feed li { opacity: 1; transform: none; }
+.js .rise .months i { transform: scaleY(0); transition: transform 700ms var(--ease-out); transition-delay: calc(300ms + var(--k, 0) * 55ms); }
+.js .rise.in .months i { transform: none; }
+.js .rise .copies .copy { transform: none; transition: transform 900ms var(--ease-out) 500ms; }
+.js .rise.in .copies .copy { transform: translate(40px, 72px); }
+@media (prefers-reduced-motion: reduce) {
+  .js .rise .feed li, .js .rise .months i { opacity: 1; transform: none; transition: none; }
+  .js .rise .copies .copy { transform: translate(40px, 72px); transition: none; }
+}
+</style>

@@ -1,0 +1,18 @@
+---
+import Icon from './Icon.astro';
+import type { IconName } from './IconSprite.astro';
+
+interface Props {
+  id: string;
+  icon: IconName;
+  title: string;
+  stack?: boolean;
+}
+
+const { id, icon, title, stack = false } = Astro.props;
+---
+<header class:list={['sec-head', 'rise', { stack }]}>
+  <span class="sec-icon" aria-hidden="true"><Icon name={icon} /></span>
+  <h2 class="xl" id={id}>{title}</h2>
+  <p class="sec-sub"><slot /></p>
+</header>

@@ -1,0 +1,34 @@
+---
+import '../styles/global.css';
+import IconSprite from '../components/IconSprite.astro';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>{title}</title>
+<meta name="description" content={description}>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=erode@400,500,600,700&display=swap" rel="stylesheet">
+<!-- Antes de pintar: las animaciones solo se preparan si hay script. -->
+<script is:inline>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+<IconSprite />
+<slot />
+<script>
+  import '../scripts/reveal.ts';
+  import '../scripts/corner.ts';
+</script>
+</body>
+</html>

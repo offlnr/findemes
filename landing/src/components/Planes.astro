@@ -1,0 +1,95 @@
+---
+import { appLink } from '../lib/app-link';
+import { features, featureText, plans, type Plan } from '../data/plans';
+import SectionHead from './SectionHead.astro';
+
+// El plan elegido viaja a la app (?plan=...) para que el registro lo traiga preseleccionado.
+// El pago con Webpay ocurre en la app y lo confirma el backend; esta página solo enlaza.
+const signupLink = (p: Plan): string => (p.id === 'gratuito' ? appLink('/registro') : appLink('/registro', { plan: p.id }));
+const btnClass = (p: Plan): string => (p.id === 'gratuito' ? 'btn btn-solid' : 'btn');
+---
+<section class="section wrap" id="planes" data-chapter="ink" aria-labelledby="t-planes">
+  <SectionHead id="t-planes" icon="tag" title="Planes">
+    Todos incluyen la conexión con tu banco y la proyección mensual. Cambian los escenarios que guardas y comparas, la simulación de prepagos y el hogar.
+  </SectionHead>
+  <div class="plans-wrap rise">
+    <table class="plans">
+      <thead>
+        <tr>
+          <th scope="col"><span class="vh">Qué incluye cada plan</span></th>
+          {plans.map((p) => (
+            <th scope="col"><span class="pname">{p.name}</span><span class:list={['price', { num: p.price.startsWith('$') }]}>{p.price}</span><span class="per">{p.period}</span></th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {features.map((f) => (
+          <tr>
+            <th scope="row">{f.label}</th>
+            {plans.map((p) => {
+              const v = f.values[p.id];
+              return <td>{typeof v === 'string' ? v : <span class={v.included ? 'yes' : 'no'}>{v.text}</span>}</td>;
+            })}
+          </tr>
+        ))}
+      </tbody>
+      <tfoot>
+        <tr><td></td>{plans.map((p) => <td><a class={btnClass(p)} href={signupLink(p)}>{p.cta}</a></td>)}</tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="plans-cards">
+    {plans.map((p) => (
+      <article class="plan-card">
+        <h3>{p.name}</h3>
+        <p class:list={['price', { num: p.price.startsWith('$') }]}>{p.price}</p>
+        <p class="per">{p.period}</p>
+        <dl>
+          {features.filter((f) => f.label !== 'Registro y proyección mensual').map((f) => (
+            <><dt>{f.shortLabel ?? f.label}</dt><dd>{f.cardValues?.[p.id] ?? featureText(f.values[p.id])}</dd></>
+          ))}
+        </dl>
+        <a class={btnClass(p)} href={signupLink(p)}>{p.cta}</a>
+      </article>
+    ))}
+  </div>
+
+  <p class="plans-note rise">Pagas con Webpay Plus y renuevas cuando quieras, sin cobros automáticos. Fin de Mes no guarda datos de tarjeta. Si tu plan vence, tus datos se conservan y vuelves al plan Gratuito.</p>
+</section>
+
+<style is:global>
+.plans-wrap { overflow-x: auto; }
+.plans { width: 100%; border-collapse: collapse; line-height: 1.35; min-width: 820px; table-layout: fixed; }
+.plans th, .plans td { text-align: left; padding: 18px 20px; vertical-align: top; }
+.plans thead th { vertical-align: bottom; }
+.plans thead th:first-child { width: 34%; font-size: var(--step-xl); font-weight: 500; letter-spacing: -0.025em; line-height: 1; padding-left: 0; }
+.plans .pname { display: block; font-size: var(--step-stmt); font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+.plans .price { display: block; font-size: var(--step-stmt); font-weight: 400; letter-spacing: -0.02em; line-height: 1.1; margin-top: 6px; }
+.plans .per { display: block; font-size: var(--step-small); color: var(--muted); margin-top: 6px; }
+.plans tbody th { font-weight: 400; width: 34%; padding-left: 12px; }
+.plans tbody tr:nth-child(odd) { background: var(--surface); }
+.plans tbody tr th { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.plans tbody tr td:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+/* tres columnas iguales, todo centrado en su columna */
+.plans thead th:not(:first-child), .plans tbody td, .plans tfoot td { text-align: center; }
+.plans tfoot td { padding: 24px 16px 18px; }
+.plans tfoot .btn { width: 100%; max-width: 240px; }
+.plans-note { margin-top: 20px; max-width: 70ch; }
+.plans .yes::before, .plans .no::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 10px; border: 2px solid currentColor; border-radius: 3px; vertical-align: 0; }
+.plans .yes::before { background: currentColor; }
+.plans .no { color: var(--muted); }
+.plans-cards { display: none; }
+@media (max-width: 900px) {
+  .plans-wrap { display: none; }
+  .plans-cards { display: grid; gap: 40px; }
+  .plan-card { background: var(--surface); border-radius: var(--r-lg); padding: 24px 16px; }
+  .plan-card h3 { font-size: var(--step-stmt); font-weight: 600; }
+  .plan-card .price { font-size: var(--step-stmt); line-height: 1.1; margin-top: 6px; }
+  .plan-card .per { font-size: var(--step-small); color: var(--muted); margin-top: 4px; }
+  .plan-card dl { margin: 20px 0 24px; }
+  .plan-card dt { color: var(--muted); margin-top: 12px; }
+  .plan-card dd { margin: 2px 0 0; }
+  .plan-card .btn { width: 100%; }
+}
+</style>

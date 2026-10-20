@@ -1,5 +1,6 @@
 packages:
   - backend
+  - landing
 
 # Supply-chain defenses.
 # Do not install package versions published less than 24 h ago.

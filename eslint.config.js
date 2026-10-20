@@ -7,7 +7,7 @@ const CORE_TEST_FILES = ['backend/src/core/**/*.test.ts'];
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', 'app/**', 'admin/**'],
+    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '**/.astro/**', 'app/**', 'admin/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,

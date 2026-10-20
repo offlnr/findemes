@@ -19,6 +19,7 @@ secrets/
 # Node / TypeScript
 node_modules/
 dist/
+.astro/
 build/
 coverage/
 *.tsbuildinfo
