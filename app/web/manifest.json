@@ -1,0 +1,12 @@
+{
+  "name": "Fin de Mes",
+  "short_name": "Fin de Mes",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1D4634",
+  "theme_color": "#1D4634",
+  "description": "Registra, proyecta y simula tus gastos mes a mes.",
+  "orientation": "any",
+  "prefer_related_applications": false,
+  "icons": []
+}
