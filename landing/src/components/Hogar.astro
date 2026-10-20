@@ -1,0 +1,145 @@
+---
+import Icon from './Icon.astro';
+import SectionHead from './SectionHead.astro';
+
+const steps = [
+  { title: 'Crean el hogar', text: 'Quien contrata invita a los demás, con enlaces de un solo uso.' },
+  { title: 'Anotan los gastos comunes', text: 'Todos ven cada gasto y quién lo anotó.' },
+  { title: 'Acuerdan el reparto', text: 'En partes iguales, por porcentaje o a una persona.' },
+  { title: 'Cada aporte llega a su mes', text: 'Aparece en la proyección de cada uno.' },
+];
+
+// Datos de ejemplo: gastos comunes de noviembre. `a` es la parte de Camila, en porcentaje.
+const shares = [
+  { name: 'Arriendo', detail: '$650.000, 55 % y 45 %', a: 55, camila: '$357.500', diego: '$292.500' },
+  { name: 'Supermercado', detail: '$320.000, partes iguales', a: 50, camila: '$160.000', diego: '$160.000' },
+  { name: 'Gastos comunes del edificio', detail: '$85.000, partes iguales', a: 50, camila: '$42.500', diego: '$42.500' },
+  { name: 'Luz y agua', detail: '$64.000, 55 % y 45 %', a: 55, camila: '$35.200', diego: '$28.800' },
+  { name: 'Internet', detail: '$38.000, asignado a Diego', a: 0, camila: '', diego: '$38.000' },
+];
+
+const hiddenFields = ['Sueldo', 'Deudas y cuotas', 'Escenarios'];
+---
+<section class="section wrap" id="hogar" data-chapter="ink" aria-labelledby="t-hogar">
+  <SectionHead id="t-hogar" icon="home" title="Plan Familiar">
+    Los gastos de la casa, en común. Dos o más personas los organizan juntas y cada una mantiene privadas sus finanzas personales.
+  </SectionHead>
+  <ol class="h-steps">
+    {steps.map((s, i) => (
+      <li class="rise" style={`--i:${i}`}><span class="n" aria-hidden="true">{i + 1}</span><b>{s.title}</b><span>{s.text}</span></li>
+    ))}
+  </ol>
+
+  <div class="hogar-grid">
+    <div class="hogar-panel rise">
+      <span class="tag">Datos de ejemplo</span>
+      <h3 class="with-ico"><Icon name="split" /><span>Hogar de Camila y Diego</span></h3>
+      <p class="sub">Gastos comunes de noviembre y cómo se reparten.</p>
+      <p class="who" aria-hidden="true"><span class="ca"><i></i>Camila</span><span><i></i>Diego</span></p>
+      <ul class="sbars num">
+        {shares.map((s, k) => (
+          <li>
+            <p class="name"><b>{s.name}</b><span>{s.detail}</span></p>
+            <p class="track" style={`--a:${s.a}%`}>
+              {s.camila === ''
+                ? <span class="a"></span>
+                : <span class="a" style={`--k:${k}`}><span class="vh">Camila </span>{s.camila}</span>}
+              <span class="b"><span class="vh">Diego </span>{s.diego}</span>
+            </p>
+          </li>
+        ))}
+      </ul>
+      <div class="totals num">
+        <div><span>Camila aporta</span><b>$595.200</b></div>
+        <div><span>Diego aporta</span><b>$561.800</b></div>
+      </div>
+    </div>
+
+    <div class="peek rise" style="--i:1">
+      <h3 class="with-ico"><Icon name="eye-off" /><span>Lo que Diego ve de Camila</span></h3>
+      <p class="sub">Lo común baja a cada perfil. Lo personal no sube al hogar.</p>
+      <dl class="num">
+        <div><dt>Aporte al hogar</dt><dd>$595.200</dd></div>
+        {hiddenFields.map((f, k) => (
+          <div class="hidden"><dt>{f}</dt><dd><span class="x" style={`--k:${k}`} aria-hidden="true"></span><span>Privado</span></dd></div>
+        ))}
+      </dl>
+      <div class="oneway" role="img" aria-label="La información fluye del espacio común hacia Camila y Diego, nunca al revés.">
+        <span class="common" aria-hidden="true">Espacio común</span>
+        <span class="down" aria-hidden="true">↓</span><span class="down" aria-hidden="true">↓</span>
+        <span class="person" aria-hidden="true">Camila</span><span class="person" aria-hidden="true">Diego</span>
+      </div>
+      <p class="flowline">La información baja del espacio común a cada perfil. Nunca sube. Lo mismo al revés: Camila ve el aporte de Diego y nada más.</p>
+    </div>
+  </div>
+  <p class="hogar-note rise">Quien administra el hogar invita y quita miembros, pero tampoco ve datos personales. Si el plan vence, el espacio común queda en solo lectura y no se borra nada.</p>
+</section>
+
+<style is:global>
+/* cuatro pasos en una fila, cada uno con su número */
+.h-steps { list-style: none; margin: 0 0 6px; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.h-steps li { background: var(--surface); border-radius: var(--r-lg); padding: 20px; display: grid; gap: 6px; align-content: start; transition: transform 160ms var(--ease-out); }
+.h-steps li:hover { transform: translateY(-3px); }
+.h-steps .n { font-size: var(--step-stmt); font-weight: 500; line-height: 0.9; letter-spacing: -0.03em; }
+.h-steps b { font-size: var(--step-lead); font-weight: 600; line-height: 1.15; margin-top: 8px; }
+.h-steps span:last-child { font-size: var(--step-small); }
+.hogar-grid { display: grid; grid-template-columns: 7fr 5fr; gap: 6px; align-items: stretch; }
+.hogar-panel { background: var(--surface); border-radius: var(--r-lg); padding: 28px; }
+.hogar-panel h3, .peek h3 { font-size: var(--step-lead); font-weight: 600; line-height: 1.2; }
+.hogar-panel .sub { font-size: var(--step-small); color: var(--muted); margin: 4px 0 20px; }
+/* reparto: cada gasto es una barra partida entre los dos */
+.who { display: flex; gap: 20px; font-size: var(--step-small); margin-bottom: 14px; }
+.who i { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; border: 2px solid var(--ink); border-radius: 3px; }
+.who .ca i { background: var(--ink); }
+.sbars { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.sbars .name { display: flex; justify-content: space-between; gap: 12px; font-size: var(--step-small); margin-bottom: 4px; }
+.sbars .name b { font-weight: 600; font-size: var(--step-body); }
+.track { display: flex; min-height: 40px; border-radius: var(--r-sm); overflow: hidden; }
+.track > span { display: flex; align-items: center; padding: 0 10px; white-space: nowrap; font-size: var(--step-small); font-weight: 600; }
+.track .a { flex: 0 0 var(--a); background: var(--ink); color: var(--bg); transform-origin: left; }
+.track .b { flex: 1 1 auto; border: 2px solid var(--ink); justify-content: flex-end; border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.track .a:empty { display: none; }
+.track .a:empty + .b { border-radius: var(--r-sm); }
+.totals { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.totals div { display: grid; gap: 2px; }
+.totals span { font-size: var(--step-small); color: var(--muted); }
+.totals b { font-size: var(--step-stmt); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+/* lo que el hogar ve de cada persona */
+.peek { background: var(--ink); color: var(--bg); border-radius: var(--r-lg); padding: 28px; display: flex; flex-direction: column; }
+.peek .sub { font-size: var(--step-small); margin: 4px 0 20px; }
+.peek dl { margin: 0; display: grid; gap: 6px; }
+.peek dl > div { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 14px; border: 2px solid var(--bg); border-radius: var(--r-sm); }
+.peek dt { font-weight: 500; }
+.peek dd { margin: 0; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.peek .hidden dt { opacity: 0.85; }
+.peek .x { display: inline-block; width: clamp(56px, 7vw, 96px); height: 14px; background: var(--bg); opacity: 0.4; transform-origin: right; border-radius: 999px; }
+.peek .x + span { font-size: var(--step-small); font-weight: 400; }
+.oneway { margin-top: auto; padding-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; text-align: center; font-weight: 600; }
+.oneway .common { grid-column: 1 / -1; background: var(--bg); color: var(--ink); padding: 12px; border-radius: var(--r-sm); }
+.oneway .person { border: 2px solid var(--bg); padding: 10px; border-radius: var(--r-sm); }
+.oneway .down { font-size: var(--step-lead); line-height: 1; }
+.peek .flowline { padding-top: 16px; font-size: var(--step-small); }
+.hogar-note { margin-top: 24px; max-width: 70ch; font-size: var(--step-small); color: var(--muted); }
+@media (max-width: 900px) {
+  .h-steps { grid-template-columns: 1fr 1fr; }
+  .hogar-grid { grid-template-columns: 1fr; }
+  .hogar-panel, .peek { padding: 20px; }
+}
+@media (max-width: 520px) {
+  .h-steps { grid-template-columns: 1fr; }
+  .h-steps li { grid-template-columns: auto 1fr; column-gap: 16px; padding: 16px; }
+  .h-steps .n { grid-row: span 2; font-size: var(--step-stmt); }
+  .h-steps b { margin-top: 0; }
+}
+
+.js .rise .track .a { transform: scaleX(0); transition: transform 800ms var(--ease-out); transition-delay: calc(200ms + var(--k, 0) * 90ms); }
+.js .rise.in .track .a { transform: none; }
+.js .rise .peek .x, .js .rise.peek .x { transform: scaleX(0); transition: transform 600ms var(--ease-out); transition-delay: calc(500ms + var(--k, 0) * 140ms); }
+.js .rise.in .peek .x, .js .rise.peek.in .x { transform: none; }
+.js .rise .oneway .down { opacity: 0; transform: translateY(-8px); transition: opacity 500ms var(--ease-out), transform 500ms var(--ease-out); transition-delay: 900ms; }
+.js .rise.in .oneway .down { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js .rise .track .a, .js .rise .peek .x, .js .rise.peek .x, .js .rise .oneway .down { opacity: 1; transform: none; transition: none; }
+  .h-steps li:hover { transform: none; }
+}
+</style>

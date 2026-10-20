@@ -1,0 +1,10 @@
+---
+import type { IconName } from './IconSprite.astro';
+
+interface Props {
+  name: IconName;
+}
+
+const { name } = Astro.props;
+---
+<svg class="ico" aria-hidden="true"><use href={`#i-${name}`} /></svg>

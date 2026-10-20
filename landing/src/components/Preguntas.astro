@@ -1,0 +1,56 @@
+---
+import SectionHead from './SectionHead.astro';
+
+const faq = [
+  { q: '¿Me dice qué decisión tomar?', a: 'No. Muestra qué ocurre con tu saldo con y sin la decisión, y qué lo causa. Los escenarios aparecen lado a lado, sin ordenarlos ni destacar uno.' },
+  { q: '¿Mueve mi dinero o paga mis deudas?', a: 'No. Fin de Mes no hace transferencias ni pagos. Solo registra, proyecta y simula.' },
+  { q: '¿Y si no quiero conectar mi banco?', a: 'Puedes registrar todo a mano. Conectar el banco evita escribir tu sueldo y cada movimiento, y mantiene tu proyección al día. Las tarjetas de crédito y las compras en cuotas se agregan a mano en ambos casos, porque Fintoc entrega solo cuentas corrientes y vista.' },
+  { q: '¿Qué ven los demás miembros de mi hogar?', a: 'Los gastos comunes y cuánto aporta cada uno. Tus ingresos, deudas y escenarios son solo tuyos.' },
+  { q: '¿Qué pasa si dejo de pagar el plan?', a: 'Vuelves al plan Gratuito y no se borra nada. En un hogar, el espacio común queda en solo lectura hasta que renueves.' },
+  { q: '¿Puedo llevarme o borrar mis datos?', a: 'Sí. Puedes exportarlos o eliminar tu cuenta con borrado efectivo, conforme a la Ley 21.719.' },
+];
+---
+<section class="section wrap faq" id="preguntas" data-chapter="ink" aria-labelledby="t-faq">
+  <div class="grid">
+    <SectionHead id="t-faq" icon="help" title="Preguntas" stack>
+      Sobre tu banco, tu hogar y tus datos. Toca una pregunta para ver la respuesta.
+    </SectionHead>
+    <div class="qa">
+      {faq.map((item, i) => (
+        <div class="q rise" style={`--i:${i}`}>
+          <h3><button type="button" id={`q${i + 1}`} aria-expanded="false" aria-controls={`r${i + 1}`}>{item.q}</button></h3>
+          <div class="ans" id={`r${i + 1}`} role="region" aria-labelledby={`q${i + 1}`}><div><p>{item.a}</p></div></div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style is:global>
+.faq .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 0 24px; }
+.faq .grid > .sec-head { grid-column: 1 / 5; align-self: start; padding-right: 24px; }
+/* cada pregunta se abre al hacer clic; la respuesta se despliega con animación */
+.qa { grid-column: 5 / 13; display: grid; gap: 6px; }
+.qa .q { background: var(--surface); border-radius: var(--r); }
+.qa h3 { font-size: var(--step-lead); font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+.qa button {
+  width: 100%; min-height: 48px; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px;
+  background: none; border: 0; border-radius: var(--r); color: inherit; font: inherit; text-align: left; cursor: pointer; outline-offset: -4px;
+}
+.qa button::after { content: "+"; flex: none; font-size: var(--step-stmt); font-weight: 400; line-height: 1; transition: transform 360ms var(--ease-out); }
+.qa button:hover::after { transform: scale(1.15); }
+.qa button[aria-expanded="true"]::after { transform: rotate(45deg); }
+.qa .ans p { padding: 0 24px 24px; max-width: 62ch; line-height: 1.55; }
+/* con script: la respuesta se despliega con su altura y aparece desde arriba */
+.js .qa .ans { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 420ms var(--ease-out), visibility 0s linear 420ms; }
+.js .qa .ans > div { overflow: hidden; }
+.js .qa .ans p { opacity: 0; transform: translateY(-8px); transition: opacity 300ms ease, transform 420ms var(--ease-out); }
+.js .qa .q.open .ans { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows 420ms var(--ease-out), visibility 0s; }
+.js .qa .q.open .ans p { opacity: 1; transform: none; transition-delay: 80ms; }
+@media (prefers-reduced-motion: reduce) { .qa button::after, .js .qa .ans, .js .qa .ans p { transition: none; } }
+@media (max-width: 900px) {
+  .faq .grid > .sec-head, .qa { grid-column: 1 / -1; }
+  .qa button { padding: 16px 18px; }
+  .qa .ans p { padding: 0 18px 20px; }
+}
+</style>

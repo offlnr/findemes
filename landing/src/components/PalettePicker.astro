@@ -1,0 +1,81 @@
+---
+// Selector de paletas de prueba. Solo se incluye con `pnpm dev` (ver pages/index.astro).
+// La paleta queda en la URL: ?paleta=bosque
+const palettes = [
+  ['teal', 'Teal', '#06525c'],
+  ['bosque', 'Bosque', '#1d4634'],
+  ['tinta', 'Tinta', '#142f57'],
+  ['grafito', 'Grafito', '#23282b'],
+  ['mostaza', 'Mostaza', '#f0bf3c'],
+  ['coral', 'Coral', '#e8664f'],
+  ['vino', 'Vino', '#6b1e2e'],
+  ['oliva', 'Oliva', '#4b5320'],
+  ['celeste', 'Celeste', '#bfe3f2'],
+  ['lima', 'Lima', '#c8e86b'],
+  ['rojo', 'Rojo', '#b3102a'],
+  ['naranja', 'Naranja', '#f28c28'],
+  ['turquesa', 'Turquesa', '#4fc1b0'],
+  ['electrico', 'Azul eléctrico', '#1f5eff'],
+  ['rosa', 'Rosa', '#f4b6c2'],
+] as const;
+---
+<div class="palette-picker" role="group" aria-label="Paleta de prueba">
+  <span>Paleta</span>
+  {palettes.map(([id, name, swatch]) => <button type="button" data-p={id}><i style={`background:${swatch}`}></i>{name}</button>)}
+</div>
+
+<script>
+  const DEFAULT = 'teal';
+  const root = document.documentElement;
+  const btns = [...document.querySelectorAll<HTMLButtonElement>('.palette-picker [data-p]')];
+  const apply = (p: string): void => {
+    if (p === DEFAULT) root.removeAttribute('data-palette');
+    else root.dataset['palette'] = p;
+    for (const b of btns) b.setAttribute('aria-pressed', String(b.dataset['p'] === p));
+    const u = new URL(location.href);
+    if (p === DEFAULT) u.searchParams.delete('paleta');
+    else u.searchParams.set('paleta', p);
+    history.replaceState(null, '', u);
+    dispatchEvent(new Event('scroll'));
+  };
+  const first = new URLSearchParams(location.search).get('paleta');
+  apply(first !== null && btns.some((b) => b.dataset['p'] === first) ? first : DEFAULT);
+  for (const b of btns) b.addEventListener('click', () => { apply(b.dataset['p'] ?? DEFAULT); });
+</script>
+
+<style is:global>
+html[data-palette="bosque"]  { --bg:#f6f8f5; --surface:#e7eee8; --ink:#1d4634; --muted:#456b59; --field-1:#1d4634; --field-1-ink:#f6f8f5; --field-1-pale:#a9d4b8; }
+html[data-palette="tinta"]   { --bg:#f6f8fb; --surface:#e5ecf5; --ink:#142f57; --muted:#3d5a85; --field-1:#142f57; --field-1-ink:#f6f8fb; --field-1-pale:#a7c3ec; }
+html[data-palette="grafito"] { --bg:#f6f6f3; --surface:#e9e9e4; --ink:#23282b; --muted:#535b60; --field-1:#23282b; --field-1-ink:#f6f6f3; --field-1-pale:#cfdc6e; }
+html[data-palette="mostaza"] { --bg:#f8f7f2; --surface:#eeece3; --ink:#1f2a24; --muted:#4e5a53; --field-1:#f0bf3c; --field-1-ink:#1f2a24; --field-1-pale:#7c5a00; }
+html[data-palette="coral"]   { --bg:#f8f6f5; --surface:#efe9e7; --ink:#2b2422; --muted:#5c504c; --field-1:#e8664f; --field-1-ink:#1f1715; --field-1-pale:#4a170e; }
+html[data-palette="vino"] { --bg:#f9f6f6; --surface:#f0e7e8; --ink:#4a1520; --muted:#7a4650; --field-1:#6b1e2e; --field-1-ink:#f9f6f6; --field-1-pale:#f2b8c0; }
+html[data-palette="oliva"] { --bg:#f7f7f1; --surface:#ebebdf; --ink:#33391a; --muted:#5e6538; --field-1:#4b5320; --field-1-ink:#f7f7f1; --field-1-pale:#d9e29a; }
+html[data-palette="celeste"] { --bg:#f6f9fb; --surface:#e5eef4; --ink:#0f2f45; --muted:#3e6077; --field-1:#bfe3f2; --field-1-ink:#0f2f45; --field-1-pale:#2f6488; }
+html[data-palette="lima"] { --bg:#f8f9f3; --surface:#ecefe1; --ink:#1c2a10; --muted:#4b5a3a; --field-1:#c8e86b; --field-1-ink:#1c2a10; --field-1-pale:#4b6611; }
+html[data-palette="rojo"] { --bg:#faf6f6; --surface:#f1e8e8; --ink:#2a1416; --muted:#6a3a3e; --field-1:#b3102a; --field-1-ink:#fff7f5; --field-1-pale:#ffc9c2; }
+html[data-palette="naranja"] { --bg:#faf7f3; --surface:#f1ebe2; --ink:#2b1a0c; --muted:#6b4a2e; --field-1:#f28c28; --field-1-ink:#1f1408; --field-1-pale:#6b2f00; }
+html[data-palette="turquesa"] { --bg:#f5faf9; --surface:#e4f1ee; --ink:#0b2b27; --muted:#2f5e57; --field-1:#4fc1b0; --field-1-ink:#0b2b27; --field-1-pale:#0b5a50; }
+html[data-palette="electrico"] { --bg:#f6f8ff; --surface:#e6ecfb; --ink:#0d1f4d; --muted:#3a4f80; --field-1:#1f5eff; --field-1-ink:#ffffff; --field-1-pale:#c9d8ff; }
+html[data-palette="rosa"] { --bg:#fbf7f8; --surface:#f3e8eb; --ink:#3a1020; --muted:#74404f; --field-1:#f4b6c2; --field-1-ink:#3a1020; --field-1-pale:#8a2a46; }
+.palette-picker {
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 30; display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 4px; max-height: 86vh; overflow-y: auto;
+  padding: 8px; background: var(--bg); color: var(--ink); font-size: var(--step-small); border-radius: var(--r) 0 0 var(--r);
+  box-shadow: 0 2px 12px rgb(0 0 0 / .18); /* taste-skill-ignore: selector flotante de prueba */
+}
+.palette-picker span { grid-column: 1 / -1; padding: 0 2px 4px; font-weight: 600; }
+.palette-picker button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 2px solid transparent; border-radius: var(--r-sm);
+  background: var(--surface); color: var(--ink); font: 500 var(--step-small)/1 var(--font); cursor: pointer;
+  transition: border-color 150ms ease, transform 120ms var(--ease-out);
+}
+.palette-picker button:active { transform: scale(0.97); }
+.palette-picker button[aria-pressed="true"] { border-color: var(--ink); }
+.palette-picker i { width: 14px; height: 14px; display: inline-block; border-radius: 50%; }
+@media (max-width: 760px) {
+  .palette-picker { grid-template-columns: 1fr 1fr 1fr; }
+  .palette-picker span { display: none; }
+  .palette-picker button { font-size: 0; gap: 0; min-height: 36px; padding: 0 10px; justify-content: center; }
+  .palette-picker i { width: 16px; height: 16px; }
+}
+</style>

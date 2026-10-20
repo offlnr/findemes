@@ -1,0 +1,38 @@
+---
+import { appLink } from '../lib/app-link';
+---
+<section class="hero" id="inicio" data-chapter="paper" aria-labelledby="t-hero">
+  <h1 id="t-hero"><span class="l1">Tus gastos,</span> <span class="l2">a la vista.</span></h1>
+  <div class="hero-foot on-field">
+    <p>Conecta tu banco y tu sueldo y tus gastos llegan solos. Fin de Mes proyecta tu saldo mes a mes y te muestra qué cambia con una compra en cuotas antes de que decidas.</p>
+    <div class="actions">
+      <a class="btn btn-solid" href={appLink('/registro', { conectar: 'fintoc' })}>Conectar mi banco</a>
+      <a href={appLink('/demo')}>Probar con un ejemplo</a>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+.hero {
+  min-height: clamp(560px, 80svh, 760px); background: var(--field-1); color: var(--field-1-ink);
+  padding: 0 var(--gutter); display: grid; grid-template-rows: clamp(96px, 14svh, 140px) auto minmax(48px, 1fr) auto;
+}
+.hero h1 { grid-row: 2; font-size: var(--step-display); line-height: 0.84; letter-spacing: -0.035em; margin-left: -0.04em; }
+.hero h1 .l1 { display: block; color: var(--field-1-pale); }
+.hero h1 .l2 { display: block; color: var(--field-1-ink); }
+.hero-foot { grid-row: 4; display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: end; padding-bottom: clamp(24px, 6svh, 64px); }
+.hero-foot p { grid-column: 1 / 7; font-size: var(--step-lead); line-height: 1.35; max-width: 34ch; }
+.hero-foot .actions { grid-column: 8 / 13; justify-self: end; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: flex-end; }
+.hero-foot .actions a:not(.btn) { padding: 12px 0; }
+@media (max-width: 760px) {
+  .hero h1 { font-size: 13.5vw; line-height: 0.9; }
+  .hero-foot p, .hero-foot .actions { grid-column: 1 / -1; justify-self: start; justify-content: flex-start; }
+}
+
+.js .hero h1 .l1, .js .hero h1 .l2 { opacity: 0; transform: translateY(0.18em); animation: up 900ms var(--ease-out) forwards; }
+.js .hero h1 .l2 { animation-delay: 120ms; }
+.js .hero-foot > * { opacity: 0; animation: fade 700ms var(--ease-out) 420ms forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .js .hero h1 .l1, .js .hero h1 .l2, .js .hero-foot > * { opacity: 1; transform: none; animation: none; transition: opacity 200ms linear; }
+}
+</style>

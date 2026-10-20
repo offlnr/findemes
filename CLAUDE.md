@@ -34,6 +34,7 @@ El calendario de sprints del informe (Tabla 36) es simulado y no se usa para pla
   /test              -> integración y acceso cruzado
 /app                 -> aplicación Flutter (web, Android, iOS)
 /admin               -> panel de administración (aplicación separada)
+/landing             -> página pública (Astro, sitio estático; solo enlaza a la app, sin pagos ni lógica)
 /docs                -> openapi.yaml, adr/, diagrams/, actas
 ```
 
@@ -103,6 +104,8 @@ Ver `docs/adr/001-technical-stack.md`.
 - Node ejecuta TypeScript directamente (type stripping): los imports relativos usan extensión
   `.ts` y solo se permite sintaxis borrable (`erasableSyntaxOnly`: sin `enum` ni `namespace`).
 - Comandos: `pnpm check` (lint, tipos, capas, pruebas), `pnpm --filter @findemes/backend dev:api`,
+  `pnpm --filter @findemes/landing dev` (landing en http://localhost:4322; enlaces a la app según
+  `PUBLIC_APP_URL`, ver `landing/.env.example`),
   `openapi:generate` tras cambiar una ruta (una prueba falla si `docs/openapi.yaml` queda desfasado).
 - Base de datos: `docker compose up -d`, luego en `backend/`: `pnpm db:migrate` (aplica migraciones y
   crea los roles de login con los valores de `.env.local`; ver `.env.example`) y `pnpm test:db`

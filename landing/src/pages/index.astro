@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import Corner from '../components/Corner.astro';
+import Hero from '../components/Hero.astro';
+import Como from '../components/Como.astro';
+import Incluye from '../components/Incluye.astro';
+import Hogar from '../components/Hogar.astro';
+import Planes from '../components/Planes.astro';
+import Preguntas from '../components/Preguntas.astro';
+import Cierre from '../components/Cierre.astro';
+import Pie from '../components/Pie.astro';
+import PalettePicker from '../components/PalettePicker.astro';
+---
+<Base
+  title="Fin de Mes · Tus gastos, a la vista"
+  description="Conecta tu banco y Fin de Mes ordena tu sueldo y tus gastos, proyecta tu saldo mes a mes y te muestra qué cambia con una compra en cuotas antes de que decidas."
+>
+  <Corner />
+  <div class="page">
+    <main>
+      <Hero />
+      <Como />
+      <Incluye />
+      <Hogar />
+      <Planes />
+      <Preguntas />
+      <Cierre />
+    </main>
+  </div>
+  <Pie />
+  {import.meta.env.DEV && <PalettePicker />}
+</Base>
+
+<style is:global>
+.page { position: relative; background: var(--bg); }
+</style>
