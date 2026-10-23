@@ -154,6 +154,27 @@ describe('accounts', () => {
     await db.admin.query(`UPDATE app.users SET status = 'active' WHERE id = $1`, [bruno]);
   });
 
+  it('record the initial-registration timestamps for the KPI, readable by the admin role', async () => {
+    const gabi = await createUser(db);
+    await asUser(db.api, gabi, (c) =>
+      c.query(`UPDATE app.users SET onboarding_started_at = now() - interval '5 minutes', onboarding_completed_at = now()`),
+    );
+    const { rows } = await db.admin.query<{ minutes: number }>(
+      `SELECT extract(epoch FROM onboarding_completed_at - onboarding_started_at) / 60 AS minutes FROM app.users WHERE id = $1`,
+      [gabi],
+    );
+    expect(Number(rows[0]?.minutes)).toBeCloseTo(5);
+    expect(await errorCode(db.admin.query(`UPDATE app.users SET onboarding_started_at = now() WHERE id = $1`, [gabi]))).toBe(
+      INSUFFICIENT_PRIVILEGE,
+    );
+  });
+
+  it('reject a registration completed before it started', async () => {
+    const hugo = await createUser(db);
+    const code = await errorCode(asUser(db.api, hugo, (c) => c.query('UPDATE app.users SET onboarding_completed_at = now()')));
+    expect(code).toBe('23514');
+  });
+
   it('do not let a user mark their own email as verified (only a valid email token does)', async () => {
     const code = await errorCode(asUser(db.api, bruno, (c) => c.query('UPDATE app.users SET email_verified_at = now()')));
     expect(code).toBe(INSUFFICIENT_PRIVILEGE);
@@ -165,12 +186,60 @@ describe('accounts', () => {
       await asUser(db.api, carla, (c) => c.query(insert, [carla]));
     }
     await createScenario(carla);
+    await asUser(db.api, carla, (c) =>
+      c.query(`INSERT INTO app.consents (owner_id, kind, document_version) VALUES ($1, 'terms', '2026-10')`, [carla]),
+    );
     const deleted = await asUser(db.api, carla, (c) => c.query('DELETE FROM app.users WHERE id = $1', [carla]));
     expect(deleted.rowCount).toBe(1);
-    for (const table of [...OWNED_ROWS.map((row) => row.table), 'scenarios']) {
+    for (const table of [...OWNED_ROWS.map((row) => row.table), 'scenarios', 'consents']) {
       const { rowCount } = await db.owner.query(`SELECT 1 FROM app.${table} WHERE owner_id = $1`, [carla]);
       expect(rowCount, table).toBe(0);
     }
+  });
+});
+
+describe('consents (Ley 21.719)', () => {
+  const ACCEPT = `INSERT INTO app.consents (owner_id, kind, document_version) VALUES ($1, $2, '2026-10') RETURNING id`;
+
+  it('are visible only to their owner', async () => {
+    const dana = await createUser(db);
+    await asUser(db.api, dana, (c) => c.query(ACCEPT, [dana, 'terms']));
+    const own = await asUser(db.api, dana, (c) => c.query('SELECT 1 FROM app.consents'));
+    const other = await asUser(db.api, bruno, (c) => c.query('SELECT 1 FROM app.consents WHERE owner_id = $1', [dana]));
+    const nobody = await asUser(db.api, null, (c) => c.query('SELECT 1 FROM app.consents'));
+    expect([own.rowCount, other.rowCount, nobody.rowCount]).toEqual([1, 0, 0]);
+  });
+
+  it('cannot be recorded on behalf of another user', async () => {
+    expect(await errorCode(asUser(db.api, bruno, (c) => c.query(ACCEPT, [ana, 'terms'])))).toBe(INSUFFICIENT_PRIVILEGE);
+  });
+
+  it('can be withdrawn but never rewritten or deleted', async () => {
+    const elena = await createUser(db);
+    const { rows } = await asUser(db.api, elena, (c) => c.query<{ id: string }>(ACCEPT, [elena, 'bank_connection']));
+    const id = rows[0]?.id;
+    const withdrawn = await asUser(db.api, elena, (c) => c.query('UPDATE app.consents SET withdrawn_at = now() WHERE id = $1', [id]));
+    expect(withdrawn.rowCount).toBe(1);
+    expect(
+      await errorCode(asUser(db.api, elena, (c) => c.query(`UPDATE app.consents SET document_version = '2027-01' WHERE id = $1`, [id]))),
+    ).toBe(INSUFFICIENT_PRIVILEGE);
+    expect(await errorCode(asUser(db.api, elena, (c) => c.query('DELETE FROM app.consents WHERE id = $1', [id])))).toBe(
+      INSUFFICIENT_PRIVILEGE,
+    );
+  });
+
+  it('allow only one active consent of each kind, keeping the history', async () => {
+    const fede = await createUser(db);
+    await asUser(db.api, fede, (c) => c.query(ACCEPT, [fede, 'privacy_policy']));
+    expect(await errorCode(asUser(db.api, fede, (c) => c.query(ACCEPT, [fede, 'privacy_policy'])))).toBe('23505');
+    await asUser(db.api, fede, (c) => c.query(`UPDATE app.consents SET withdrawn_at = now() WHERE kind = 'privacy_policy'`));
+    await asUser(db.api, fede, (c) => c.query(ACCEPT, [fede, 'privacy_policy']));
+    const { rowCount } = await asUser(db.api, fede, (c) => c.query(`SELECT 1 FROM app.consents WHERE kind = 'privacy_policy'`));
+    expect(rowCount).toBe(2);
+  });
+
+  it('are not readable by the admin API role', async () => {
+    expect(await errorCode(db.admin.query('SELECT 1 FROM app.consents'))).toBe(INSUFFICIENT_PRIVILEGE);
   });
 });
 
