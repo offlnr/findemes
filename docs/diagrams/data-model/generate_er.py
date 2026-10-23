@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 
-DATE = '13-10-2026'
+DATE = '21-10-2026'
 
 # ---------------------------------------------------------------------------------------------
 # Descriptions (Spanish). Everything structural comes from the database.
@@ -32,6 +32,9 @@ MODULES = {
 TABLES = {
     'users': ('idn', 'Cuenta de usuario registrada. Base de la identidad y del control de acceso.',
               'HU17, HU17.1-HU17.4, HU23'),
+    'consents': ('idn', 'Consentimientos otorgados por el usuario (términos, política de privacidad y conexión '
+                 'bancaria) con la versión del documento aceptado. Retirar un consentimiento no borra el historial; '
+                 'se elimina con la cuenta.', 'HU32, HU36, Ley 21.719'),
     'refresh_tokens': ('idn', 'Refresh tokens opacos y rotativos, guardados como hash SHA-256. Una familia agrupa '
                        'los tokens de un mismo inicio de sesión; reutilizar uno consumido revoca la familia.',
                        'HU17.1-HU17.3'),
@@ -63,10 +66,10 @@ TABLES = {
                            'miembro.', 'HU14, HU15'),
     'contribution_shares': ('hog', 'Porcentaje de cada miembro cuando la regla es por porcentajes. La suma debe ser '
                             'exactamente 100 % (se verifica al confirmar la transacción).', 'HU14'),
-    'plans': ('sub', 'Catálogo de planes del modelo freemium y sus límites (Tabla 13). Datos de referencia '
+    'plans': ('sub', 'Catálogo de planes del modelo freemium y sus límites (Tabla 13 del primer informe). Datos de referencia '
               'cargados por la migración.', 'HU18, HU30'),
     'subscriptions': ('sub', 'Período pagado vigente de un usuario. Sin fila, el usuario está en el plan gratuito. '
-                      'El estado de la Tabla 14 se deriva de las fechas; no se almacena.', 'HU19, HU20'),
+                      'El estado (Tabla 14 del primer informe) se deriva de las fechas; no se almacena.', 'HU19, HU20'),
     'payment_orders': ('sub', 'Órdenes de pago de Webpay Plus. buy_order único hace idempotente la activación. '
                        'Nunca se guardan datos de tarjeta.', 'HU19, HU26, RNF09'),
     'scenarios': ('scn', 'Escenario de simulación: nombre, referencia al estado base y decisiones. El estado base '
@@ -104,6 +107,16 @@ COLUMNS = {
         'password_hash': 'Hash argon2id de la contraseña (RNF07). La API de administración no puede leerlo.',
         'email_verified_at': 'Fecha y hora de verificación del correo; NULL = no verificado.',
         'status': "Estado de la cuenta: 'active' o 'suspended'. Solo un administrador lo cambia (HU23).",
+        'onboarding_started_at': 'Inicio del registro inicial (KPI de finalización y tiempo de registro).',
+        'onboarding_completed_at': 'Término del registro inicial: saldo inicial y al menos un ingreso (HU01, HU04).',
+    },
+    'consents': {
+        'owner_id': 'Usuario que otorgó el consentimiento.',
+        'kind': "Tipo: 'terms' (términos), 'privacy_policy' (política de privacidad) o 'bank_connection' "
+                "(conexión bancaria).",
+        'document_version': 'Versión del documento aceptado, por ejemplo 2026-10.',
+        'accepted_at': 'Fecha y hora de aceptación.',
+        'withdrawn_at': 'Fecha y hora de retiro; NULL = vigente. Solo un consentimiento vigente por tipo.',
     },
     'refresh_tokens': {
         'user_id': 'Usuario de la sesión.',
@@ -592,7 +605,7 @@ for _n, _c, _r, _rc, _ in LOGICAL:
 REF_COLS = {'users': ['id'], 'households': ['id'], 'bank_accounts': ['id', 'owner_id'],
             'household_members': ['household_id', 'user_id']}
 
-SUBTITLE = 'Esquema app · PostgreSQL 18 · generado desde las migraciones 0001-0009 · ' + DATE
+SUBTITLE = 'Esquema app · PostgreSQL 18 · generado desde las migraciones 0001-0010 · ' + DATE
 
 # Each view: file, title, mode, table width, gaps between columns, columns of tables (or (table, mode)).
 # A relation may only join tables in the same or in neighbouring columns (checked when routing).
@@ -601,7 +614,7 @@ VIEWS = [
      [110, 110, 110, 220], [
         ['plans'],
         ['subscriptions', 'payment_orders', 'audit_log', 'refresh_tokens', 'email_tokens', 'platform_admins',
-         'login_throttle'],
+         'consents', 'login_throttle'],
         ['users'],
         ['financial_profiles', 'incomes', 'expenses', 'bank_links', 'debts', 'scenarios', 'household_members',
          'household_expenses'],
@@ -611,7 +624,7 @@ VIEWS = [
     ('datos-1-identidad', 'Modelo de datos · Identidad y administración', 'full', 380, [140, 140], [
         ['refresh_tokens', 'email_tokens'],
         ['users'],
-        ['platform_admins', 'login_throttle'],
+        ['platform_admins', 'consents', 'login_throttle'],
     ]),
     ('datos-2-registro-y-agregacion', 'Modelo de datos · Registro financiero y agregación bancaria', 'full',
      380, [150, 170], [
@@ -635,7 +648,7 @@ VIEWS = [
      [120, 120, 120, 230], [
         ['plans'],
         ['subscriptions', 'payment_orders', 'audit_log', 'refresh_tokens', 'email_tokens', 'platform_admins',
-         'login_throttle'],
+         'consents', 'login_throttle'],
         ['users'],
         ['financial_profiles', 'incomes', 'expenses', 'bank_links', 'debts', 'scenarios', 'household_members',
          'household_expenses'],
@@ -707,7 +720,7 @@ def md_escape(s):
 
 def dictionary_md(tables):
     out = ['# Diccionario de datos · Fin de Mes', '',
-           '> Generado por `docs/diagrams/data-model/generate_er.py` desde la base de datos con las migraciones 0001-0009 '
+           '> Generado por `docs/diagrams/data-model/generate_er.py` desde la base de datos con las migraciones 0001-0010 '
            'aplicadas (%s). No se edita a mano: se regenera cuando cambia una migración.' % DATE, '',
            'Esquema `app` de PostgreSQL 18. Diagramas: `docs/diagrams/data-model/datos-*.drawio.svg`. Decisiones de diseño, '
            'roles y Row-Level Security: `docs/adr/003-data-model-and-database-security.md`.', '',

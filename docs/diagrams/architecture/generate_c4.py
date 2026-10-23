@@ -6,7 +6,7 @@ import html
 import os
 import sys
 
-DATE = '11-10-2026'
+DATE = '20-10-2026'
 
 PERSON = ('html=1;fontSize=11;whiteSpace=wrap;fillColor=#083F75;strokeColor=#06315C;fontColor=#ffffff;'
           'shape=mxgraph.c4.person2;align=center;verticalAlign=bottom;spacingBottom=14;spacingLeft=12;'
@@ -77,6 +77,7 @@ class Diagram:
         self.geo = {}
         self.parent_of = {'1': None}
         self.n = 0
+        self.font_scale = 1.0
 
     def add(self, cid, value, style, x, y, w, h, parent='1'):
         px, py = self.abs[parent]
@@ -111,11 +112,14 @@ class Diagram:
         b = set(self._ancestors(self.parent_of[tgt]))
         parent = next(x for x in a if x in b)
         st = style
+        if self.font_scale != 1.0:
+            st = st.replace('fontSize=10', 'fontSize=%d' % round(10 * self.font_scale))
         if exit:
             st += 'exitX=%s;exitY=%s;exitDx=0;exitDy=0;' % exit
         if entry:
             st += 'entryX=%s;entryY=%s;entryDx=0;entryDy=0;' % entry
-        value = text if not tech else '%s<br><span style="font-size:9px">[%s]</span>' % (text, tech)
+        value = text if not tech else '%s<br><span style="font-size:%dpx">[%s]</span>' % (
+            text, round(9 * self.font_scale), tech)
         ox, oy = self.abs[parent]
         geo = '<mxGeometry relative="1" as="geometry"%s>' % (' x="%s"' % lpos if lpos is not None else '')
         if pts:
@@ -126,14 +130,16 @@ class Diagram:
                           '</mxCell>' % (self.n, e(value), st, parent, src, tgt, geo))
 
     def title(self, title, subtitle, x=40, y=20, w=1400):
-        self.add('title', '<span style="font-size:20px"><b>%s</b></span><br>%s' % (title, subtitle),
-                 TEXT, x, y, w, 60)
+        self.add('title', '<span style="font-size:%dpx"><b>%s</b></span><br><span style="font-size:%dpx">%s</span>'
+                 % (round(20 * self.font_scale), title, round(12 * self.font_scale), subtitle), TEXT, x, y, w,
+                 round(60 * self.font_scale))
 
     def legend(self, x, y, items, w=330):
-        h = 40 + 34 * len(items)
+        step = round(34 * self.font_scale)
+        h = 40 + step * len(items)
         self.add('legend', '<b>Leyenda</b>', BAND.replace('#F4F8FB', '#FFFFFF'), x, y, w, h)
         for i, (kind, label) in enumerate(items):
-            yy = y + 34 + 34 * i
+            yy = y + step + step * i
             sid = 'lg%d' % i
             if kind.startswith('edge:'):
                 self.add(sid + 'a', '', 'text;', x + 14, yy + 12, 1, 2, 'legend')
@@ -141,7 +147,8 @@ class Diagram:
                 self.rel(sid + 'a', sid + 'b', style=kind[5:])
             else:
                 self.add(sid + 's', '', kind, x + 14, yy, 70, 26, 'legend')
-            self.add(sid + 't', label, TEXT + 'verticalAlign=middle;fontSize=10;', x + 96, yy - 2, w - 106, 30,
+            self.add(sid + 't', label, TEXT + 'verticalAlign=middle;fontSize=%d;' % round(10 * self.font_scale),
+                     x + 96, yy - 2, w - 106, 30,
                      'legend')
 
     def write(self, out_dir):
@@ -194,7 +201,7 @@ def context():
     d.add('tbk', c4('Transbank Webpay Plus', 'Sistema externo · ambiente de integración',
                     'Pasarela de pago. Recibe los datos de tarjeta en su propio formulario.'),
           EXTERNAL, 400, 900, 400, 170)
-    d.add('mail', c4('Proveedor de correo transaccional', 'Sistema externo · por definir',
+    d.add('mail', c4('Amazon SES', 'Sistema externo · correo transaccional',
                      'Entrega a los usuarios correos de verificación, restablecimiento e invitación.'),
           EXTERNAL, 1160, 900, 400, 170)
 
@@ -265,7 +272,7 @@ def containers():
           EXTERNAL, 60, 1180, 340, 140)
     d.add('tbk', c4('Transbank Webpay Plus', 'Sistema externo · integración', 'Formulario de pago y API.'),
           EXTERNAL, 480, 1180, 340, 140)
-    d.add('mail', c4('Proveedor de correo', 'Sistema externo · por definir', 'Correo transaccional.'),
+    d.add('mail', c4('Amazon SES', 'Sistema externo · correo transaccional', 'Verificación, recuperación e invitaciones.'),
           EXTERNAL, 900, 1180, 340, 140)
 
     d.rel('vis', 'web', 'Prueba el modo<br>demostración', 'HTTPS', exit=bottom(d, 'vis', 230),
@@ -421,7 +428,7 @@ def components():
           COMPONENT + PLANNED, PGX, R2, PGW, 100, 'b4')
 
     EY = 1680
-    d.add('x_mail', c4('Proveedor de correo', 'Sistema externo'), EXTERNAL, cx['hog'] - 40, EY, 236, 90)
+    d.add('x_mail', c4('Amazon SES', 'Sistema externo · correo'), EXTERNAL, cx['hog'] - 40, EY, 236, 90)
     d.add('x_tbk', c4('Transbank', 'Sistema externo'), EXTERNAL, cx['sub'] + 10, EY, 200, 90)
     d.add('x_fin', c4('Fintoc', 'Sistema externo'), EXTERNAL, cx['agg'] + 30, EY, 200, 90)
     d.add('x_db', c4('Base de datos', 'Contenedor: PostgreSQL 18 gestionado'), DB, cx['aud'] + 40, EY - 10, 300,
@@ -504,18 +511,20 @@ def components():
 def deployment():
     d = Diagram('c4-4-despliegue')
     d.title('[Diagrama de despliegue] Fin de Mes · ambiente de integración',
-            'Nivel C4 de despliegue · DigitalOcean, región NYC · cada flecha parte de quien inicia la conexión · '
-            + DATE, w=1900)
+            'Nivel C4 de despliegue · AWS, región us-east-1, plan gratuito · cada flecha parte de quien inicia la '
+            'conexión · ' + DATE, w=1900)
 
+    # Externals (right column).
     d.add('x_fin', c4('Fintoc', 'Sistema externo · llaves sk_test_', 'API de movimientos y widget.'),
-          EXTERNAL, 620, 100, 300, 130)
+          EXTERNAL, 1960, 380, 300, 110)
     d.add('x_tbk', c4('Transbank Webpay Plus', 'Sistema externo · integración', 'Formulario y API de pago.'),
-          EXTERNAL, 980, 100, 300, 130)
-    d.add('x_mail', c4('Proveedor de correo', 'Sistema externo · por definir', 'Correo transaccional.'),
-          EXTERNAL, 1340, 100, 300, 130)
+          EXTERNAL, 1960, 520, 300, 110)
+    d.add('x_mail', c4('Amazon SES', 'Sistema externo · correo transaccional', 'Verificación, recuperación e invitaciones.'),
+          EXTERNAL, 1960, 660, 300, 110)
     d.add('x_ts', c4('Tailscale', 'Sistema externo · plano de control', 'Coordina la tailnet; no ve el tráfico.'),
-          EXTERNAL, 1880, 100, 300, 130)
+          EXTERNAL, 1960, 800, 300, 110)
 
+    # User device.
     d.add('dev', node_label('Dispositivo del usuario', 'Nodo de despliegue', 'Internet · no confiable'),
           NODE_UNTRUSTED, 40, 300, 500, 760)
     d.add('br', node_label('Navegador web', 'Nodo: Chrome, Firefox, Edge o Safari'), NODE_GRAY, 60, 370, 460, 200,
@@ -529,78 +538,96 @@ def deployment():
     d.add('wid', c4('Widget de Fintoc', 'Sistema externo: JavaScript en el navegador o WebView',
                     'El usuario escribe aquí su clave bancaria.', 11), EXTERNAL, 80, 840, 420, 190, 'dev')
 
-    d.add('do', node_label('DigitalOcean · región NYC', 'Nodo: proyecto findemes-int'), NODE, 600, 300, 1220, 1120)
-    d.add('ap', node_label('App Platform · app findemes-int', 'Nodo: contenedores gestionados'), NODE_GRAY,
-          630, 350, 760, 520, 'do')
-    d.add('edge', node_label('Borde de App Platform', 'Nodo: CDN de Cloudflare, TLS gestionado, dominio propio',
-                             'Único punto de entrada público. Sin WAF propio en el MVP.'),
-          NODE, 660, 420, 340, 130, 'ap')
-    d.add('st', c4('Aplicación web', 'Contenedor: sitio estático', 'Sirve /. Mismo dominio que la API.', 11),
-          CONTAINER, 660, 600, 340, 110, 'ap')
-    d.add('mig', c4('Migrador', 'Contenedor: job previo al despliegue', 'Rol dueño.', 11),
-          CONTAINER, 660, 740, 340, 100, 'ap')
-    d.add('api', c4('API pública', 'Contenedor: Node.js 24, Fastify · N instancias',
-                    'Sirve /v1. Incluye el motor en proceso. Sin estado.', 11), CONTAINER, 1060, 560, 300, 160, 'ap')
-    d.add('secr', '<b>Secretos</b> como variables cifradas de App Platform: clave AES, clave JWT, sk de Fintoc, '
-          'credenciales de Webpay, de correo y de cada rol. Nunca en la imagen ni en el repositorio.',
-          NOTE, 1420, 350, 370, 110, 'do')
+    # AWS account.
+    d.add('aws', node_label('AWS · cuenta findemes-int · región us-east-1', 'Nodo: plan gratuito (créditos)'),
+          NODE, 600, 300, 1260, 1150)
+    d.add('cf', node_label('Amazon CloudFront', 'Nodo: distribución global, TLS gestionado, AWS Shield Standard',
+                           'Único punto de entrada público. Enruta / al sitio y /v1/* a la API.'),
+          NODE, 640, 360, 380, 150, 'aws')
+    d.add('s3', node_label('Amazon S3', 'Nodo: bucket privado, solo legible por CloudFront (OAC)'), NODE_GRAY,
+          640, 560, 380, 170, 'aws')
+    d.add('st', c4('Aplicación web y sitio público', 'Contenedor: archivos estáticos', 'Flutter web y landing.', 11),
+          CONTAINER, 660, 620, 340, 90, 's3')
+    d.add('gw', node_label('Amazon API Gateway', 'Nodo: API HTTP regional',
+                           'Límite de tasa. Integración privada por VPC Link con AWS Cloud Map.'),
+          NODE, 1080, 360, 380, 150, 'aws')
+    d.add('secr', '<b>Secretos</b> en AWSSystems Manager Parameter Store (SecureString, KMS): clave AES, clave JWT, '
+          'sk de Fintoc, credenciales de Webpay, de correo y de cada rol. Cada instancia los lee con su rol de IAM. '
+          'Nunca en la imagen ni en el repositorio.'.replace('AWSSystems', 'AWS Systems'),
+          NOTE, 1500, 360, 340, 150, 'aws')
+    d.add('igw', node_label('Internet Gateway', 'Nodo: salida a internet de la subred pública'), NODE_GRAY,
+          1500, 600, 320, 90, 'aws')
 
-    d.add('vpc', node_label('VPC findemes-int-vpc', 'Nodo: red privada de la región NYC'), NODE_GRAY,
-          630, 920, 1170, 470, 'do')
-    d.add('pgn', node_label('PostgreSQL gestionado', 'Nodo: clúster de DigitalOcean'), NODE, 660, 980, 520, 380,
-          'vpc')
+    d.add('vpc', node_label('VPC findemes-int · 10.0.0.0/16', 'Nodo: red privada virtual'), NODE_GRAY,
+          630, 760, 1210, 670, 'aws')
+    d.add('pub', node_label('Subred pública 10.0.1.0/24', 'Nodo: us-east-1a · sin reglas de entrada desde internet'),
+          NODE, 660, 810, 1150, 230, 'vpc')
+    d.add('ec2', node_label('EC2 api · t4g.micro', 'Nodo: Amazon Linux + Docker',
+                            'Grupo de seguridad: entrada solo desde el VPC Link.'), NODE, 680, 850, 520, 170, 'pub')
+    d.add('mig', c4('Migrador', 'Contenedor: job previo', 'Rol dueño.', 10), CONTAINER, 700, 925, 180, 80, 'ec2')
+    d.add('api', c4('API pública', 'Contenedor: Node.js 24, Fastify', 'Sirve /v1 con el motor en proceso.', 10),
+          CONTAINER, 910, 925, 270, 80, 'ec2')
+    d.add('adm', node_label('EC2 admin · t4g.nano', 'Nodo: Amazon Linux + cliente Tailscale',
+                            'Grupo de seguridad: 0 reglas de entrada.'), NODE_ADMIN, 1240, 850, 550, 170, 'pub')
+    d.add('aapi', c4('API de administración', 'Contenedor: Node.js 24, Fastify', 'TOTP · rol app_admin.', 10),
+          CONTAINER, 1260, 925, 250, 80, 'adm')
+    d.add('pan', c4('Panel de administración', 'Contenedor: aplicación web', 'Estático.', 10),
+          CONTAINER + PLANNED, 1530, 925, 240, 80, 'adm')
+    d.add('priv', node_label('Subredes privadas 10.0.11.0/24 y 10.0.12.0/24',
+                             'Nodo: us-east-1a y us-east-1b · sin ruta a internet'), NODE, 660, 1070, 1150, 340, 'vpc')
+    d.add('rds', node_label('Amazon RDS for PostgreSQL', 'Nodo: db.t4g.micro, Single-AZ, 20 GB cifrados con KMS'),
+          NODE, 680, 1110, 560, 160, 'priv')
     d.add('db', c4('Base de datos findemes', 'Contenedor: PostgreSQL 18',
-                   'RLS · roles app_api y app_admin · auditoría solo inserciones, encadenada por hash.', 11),
-          DB, 690, 1080, 460, 170, 'pgn')
-    d.add('pgnote', 'Trusted sources: salida de App Platform por la VPC e IP privada del Droplet. Respaldo diario y '
-          'recuperación a un punto en el tiempo (7 días).', NOTE, 690, 1270, 460, 70, 'pgn')
-    d.add('dro', node_label('Droplet admin', 'Nodo: Ubuntu LTS + cliente Tailscale',
-                            'Cloud Firewall: 0 reglas de entrada. Los servicios escuchan solo en la interfaz '
-                            'de Tailscale.'), NODE_ADMIN, 1220, 980, 560, 380, 'vpc')
-    d.add('aapi', c4('API de administración', 'Contenedor: Node.js 24, Fastify', 'TOTP · rol app_admin.', 11),
-          CONTAINER, 1240, 1110, 220, 170, 'dro')
-    d.add('pan', c4('Panel de administración', 'Contenedor: aplicación web', 'Estático.', 11),
-          CONTAINER + PLANNED, 1540, 1110, 220, 170, 'dro')
+                   'RLS · roles app_api y app_admin · auditoría solo inserciones, encadenada por hash.', 10),
+          DB, 700, 1165, 520, 95, 'rds')
+    d.add('pgnote', 'Grupo de seguridad: 5432 solo desde los grupos de las dos instancias. Respaldo automático diario '
+          'con recuperación a un punto en el tiempo (30 días). Sin acceso público.', NOTE, 680, 1290, 560, 90, 'priv')
 
     d.add('opd', node_label('Equipo del operador', 'Nodo: dispositivo tag:admin de la tailnet',
                             'Aprobación manual · MFA en el proveedor de identidad.'),
-          NODE_ADMIN, 1880, 1080, 300, 230)
+          NODE_ADMIN, 1960, 1080, 300, 230)
     d.add('opb', 'Navegador', CONTAINER.replace('#23A2D9', '#5B6770').replace('#0E7DAD', '#3D464C'),
-          1910, 1170, 240, 60, 'opd')
+          1990, 1170, 240, 60, 'opd')
 
-    d.add('prod', '<b>Producción (fuera del alcance del MVP):</b> misma topología en otro proyecto de DigitalOcean, '
-          'con clúster, credenciales y respaldos propios. Webpay requiere afiliación comercial y Fintoc, llaves '
-          'live y consentimiento según la Ley 21.719.', NOTE, 600, 1450, 760, 70)
+    d.add('prod', '<b>Producción (fuera del alcance del MVP):</b> misma topología en otra cuenta de AWS, con las '
+          'instancias en subredes privadas y salida por NAT Gateway, RDS Multi-AZ, dos instancias de API en zonas '
+          'distintas registradas en Cloud Map, AWS WAF en CloudFront y credenciales propias. Webpay requiere afiliación comercial y Fintoc, llaves live y consentimiento según '
+          'la Ley 21.719.', NOTE, 600, 1480, 1260, 70)
 
-    d.rel('web', 'edge', 'Descarga la app<br>y llama a /v1', 'HTTPS 443, TLS', exit=right(d, 'web', 470),
-          entry=left(d, 'edge', 470), lpos=-0.55)
-    d.rel('mob', 'edge', 'Llama a /v1', 'HTTPS 443, TLS', exit=right(d, 'mob', 720), entry=left(d, 'edge', 520),
-          pts=[(600, 720), (600, 520)], lpos=-0.1)
-    d.rel('edge', 'st', 'Sirve /', 'enrutamiento interno', exit=bottom(d, 'edge', 830), entry=top(d, 'st', 830))
-    d.rel('edge', 'api', 'Enruta /v1', 'enrutamiento interno', exit=right(d, 'edge', 500),
-          entry=top(d, 'api', 1120), pts=[(1120, 500)])
+    # Relations.
+    d.rel('web', 'cf', 'Descarga la app<br>y llama a /v1', 'HTTPS 443, TLS', exit=right(d, 'web', 470),
+          entry=left(d, 'cf', 470), lpos=-0.45)
+    d.rel('mob', 'cf', 'Llama a /v1', 'HTTPS 443, TLS', exit=right(d, 'mob', 720), entry=left(d, 'cf', 420),
+          pts=[(580, 720), (580, 420)], lpos=-0.1)
+    d.rel('cf', 'st', 'Sirve /', 'HTTPS, OAC', exit=bottom(d, 'cf', 830), entry=top(d, 'st', 830))
+    d.rel('cf', 'gw', 'Enruta /v1/*', 'HTTPS 443', exit=right(d, 'cf', 435), entry=left(d, 'gw', 435))
+    d.rel('gw', 'api', 'VPC Link privado', 'HTTP 8080 dentro de la VPC', exit=bottom(d, 'gw', 1130),
+          entry=top(d, 'api', 1130))
+    d.rel('api', 'igw', 'Fintoc, Webpay<br>y correo', 'HTTPS 443 saliente', exit=right(d, 'api', 965),
+          entry=bottom(d, 'igw', 1660), pts=[(1220, 965), (1220, 790), (1660, 790)], lpos=0.2)
+    d.rel('igw', 'x_fin', 'Link Intent, canje<br>y movimientos', 'HTTPS', exit=right(d, 'igw', 625),
+          entry=left(d, 'x_fin', 435), pts=[(1900, 625), (1900, 435)], lpos=0.6)
+    d.rel('igw', 'x_tbk', 'Crea y confirma<br>(commit)', 'HTTPS', exit=right(d, 'igw', 645),
+          entry=left(d, 'x_tbk', 575), pts=[(1920, 645), (1920, 575)])
+    d.rel('igw', 'x_mail', 'Envía correos', 'HTTPS', exit=right(d, 'igw', 665), entry=left(d, 'x_mail', 715),
+          pts=[(1900, 665), (1900, 715)])
+    d.rel('api', 'db', 'rol app_api', 'TLS verify-full, 5432', exit=bottom(d, 'api', 1045),
+          entry=top(d, 'db', 1045))
+    d.rel('mig', 'db', 'rol dueño', 'TLS, 5432', exit=bottom(d, 'mig', 790), entry=top(d, 'db', 790), lpos=-0.5)
+    d.rel('aapi', 'db', 'rol app_admin', 'TLS verify-full, 5432', exit=bottom(d, 'aapi', 1385),
+          entry=right(d, 'db', 1212), pts=[(1385, 1212)])
     d.rel('web', 'x_tbk', 'Va al formulario de pago y vuelve a la URL de retorno fija', 'HTTPS', REL_BROWSER,
-          exit=top(d, 'web', 300), entry=bottom(d, 'x_tbk', 1010), pts=[(300, 262), (1010, 262)], lpos=-0.4)
+          exit=top(d, 'web', 300), entry=right(d, 'x_tbk', 575), pts=[(300, 250), (2300, 250), (2300, 575)],
+          lpos=-0.55)
     d.rel('wid', 'x_fin', 'Clave bancaria<br>del usuario', 'HTTPS', REL_SECRET, exit=right(d, 'wid', 935),
-          entry=bottom(d, 'x_fin', 660), pts=[(552, 935), (552, 278), (660, 278)], lpos=-0.55)
-    d.rel('api', 'x_fin', 'Link Intent, canje<br>y movimientos', 'HTTPS 443 saliente',
-          exit=top(d, 'api', 1090), entry=bottom(d, 'x_fin', 880), pts=[(1090, 290), (880, 290)])
-    d.rel('api', 'x_tbk', 'Crea y confirma<br>(commit)', 'HTTPS 443 saliente', exit=top(d, 'api', 1200),
-          entry=bottom(d, 'x_tbk', 1200))
-    d.rel('api', 'x_mail', 'Envía correos', 'HTTPS 443 saliente', exit=top(d, 'api', 1320),
-          entry=bottom(d, 'x_mail', 1380), pts=[(1320, 290), (1380, 290)])
-    d.rel('api', 'db', 'rol app_api', 'TLS verify-full, 25060, por la VPC', exit=bottom(d, 'api', 1110),
-          entry=top(d, 'db', 1110))
-    d.rel('mig', 'db', 'rol dueño', 'TLS, 25060', exit=bottom(d, 'mig', 940), entry=top(d, 'db', 940))
-    d.rel('aapi', 'db', 'rol app_admin', 'TLS verify-full, IP privada', exit=left(d, 'aapi', 1165),
-          entry=right(d, 'db', 1165))
+          entry=right(d, 'x_fin', 435), pts=[(560, 935), (560, 275), (2280, 275), (2280, 435)], lpos=-0.75)
     d.rel('opb', 'pan', 'Usa el panel<br>(TOTP)', 'WireGuard sobre Tailscale<br>ACL tag:admin', REL_ADMIN,
-          exit=left(d, 'opb', 1200), entry=right(d, 'pan', 1200))
-    d.rel('pan', 'aapi', 'Llama a', 'HTTPS en la tailnet', REL_ADMIN, exit=left(d, 'pan', 1240),
-          entry=right(d, 'aapi', 1240))
-    d.rel('dro', 'x_ts', 'Coordina el túnel', 'HTTPS 443 saliente', REL_FAINT, exit=top(d, 'dro', 1740),
-          entry=bottom(d, 'x_ts', 1930), pts=[(1740, 960), (1850, 960), (1850, 290), (1930, 290)])
-    d.rel('opd', 'x_ts', '', '', REL_FAINT, exit=top(d, 'opd', 2100), entry=bottom(d, 'x_ts', 2100))
+          exit=left(d, 'opb', 1200), entry=right(d, 'pan', 965), pts=[(1880, 1200), (1880, 965)], lpos=-0.2)
+    d.rel('pan', 'aapi', 'Llama a', 'HTTPS en la tailnet', REL_ADMIN, exit=left(d, 'pan', 965),
+          entry=right(d, 'aapi', 965))
+    d.rel('adm', 'x_ts', 'Coordina el túnel', 'HTTPS 443 saliente', REL_FAINT, exit=right(d, 'adm', 880),
+          entry=left(d, 'x_ts', 880))
+    d.rel('opd', 'x_ts', '', '', REL_FAINT, exit=top(d, 'opd', 2110), entry=bottom(d, 'x_ts', 2110))
     d.legend(40, 1110, [
         (NODE.replace('container=1;', ''), 'Nodo de despliegue'),
         (NODE_UNTRUSTED.replace('container=1;', ''), 'Nodo no confiable (internet)'),
@@ -615,10 +642,141 @@ def deployment():
     return d
 
 
+# =====================================================================================
+ZONE = ('rounded=1;arcSize=2;absoluteArcSize=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=12;'
+        'spacingTop=6;fontSize=19;fontStyle=1;container=1;collapsible=0;pointerEvents=0;')
+Z_NET = ZONE + 'fillColor=#FDEDEC;strokeColor=#C0392B;fontColor=#922B21;dashed=1;dashPattern=10 5;strokeWidth=2;'
+Z_EDGE = ZONE + 'fillColor=#EBF5FB;strokeColor=#2E86C1;fontColor=#1B4F72;'
+Z_VPC = ZONE + 'fillColor=#E9F7EF;strokeColor=#239B56;fontColor=#145A32;strokeWidth=2;'
+Z_PRIV = ZONE + 'fillColor=#D5F5E3;strokeColor=#1E8449;fontColor=#145A32;'
+Z_EXT = ZONE + 'fillColor=#F4F2F6;strokeColor=#8C8496;fontColor=#4A4453;'
+Z_TAIL = ZONE + 'fillColor=#FEF5E7;strokeColor=#D68910;fontColor=#A6610A;strokeWidth=2;'
+DEV = ('rounded=1;whiteSpace=wrap;html=1;arcSize=8;absoluteArcSize=1;fillColor=#FFFFFF;strokeColor=#5B6770;'
+       'fontColor=#222222;fontSize=18;spacing=6;')
+
+
+def dev(name, kind, extra=''):
+    # The third line (extra) is not drawn: it is in the connections table of the report.
+    return '<b>%s</b><br><span style="font-size:15px">%s</span>' % (name, kind)
+
+
+def topology():
+    d = Diagram('topologia-comunicaciones')
+    d.font_scale = 1.5
+    d.title('[Topología de comunicaciones] Fin de Mes · ambiente de integración',
+            'Zonas de confianza, protocolos, puertos y cifrado · cada flecha parte de quien inicia la conexión · '
+            + DATE, w=1900)
+
+    # Zone 1: internet.
+    d.add('z_net', 'Zona 1 · Internet (no confiable)', Z_NET, 40, 110, 420, 720)
+    d.add('n_br', dev('Navegador', 'Aplicación web Flutter', 'Windows, macOS, Linux'), DEV, 80, 170, 340, 90,
+          'z_net')
+    d.add('n_ph', dev('Teléfono', 'Aplicación Android o iOS', '4G/5G o Wi-Fi doméstico'), DEV, 80, 300, 340, 90,
+          'z_net')
+    d.add('n_wid', dev('Widget de Fintoc', 'En el navegador o WebView', 'La clave bancaria va directo a Fintoc'),
+          DEV, 80, 430, 340, 90, 'z_net')
+    d.add('n_isp', dev('Proveedor de internet del usuario', 'Fibra, cable o red móvil', 'Fuera del control del '
+                       'proyecto'), DEV, 80, 580, 340, 90, 'z_net')
+
+    # Zone 2: AWS edge.
+    d.add('z_edge', 'Zona 2 · Borde de AWS (público)', Z_EDGE, 520, 110, 420, 720)
+    d.add('n_cf', dev('Amazon CloudFront', 'Puntos de presencia globales', 'TLS 1.2+, AWS Shield Standard'), DEV,
+          560, 170, 340, 90, 'z_edge')
+    d.add('n_s3', dev('Amazon S3', 'Bucket privado del sitio', 'Solo CloudFront lo lee (OAC)'), DEV, 560, 330, 340,
+          90, 'z_edge')
+    d.add('n_gw', dev('Amazon API Gateway', 'API HTTP regional', 'Límite de tasa; VPC Link hacia la VPC'), DEV,
+          560, 490, 340, 90, 'z_edge')
+    d.add('n_ssm', dev('AWS Systems Manager', 'Parameter Store y Run Command', 'Secretos y despliegue sin SSH'), DEV,
+          560, 650, 340, 90, 'z_edge')
+
+    # Zone 3: VPC.
+    d.add('z_vpc', 'Zona 3 · VPC findemes-int 10.0.0.0/16 (us-east-1)', Z_VPC, 1000, 110, 600, 720)
+    d.add('n_igw', dev('Internet Gateway', 'Solo tráfico saliente', 'Ninguna regla de entrada abierta'), DEV,
+          1040, 170, 520, 70, 'z_vpc')
+    d.add('z_pub', 'Subred pública 10.0.1.0/24', Z_PRIV.replace('#D5F5E3', '#FFFFFF'), 1030, 270, 540, 250, 'z_vpc')
+    d.add('n_api', dev('EC2 api (t4g.micro)', 'API pública y migrador en Docker',
+                       'Entrada: 8080 solo desde el VPC Link'), DEV, 1060, 320, 230, 110, 'z_pub')
+    d.add('n_adm', dev('EC2 admin (t4g.nano)', 'API y panel de administración',
+                       'Entrada: ninguna; escucha en Tailscale'), DEV + 'strokeColor=#D68910;strokeWidth=2;', 1310,
+          320, 230, 110, 'z_pub')
+    d.add('z_priv', 'Subredes privadas 10.0.11.0/24 y 10.0.12.0/24', Z_PRIV, 1030, 550, 540, 250, 'z_vpc')
+    d.add('n_rds', dev('Amazon RDS for PostgreSQL 18', 'db.t4g.micro, cifrado con KMS',
+                       'Entrada: 5432 solo desde EC2 api y EC2 admin'), DEV, 1100, 610, 400, 100, 'z_priv')
+
+    # Zone 4: external services.
+    d.add('z_ext', 'Zona 4 · Servicios externos (SaaS)', Z_EXT, 1660, 110, 400, 720)
+    d.add('n_fin', dev('Fintoc', 'API de agregación bancaria', 'Modo de prueba'), DEV, 1700, 170, 320, 80, 'z_ext')
+    d.add('n_tbk', dev('Transbank Webpay Plus', 'Formulario y API de pago', 'Ambiente de integración'), DEV, 1700,
+          290, 320, 80, 'z_ext')
+    d.add('n_mail', dev('Amazon SES', 'Correo transaccional', ''), DEV, 1700, 410, 320, 80, 'z_ext')
+    d.add('n_ts', dev('Tailscale', 'Plano de control de la tailnet', 'Coordina claves; no ve el tráfico'), DEV,
+          1700, 530, 320, 80, 'z_ext')
+    d.add('n_gh', dev('GitHub y GitHub Actions', 'Repositorio, CI y registro de imágenes', 'Rama main protegida'),
+          DEV, 1700, 650, 320, 90, 'z_ext')
+
+    # Zone 5: team (development and maintenance).
+    d.add('z_team', 'Zona 5 · Equipo del proyecto: desarrollo y mantenimiento (tailnet con ACL tag:admin)', Z_TAIL,
+          40, 880, 1460, 230)
+    d.add('n_nb1', dev('Notebook J. Varas', 'Windows 11 · Docker Desktop', 'Fibra 600 Mbps · MFA'), DEV, 120, 950,
+          300, 90, 'z_team')
+    d.add('n_nb2', dev('Notebook M. Lizana', 'Windows 11 · Docker Desktop', 'Fibra 600 Mbps · MFA'), DEV, 480, 950,
+          300, 90, 'z_team')
+    d.add('n_mac', dev('Mac mini M4', 'Compilación iOS', 'Red doméstica'), DEV, 840, 950, 260, 90, 'z_team')
+    d.add('n_dev', dev('Teléfonos de prueba', 'Galaxy A16 · iPhone SE', 'Validación en dispositivo'), DEV, 1160, 950,
+          260, 90, 'z_team')
+
+    # Use view.
+    d.rel('n_br', 'n_cf', 'Sitio y API', 'HTTPS 443 · TLS 1.2+', exit=right(d, 'n_br', 215),
+          entry=left(d, 'n_cf', 215))
+    d.rel('n_ph', 'n_cf', 'API', 'HTTPS 443 · TLS 1.2+', exit=right(d, 'n_ph', 345), entry=left(d, 'n_cf', 240),
+          pts=[(480, 345), (480, 240)], lpos=-0.3)
+    d.rel('n_wid', 'n_fin', 'Clave bancaria', 'HTTPS 443', REL_SECRET, exit=bottom(d, 'n_wid', 250),
+          entry=bottom(d, 'n_fin', 1990), pts=[(250, 545), (480, 545), (480, 850), (1640, 850), (1640, 262),
+                                                (1990, 262)], lpos=-0.2)
+    d.rel('n_br', 'n_tbk', 'Formulario de pago', 'HTTPS 443', REL_BROWSER, exit=top(d, 'n_br', 300),
+          entry=right(d, 'n_tbk', 330), pts=[(300, 95), (2040, 95), (2040, 330)], lpos=0.35)
+    d.rel('n_cf', 'n_s3', '/', 'HTTPS · OAC', exit=bottom(d, 'n_cf', 730), entry=top(d, 'n_s3', 730))
+    d.rel('n_cf', 'n_gw', 'Solicitudes a la API', 'HTTPS 443', exit=bottom(d, 'n_cf', 860), entry=top(d, 'n_gw', 860),
+          lpos=0.5)
+    d.rel('n_gw', 'n_api', 'VPC Link', 'HTTP 8080', exit=right(d, 'n_gw', 535), entry=bottom(d, 'n_api', 1100),
+          pts=[(1100, 535)], lpos=-0.3)
+    d.rel('n_api', 'n_rds', 'Usuario de la API', 'TLS · 5432', exit=bottom(d, 'n_api', 1150),
+          entry=top(d, 'n_rds', 1150), lpos=-0.55)
+    d.rel('n_adm', 'n_rds', 'Usuario de administración', 'TLS · 5432', REL_ADMIN, exit=bottom(d, 'n_adm', 1450),
+          entry=top(d, 'n_rds', 1450), lpos=-0.55)
+    d.rel('n_api', 'n_igw', '', '', exit=top(d, 'n_api', 1270), entry=bottom(d, 'n_igw', 1270))
+    d.rel('n_adm', 'n_igw', '', '', REL_FAINT, exit=top(d, 'n_adm', 1480), entry=bottom(d, 'n_igw', 1480))
+    d.rel('n_igw', 'n_fin', 'Salidas', 'HTTPS 443', exit=right(d, 'n_igw', 190), entry=left(d, 'n_fin', 210),
+          pts=[(1630, 190), (1630, 210)], lpos=0.6)
+    d.rel('n_igw', 'n_tbk', '', '', exit=right(d, 'n_igw', 205), entry=left(d, 'n_tbk', 330),
+          pts=[(1615, 205), (1615, 330)], lpos=0.5)
+    d.rel('n_igw', 'n_mail', '', '', exit=right(d, 'n_igw', 220), entry=left(d, 'n_mail', 450),
+          pts=[(1600, 220), (1600, 450)], lpos=0.6)
+    d.rel('n_igw', 'n_ts', '', '', REL_FAINT, exit=right(d, 'n_igw', 230),
+          entry=left(d, 'n_ts', 570), pts=[(1585, 230), (1585, 570)], lpos=0.7)
+    # Development and maintenance views.
+    d.rel('n_nb1', 'n_gh', 'Código y revisiones', 'HTTPS 443 / SSH 22', exit=top(d, 'n_nb1', 270),
+          entry=bottom(d, 'n_gh', 1860), pts=[(270, 920), (1860, 920)], lpos=0.2)
+    d.rel('n_nb2', 'n_gh', '', '', exit=top(d, 'n_nb2', 630), entry=bottom(d, 'n_gh', 1860), pts=[(630, 920)])
+    d.rel('n_gh', 'n_ssm', 'Despliegue con permisos temporales', 'HTTPS 443', exit=left(d, 'n_gh', 720),
+          entry=right(d, 'n_ssm', 720), pts=[(1640, 720), (1640, 790), (930, 790), (930, 720)], lpos=0.0)
+    d.rel('n_nb2', 'n_adm', 'Mantenimiento (TOTP)', 'WireGuard UDP 41641 · Tailscale', REL_ADMIN,
+          exit=bottom(d, 'n_nb2', 700), entry=bottom(d, 'n_adm', 1510),
+          pts=[(700, 1075), (1510, 1075)], lpos=-0.6)
+    d.legend(1560, 880, [
+        ('edge:' + REL, 'Tráfico de usuarios y servicios'),
+        ('edge:' + REL_ADMIN, 'Administración por Tailscale'),
+        ('edge:' + REL_BROWSER, 'Redirección del navegador'),
+        ('edge:' + REL_SECRET, 'Credencial que nunca toca Fin de Mes'),
+        ('edge:' + REL_FAINT, 'Canal de control saliente'),
+    ], w=560)
+    return d
+
+
 def main():
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    for build in (context, containers, components, deployment):
+    for build in (context, containers, components, deployment, topology):
         print(build().write(out))
 
 
