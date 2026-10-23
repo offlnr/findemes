@@ -8,7 +8,7 @@ export interface AdminApiOptions {
 const BODY_LIMIT_BYTES = 64 * 1024;
 
 /**
- * Builds the administration API. Separate process and deployment (rule 9): it runs on a Droplet
+ * Builds the administration API. Separate process and deployment (rule 9): it runs on its own EC2 instance
  * reachable only through Tailscale (RNF21) and its database role cannot read financial tables (HU23).
  */
 export async function buildAdminApi(options: AdminApiOptions): Promise<FastifyInstance> {

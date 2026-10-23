@@ -1,6 +1,6 @@
 # Diccionario de datos · Fin de Mes
 
-> Generado por `docs/diagrams/data-model/generate_er.py` desde la base de datos con las migraciones 0001-0009 aplicadas (13-10-2026). No se edita a mano: se regenera cuando cambia una migración.
+> Generado por `docs/diagrams/data-model/generate_er.py` desde la base de datos con las migraciones 0001-0010 aplicadas (21-10-2026). No se edita a mano: se regenera cuando cambia una migración.
 
 Esquema `app` de PostgreSQL 18. Diagramas: `docs/diagrams/data-model/datos-*.drawio.svg`. Decisiones de diseño, roles y Row-Level Security: `docs/adr/003-data-model-and-database-security.md`.
 
@@ -25,7 +25,8 @@ Esquema `app` de PostgreSQL 18. Diagramas: `docs/diagrams/data-model/datos-*.dra
 
 | Tabla | Módulo | Descripción | HU / RNF | RLS | app_api | app_admin |
 |---|---|---|---|---|---|---|
-| [`users`](#users) | Identidad y administración | Cuenta de usuario registrada. Base de la identidad y del control de acceso. | HU17, HU17.1-HU17.4, HU23 | Sí | DELETE, INSERT, SELECT, UPDATE (email, password_hash, updated_at) | SELECT (created_at, email, email_verified_at, id, status, updated_at), UPDATE (status, updated_at) |
+| [`users`](#users) | Identidad y administración | Cuenta de usuario registrada. Base de la identidad y del control de acceso. | HU17, HU17.1-HU17.4, HU23 | Sí | DELETE, INSERT, SELECT, UPDATE (email, onboarding_completed_at, onboarding_started_at, password_hash, updated_at) | SELECT (created_at, email, email_verified_at, id, onboarding_completed_at, onboarding_started_at, status, updated_at), UPDATE (status, updated_at) |
+| [`consents`](#consents) | Identidad y administración | Consentimientos otorgados por el usuario (términos, política de privacidad y conexión bancaria) con la versión del documento aceptado. Retirar un consentimiento no borra el historial; se elimina con la cuenta. | HU32, HU36, Ley 21.719 | Sí | INSERT, SELECT, UPDATE (withdrawn_at) | sin acceso |
 | [`refresh_tokens`](#refresh_tokens) | Identidad y administración | Refresh tokens opacos y rotativos, guardados como hash SHA-256. Una familia agrupa los tokens de un mismo inicio de sesión; reutilizar uno consumido revoca la familia. | HU17.1-HU17.3 | Sí | DELETE, INSERT, SELECT, UPDATE | sin acceso |
 | [`email_tokens`](#email_tokens) | Identidad y administración | Enlaces de un solo uso enviados por correo (verificación 24 h, restablecimiento 30 min), guardados como hash SHA-256. | HU17, HU17.2 | Sí | DELETE, INSERT, SELECT, UPDATE | sin acceso |
 | [`login_throttle`](#login_throttle) | Identidad y administración | Contadores del bloqueo temporal de inicio de sesión por cuenta y por IP. Las claves son HMAC del correo normalizado o de la IP: no guarda datos personales en claro. | HU17.1 | No | DELETE, INSERT, SELECT, UPDATE | sin acceso |
@@ -44,8 +45,8 @@ Esquema `app` de PostgreSQL 18. Diagramas: `docs/diagrams/data-model/datos-*.dra
 | [`household_expenses`](#household_expenses) | Hogar | Gastos comunes del hogar, visibles para todos los miembros junto con quién los registró. | HU13 | Sí | DELETE, INSERT, SELECT, UPDATE (amount, from_month, interval_months, label, schedule_kind, until_month, updated_at) | sin acceso |
 | [`contribution_rules`](#contribution_rules) | Hogar | Regla de aporte de cada gasto común: partes iguales, porcentajes o asignado a un miembro. | HU14, HU15 | Sí | DELETE, INSERT, SELECT, UPDATE | sin acceso |
 | [`contribution_shares`](#contribution_shares) | Hogar | Porcentaje de cada miembro cuando la regla es por porcentajes. La suma debe ser exactamente 100 % (se verifica al confirmar la transacción). | HU14 | Sí | DELETE, INSERT, SELECT, UPDATE | sin acceso |
-| [`plans`](#plans) | Suscripción y pagos | Catálogo de planes del modelo freemium y sus límites (Tabla 13). Datos de referencia cargados por la migración. | HU18, HU30 | No | SELECT | SELECT |
-| [`subscriptions`](#subscriptions) | Suscripción y pagos | Período pagado vigente de un usuario. Sin fila, el usuario está en el plan gratuito. El estado de la Tabla 14 se deriva de las fechas; no se almacena. | HU19, HU20 | Sí | SELECT | SELECT |
+| [`plans`](#plans) | Suscripción y pagos | Catálogo de planes del modelo freemium y sus límites (Tabla 13 del primer informe). Datos de referencia cargados por la migración. | HU18, HU30 | No | SELECT | SELECT |
+| [`subscriptions`](#subscriptions) | Suscripción y pagos | Período pagado vigente de un usuario. Sin fila, el usuario está en el plan gratuito. El estado (Tabla 14 del primer informe) se deriva de las fechas; no se almacena. | HU19, HU20 | Sí | SELECT | SELECT |
 | [`payment_orders`](#payment_orders) | Suscripción y pagos | Órdenes de pago de Webpay Plus. buy_order único hace idempotente la activación. Nunca se guardan datos de tarjeta. | HU19, HU26, RNF09 | Sí | INSERT, SELECT, UPDATE (provider_token) | SELECT |
 | [`scenarios`](#scenarios) | Escenarios | Escenario de simulación: nombre, referencia al estado base y decisiones. El estado base nunca se copia, así que el escenario no puede alterarlo (regla 3). | HU06, HU07, HU09, HU11 | Sí | DELETE, SELECT, UPDATE (base_kind, decisions, household_id, name, updated_at) | sin acceso |
 | [`audit_log`](#audit_log) | Auditoría | Traza de auditoría de solo inserción, encadenada por hash: alterar o borrar una entrada rompe la cadena y es detectable. | RNF10, RNF22, HU25 | No | INSERT | INSERT, SELECT |
@@ -65,11 +66,35 @@ Cuenta de usuario registrada. Base de la identidad y del control de acceso. Traz
 | `status` | `text` | No | `'active'` |  | `status IN ('active', 'suspended')` | Estado de la cuenta: 'active' o 'suspended'. Solo un administrador lo cambia (HU23). |
 | `created_at` | `timestamptz` | No | `now()` |  |  | Fecha y hora de creación. |
 | `updated_at` | `timestamptz` | No | `now()` |  |  | Fecha y hora de la última modificación. |
+| `onboarding_started_at` | `timestamptz` | Sí |  |  |  | Inicio del registro inicial (KPI de finalización y tiempo de registro). |
+| `onboarding_completed_at` | `timestamptz` | Sí |  |  |  | Término del registro inicial: saldo inicial y al menos un ingreso (HU01, HU04). |
 
 - **Clave primaria:** `id`
 - **Única:** (`email`)
+- **Regla de fila:** `(onboarding_completed_at IS NULL) OR ((onboarding_started_at IS NOT NULL) AND (onboarding_completed_at >= onboarding_started_at))`
 - **RLS:** activa; políticas: `users_admin` (ALL, app_admin), `users_self` (ALL, app_api)
-- **Acceso:** `app_api`: DELETE, INSERT, SELECT, UPDATE (email, password_hash, updated_at) · `app_admin`: SELECT (created_at, email, email_verified_at, id, status, updated_at), UPDATE (status, updated_at)
+- **Acceso:** `app_api`: DELETE, INSERT, SELECT, UPDATE (email, onboarding_completed_at, onboarding_started_at, password_hash, updated_at) · `app_admin`: SELECT (created_at, email, email_verified_at, id, onboarding_completed_at, onboarding_started_at, status, updated_at), UPDATE (status, updated_at)
+
+### consents
+
+Consentimientos otorgados por el usuario (términos, política de privacidad y conexión bancaria) con la versión del documento aceptado. Retirar un consentimiento no borra el historial; se elimina con la cuenta. Trazabilidad: HU32, HU36, Ley 21.719.
+
+| Columna | Tipo | Nulo | Por defecto | Clave | Restricciones | Descripción |
+|---|---|---|---|---|---|---|
+| `id` | `uuid` | No | `gen_random_uuid()` | PK |  | Identificador único (UUID aleatorio, no secuencial). |
+| `owner_id` | `uuid` | No |  | FK |  | Usuario que otorgó el consentimiento. |
+| `kind` | `text` | No |  |  | `kind IN ('terms', 'privacy_policy', 'bank_connection')` | Tipo: 'terms' (términos), 'privacy_policy' (política de privacidad) o 'bank_connection' (conexión bancaria). |
+| `document_version` | `text` | No |  |  | `(length(btrim(document_version)) >= 1) AND (length(btrim(document_version)) <= 20)` | Versión del documento aceptado, por ejemplo 2026-10. |
+| `accepted_at` | `timestamptz` | No | `now()` |  |  | Fecha y hora de aceptación. |
+| `withdrawn_at` | `timestamptz` | Sí |  |  |  | Fecha y hora de retiro; NULL = vigente. Solo un consentimiento vigente por tipo. |
+
+- **Clave primaria:** `id`
+- **Clave foránea:** (`owner_id`) → `users` (id), ON DELETE CASCADE
+- **Única:** (`owner_id`, `kind) WHERE (withdrawn_at IS NULL`)
+- **Regla de fila:** `(withdrawn_at IS NULL) OR (withdrawn_at >= accepted_at)`
+- **Índice:** `consents_owner_idx` (owner_id)
+- **RLS:** activa; políticas: `consents_owner` (ALL, app_api)
+- **Acceso:** `app_api`: INSERT, SELECT, UPDATE (withdrawn_at) · `app_admin`: sin acceso
 
 ### refresh_tokens
 
@@ -473,7 +498,7 @@ Porcentaje de cada miembro cuando la regla es por porcentajes. La suma debe ser 
 
 ### plans
 
-Catálogo de planes del modelo freemium y sus límites (Tabla 13). Datos de referencia cargados por la migración. Trazabilidad: HU18, HU30.
+Catálogo de planes del modelo freemium y sus límites (Tabla 13 del primer informe). Datos de referencia cargados por la migración. Trazabilidad: HU18, HU30.
 
 | Columna | Tipo | Nulo | Por defecto | Clave | Restricciones | Descripción |
 |---|---|---|---|---|---|---|
@@ -493,7 +518,7 @@ Catálogo de planes del modelo freemium y sus límites (Tabla 13). Datos de refe
 
 ### subscriptions
 
-Período pagado vigente de un usuario. Sin fila, el usuario está en el plan gratuito. El estado de la Tabla 14 se deriva de las fechas; no se almacena. Trazabilidad: HU19, HU20.
+Período pagado vigente de un usuario. Sin fila, el usuario está en el plan gratuito. El estado (Tabla 14 del primer informe) se deriva de las fechas; no se almacena. Trazabilidad: HU19, HU20.
 
 | Columna | Tipo | Nulo | Por defecto | Clave | Restricciones | Descripción |
 |---|---|---|---|---|---|---|
