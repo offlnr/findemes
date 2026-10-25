@@ -1,0 +1,12 @@
+{
+  // Pure domain: no Node.js, DOM or third-party ambient types are available here.
+  // Using process, setTimeout, fetch, Buffer, etc. inside the core fails to compile.
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2024"],
+    "types": [],
+    "rootDir": "."
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["**/*.test.ts"]
+}

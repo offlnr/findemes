@@ -1,0 +1,70 @@
+INFORME 2 - FIN DE MES
+Cambios de la versión v0.8 (25-10-2026) respecto de la v0.7
+=============================================================
+
+La v0.8 no cambia cifras ni resultados. Agrega el firewall a los diagramas de red y de
+despliegue, y a su descripción. La v0.7 quedó en versiones-anteriores/v0.7 (2026-10-25)/.
+
+
+1. QUÉ ES EL FIREWALL EN ESTA ARQUITECTURA
+------------------------------------------
+En AWS, el firewall de cada servidor y de la base de datos es su grupo de seguridad: una
+lista de reglas que solo deja pasar el tráfico autorizado. Ya estaba definido en el diseño
+(ADR-005), pero ningún diagrama lo mostraba como firewall:
+  - sg-api (servidor de la API): entrada solo por el puerto 8080 desde API Gateway (VPC Link).
+  - sg-admin (servidor de administración): ninguna conexión entrante; se administra por Tailscale.
+  - sg-rds (base de datos): entrada solo por el puerto 5432 desde sg-api y sg-admin.
+
+
+2. DIAGRAMAS ACTUALIZADOS
+-------------------------
+- Ilustración 27, topología física:
+    * Se agregan dos firewalls entre el router de la VPC y las subredes: uno para los
+      servidores EC2 y otro para la base de datos.
+    * Se corrige el ícono del borde de AWS: antes tenía un ícono de firewall, pero CloudFront
+      y API Gateway son el punto de entrada, no un firewall. Ahora es un servidor web, con la
+      etiqueta «CloudFront (AWS Shield Standard) y API Gateway».
+- Ilustración 28, topología lógica:
+    * Cada servidor y la base de datos aparecen dentro de un recuadro rojo de firewall con su
+      regla de entrada. La leyenda incluye el nuevo símbolo.
+    * Se corrige el Internet Gateway, que decía «Solo tráfico saliente; ninguna regla de
+      entrada abierta»: esa restricción la aplican los grupos de seguridad, no el gateway.
+- Ilustración 29, diagrama de despliegue:
+    * Los grupos de seguridad, que antes eran solo texto dentro de las cajas, ahora son
+      límites de firewall visibles alrededor de cada servidor y de la base de datos, con su
+      regla. La leyenda incluye el nuevo símbolo.
+
+No se modificaron los diagramas C4 de contexto, contenedores y componentes, los de
+componentes UML, los BPMN, los casos de uso ni el modelo de datos: muestran software o
+procesos, no la red, así que el firewall no corresponde en ellos.
+
+
+3. TEXTO ACTUALIZADO
+--------------------
+- Tabla 79, fila «Red y seguridad»: «reglas de acceso de red» pasa a «firewall de AWS (grupos
+  de seguridad), AWS Shield Standard».
+- Sección 3.5 (topología): la vista física menciona los firewalls, y la descripción de la
+  Zona 3 explica la regla de entrada de cada uno.
+- Sección 3.6 (infraestructura): se explica que el firewall de cada servidor bloquea las
+  conexiones desde internet y que la base de datos solo acepta las de los dos servidores.
+- Índices actualizados. El informe sigue en 139 páginas y se regeneró el PDF.
+
+
+4. ARCHIVOS FUENTE DE LOS DIAGRAMAS
+-----------------------------------
+Los diagramas se regeneraron con sus scripts (generate_c4.py y generate_topo_fisica.py) en
+la rama docs/aws-kanban-bpmn-informe2, en la copia de trabajo C:\Users\maxii\OneDrive\
+Escritorio\FinDeMes-docs. Los cambios no tienen commit todavía. Para esto se instalaron en
+este equipo Python 3.12 y draw.io.
+
+
+5. PENDIENTE
+------------
+- Hacer commit de los diagramas en la rama docs/aws-kanban-bpmn-informe2 y que Maximiliano
+  revise el PR.
+- ADR-004 (modelo de amenazas) todavía habla del «Cloud Firewall del Droplet» de
+  DigitalOcean; hay que actualizarlo a los grupos de seguridad de AWS.
+- Subtítulos a la izquierda (pendiente desde la v0.7): falta confirmar si se refiere al índice.
+- Siguen vigentes los pendientes de la v0.6 (cotización de Fintoc, sueldo, CORFO, comisión de
+  Webpay, revisión de Maximiliano y entrega de la planilla con el nombre
+  «Flujo de caja - Fin de Mes.xlsx»).

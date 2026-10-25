@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="defs_sp_confirmar" targetNamespace="https://findemes.cl/bpmn" exporter="generate_bpmn.py">
+<bpmn:collaboration id="collab_sp_confirmar">
+<bpmn:participant id="pool_sp_confirmar" name="Usuario" processRef="proc_sp_confirmar"/>
+</bpmn:collaboration>
+<bpmn:process id="proc_sp_confirmar" name="Confirmar movimientos recurrentes" isExecutable="false">
+<bpmn:startEvent id="c_start" name=""><bpmn:outgoing>fc1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:exclusiveGateway id="c_merge" name=""><bpmn:incoming>fc1</bpmn:incoming><bpmn:incoming>fc9</bpmn:incoming><bpmn:outgoing>fc2</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:userTask id="c_revisa" name="Revisar el siguiente movimiento sugerido"><bpmn:incoming>fc2</bpmn:incoming><bpmn:outgoing>fc3</bpmn:outgoing></bpmn:userTask>
+<bpmn:exclusiveGateway id="c_rec" name="¿Es recurrente?"><bpmn:incoming>fc3</bpmn:incoming><bpmn:outgoing>fc4</bpmn:outgoing><bpmn:outgoing>fc5</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:userTask id="c_fijo" name="Clasificarlo como ingreso o gasto fijo"><bpmn:incoming>fc4</bpmn:incoming><bpmn:outgoing>fc6</bpmn:outgoing></bpmn:userTask>
+<bpmn:userTask id="c_puntual" name="Dejarlo como movimiento puntual"><bpmn:incoming>fc5</bpmn:incoming><bpmn:outgoing>fc7</bpmn:outgoing></bpmn:userTask>
+<bpmn:exclusiveGateway id="c_merge2" name=""><bpmn:incoming>fc6</bpmn:incoming><bpmn:incoming>fc7</bpmn:incoming><bpmn:outgoing>fc8</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:exclusiveGateway id="c_quedan" name="¿Quedan movimientos?"><bpmn:incoming>fc8</bpmn:incoming><bpmn:outgoing>fc9</bpmn:outgoing><bpmn:outgoing>fc10</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:endEvent id="c_end" name=""><bpmn:incoming>fc10</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="fc1" name="" sourceRef="c_start" targetRef="c_merge"/>
+<bpmn:sequenceFlow id="fc2" name="" sourceRef="c_merge" targetRef="c_revisa"/>
+<bpmn:sequenceFlow id="fc3" name="" sourceRef="c_revisa" targetRef="c_rec"/>
+<bpmn:sequenceFlow id="fc4" name="Sí" sourceRef="c_rec" targetRef="c_fijo"/>
+<bpmn:sequenceFlow id="fc5" name="No" sourceRef="c_rec" targetRef="c_puntual"/>
+<bpmn:sequenceFlow id="fc6" name="" sourceRef="c_fijo" targetRef="c_merge2"/>
+<bpmn:sequenceFlow id="fc7" name="" sourceRef="c_puntual" targetRef="c_merge2"/>
+<bpmn:sequenceFlow id="fc8" name="" sourceRef="c_merge2" targetRef="c_quedan"/>
+<bpmn:sequenceFlow id="fc9" name="Sí" sourceRef="c_quedan" targetRef="c_merge"/>
+<bpmn:sequenceFlow id="fc10" name="No" sourceRef="c_quedan" targetRef="c_end"/>
+</bpmn:process>
+<bpmndi:BPMNDiagram id="dia_sp_confirmar" name="Confirmar movimientos recurrentes"><bpmndi:BPMNPlane id="plane_sp_confirmar" bpmnElement="collab_sp_confirmar">
+<bpmndi:BPMNShape id="pool_sp_confirmar_di" bpmnElement="pool_sp_confirmar" isHorizontal="true"><dc:Bounds x="742" y="30" width="901" height="355"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_start_di" bpmnElement="c_start"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="812" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_merge_di" bpmnElement="c_merge" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="885" y="175" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_revisa_di" bpmnElement="c_revisa"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="965" y="160" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_rec_di" bpmnElement="c_rec" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="1155" y="175" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1210" y="210" width="90" height="32"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_fijo_di" bpmnElement="c_fijo"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1245" y="70" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_puntual_di" bpmnElement="c_puntual"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1245" y="250" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_merge2_di" bpmnElement="c_merge2" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="1405" y="175" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_quedan_di" bpmnElement="c_quedan" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="1480" y="175" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1455" y="139" width="100" height="32"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_end_di" bpmnElement="c_end"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="1567" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="fc1_di" bpmnElement="fc1"><di:waypoint x="848" y="200"/><di:waypoint x="885" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc2_di" bpmnElement="fc2"><di:waypoint x="935" y="200"/><di:waypoint x="965" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc3_di" bpmnElement="fc3"><di:waypoint x="1115" y="200"/><di:waypoint x="1155" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc4_di" bpmnElement="fc4"><di:waypoint x="1180" y="175"/><di:waypoint x="1180" y="110"/><di:waypoint x="1245" y="110"/><bpmndi:BPMNLabel><dc:Bounds x="1186" y="155" width="30" height="16"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc5_di" bpmnElement="fc5"><di:waypoint x="1180" y="225"/><di:waypoint x="1180" y="290"/><di:waypoint x="1245" y="290"/><bpmndi:BPMNLabel><dc:Bounds x="1186" y="231" width="30" height="16"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc6_di" bpmnElement="fc6"><di:waypoint x="1395" y="110"/><di:waypoint x="1430" y="110"/><di:waypoint x="1430" y="175"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc7_di" bpmnElement="fc7"><di:waypoint x="1395" y="290"/><di:waypoint x="1430" y="290"/><di:waypoint x="1430" y="225"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc8_di" bpmnElement="fc8"><di:waypoint x="1455" y="200"/><di:waypoint x="1480" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc9_di" bpmnElement="fc9"><di:waypoint x="1505" y="225"/><di:waypoint x="1505" y="345"/><di:waypoint x="910" y="345"/><di:waypoint x="910" y="225"/><bpmndi:BPMNLabel><dc:Bounds x="1513" y="240" width="30" height="16"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc10_di" bpmnElement="fc10"><di:waypoint x="1530" y="200"/><di:waypoint x="1567" y="200"/><bpmndi:BPMNLabel><dc:Bounds x="1532" y="182" width="30" height="16"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>

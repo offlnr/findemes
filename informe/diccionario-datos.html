@@ -1,0 +1,270 @@
+<html><head><meta charset="utf-8"><title>Diccionario de datos</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:10pt}table{border-collapse:collapse;width:100%;margin-bottom:6pt}th,td{border:1px solid #808080;padding:2pt 4pt;vertical-align:top}th{background:#D9E2F3}h2{font-size:13pt}h3{font-size:11pt;margin-bottom:2pt}p{margin:2pt 0}</style></head><body>
+<h1>Diccionario de datos · Fin de Mes</h1>
+<h2>Dominios</h2><table><tr><th>Dominio</th><th>Tipo base</th><th>Regla</th></tr>
+<tr><td>app.clp</td><td>bigint</td><td>Monto en pesos chilenos, entero, dentro del rango seguro de JavaScript (±2^53 − 1). Regla 10: sin decimales.</td></tr>
+<tr><td>app.month</td><td>date</td><td>Mes calendario, guardado como su primer día (CHECK: el valor es inicio de mes).</td></tr>
+<tr><td>app.label</td><td>text</td><td>Nombre dado por el usuario: entre 1 y 80 caracteres sin contar espacios extremos.</td></tr>
+</table>
+<h2>Identidad y administración</h2>
+<h3>Tabla users</h3><p>Cuenta de usuario registrada. Base de la identidad y del control de acceso. Trazabilidad: HU17, HU17.1-HU17.4, HU23.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>email</td><td>text</td><td>No</td><td>UK</td><td>Correo, normalizado (sin espacios y en minúsculas). Único. Restricción: (email = lower(btrim(email))) AND ((length(email) &gt;= 3) AND (length(email) &lt;= 254)).</td></tr>
+<tr><td>password_hash</td><td>text</td><td>No</td><td></td><td>Hash argon2id de la contraseña (RNF07). La API de administración no puede leerlo. Restricción: password_hash ~~ &#x27;$argon2id$%&#x27;.</td></tr>
+<tr><td>email_verified_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora de verificación del correo; NULL = no verificado.</td></tr>
+<tr><td>status</td><td>text</td><td>No</td><td></td><td>Estado de la cuenta: &#x27;active&#x27; o &#x27;suspended&#x27;. Solo un administrador lo cambia (HU23). Por defecto: &#x27;active&#x27;. Restricción: status IN (&#x27;active&#x27;, &#x27;suspended&#x27;).</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla refresh_tokens</h3><p>Refresh tokens opacos y rotativos, guardados como hash SHA-256. Una familia agrupa los tokens de un mismo inicio de sesión; reutilizar uno consumido revoca la familia. Trazabilidad: HU17.1-HU17.3.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>user_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario de la sesión.</td></tr>
+<tr><td>family_id</td><td>uuid</td><td>No</td><td></td><td>Familia de tokens de un mismo inicio de sesión.</td></tr>
+<tr><td>token_hash</td><td>bytea</td><td>No</td><td>UK</td><td>Hash SHA-256 del token; el token en claro nunca se guarda. Restricción: length(token_hash) = 32.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>expires_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de expiración.</td></tr>
+<tr><td>consumed_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora en que se rotó; presentarlo de nuevo revoca la familia.</td></tr>
+<tr><td>revoked_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora de revocación (cierre de sesión o reutilización detectada).</td></tr>
+</table>
+<h3>Tabla email_tokens</h3><p>Enlaces de un solo uso enviados por correo (verificación 24 h, restablecimiento 30 min), guardados como hash SHA-256. Trazabilidad: HU17, HU17.2.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>user_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario destinatario del enlace.</td></tr>
+<tr><td>purpose</td><td>text</td><td>No</td><td></td><td>Uso del enlace: &#x27;verify_email&#x27; o &#x27;reset_password&#x27;. Restricción: purpose IN (&#x27;verify_email&#x27;, &#x27;reset_password&#x27;).</td></tr>
+<tr><td>token_hash</td><td>bytea</td><td>No</td><td>UK</td><td>Hash SHA-256 del token; el token en claro nunca se guarda. Restricción: length(token_hash) = 32.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>expires_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de expiración.</td></tr>
+<tr><td>used_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora de uso; un enlace usado no vuelve a servir.</td></tr>
+</table>
+<h3>Tabla login_throttle</h3><p>Contadores del bloqueo temporal de inicio de sesión por cuenta y por IP. Las claves son HMAC del correo normalizado o de la IP: no guarda datos personales en claro. Trazabilidad: HU17.1.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>key_hash</td><td>bytea</td><td>No</td><td>PK</td><td>HMAC del correo normalizado o de la IP. Restricción: length(key_hash) = 32.</td></tr>
+<tr><td>failures</td><td>integer</td><td>No</td><td></td><td>Intentos fallidos consecutivos. Por defecto: 0. Restricción: failures &gt;= 0.</td></tr>
+<tr><td>locked_until</td><td>timestamptz</td><td>Sí</td><td></td><td>Bloqueo temporal hasta esta fecha y hora; la espera crece con los fallos.</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla platform_admins</h3><p>Usuarios con rol de administrador de la plataforma y su segundo factor TOTP. Solo la lee el rol de la API de administración. Trazabilidad: HU22, RNF22.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>user_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Usuario con rol de administrador.</td></tr>
+<tr><td>totp_secret_ciphertext</td><td>bytea</td><td>No</td><td></td><td>Secreto TOTP cifrado por la aplicación con AES-256-GCM.</td></tr>
+<tr><td>totp_nonce</td><td>bytea</td><td>No</td><td></td><td>Nonce de 12 bytes del cifrado AES-256-GCM. Restricción: length(totp_nonce) = 12.</td></tr>
+<tr><td>totp_key_version</td><td>smallint</td><td>No</td><td></td><td>Versión de la clave de cifrado usada (permite rotarla). Restricción: totp_key_version &gt; 0.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>last_login_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Último inicio de sesión en el panel.</td></tr>
+</table>
+<h2>Registro financiero</h2>
+<h3>Tabla financial_profiles</h3><p>Saldo inicial del usuario al comienzo de un mes (uno por usuario). Trazabilidad: HU04.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Usuario dueño del perfil (uno por usuario).</td></tr>
+<tr><td>opening_balance</td><td>app.clp</td><td>No</td><td></td><td>Saldo inicial en pesos; puede ser negativo.</td></tr>
+<tr><td>balance_month</td><td>app.month</td><td>No</td><td></td><td>Mes al que corresponde el saldo inicial.</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+<tr><td>origin</td><td>text</td><td>No</td><td></td><td>Origen del dato: &#x27;real&#x27;, &#x27;provider_test&#x27; (modo de prueba del proveedor) o &#x27;demo&#x27;. La app rotula lo que no es real. Por defecto: &#x27;real&#x27;. Restricción: origin IN (&#x27;real&#x27;, &#x27;provider_test&#x27;, &#x27;demo&#x27;).</td></tr>
+<tr><td>source_account_id</td><td>uuid</td><td>Sí</td><td>FK</td><td>Cuenta bancaria de la que se tomó el saldo; NULL si es manual.</td></tr>
+</table>
+<h3>Tabla incomes</h3><p>Ingresos recurrentes o esporádicos del usuario. Trazabilidad: HU01.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario dueño del registro. Toda lectura y escritura se filtra por este campo (RLS).</td></tr>
+<tr><td>label</td><td>app.label</td><td>No</td><td></td><td>Nombre que el usuario da al registro.</td></tr>
+<tr><td>amount</td><td>app.clp</td><td>No</td><td></td><td>Monto en pesos chilenos (entero). Restricción: amount &gt; 0.</td></tr>
+<tr><td>schedule_kind</td><td>text</td><td>No</td><td></td><td>Periodicidad: &#x27;once&#x27; (un mes), &#x27;monthly&#x27; (mensual) o &#x27;every_n_months&#x27; (cada N meses). Restricción: schedule_kind IN (&#x27;once&#x27;, &#x27;monthly&#x27;, &#x27;every_n_months&#x27;).</td></tr>
+<tr><td>interval_months</td><td>smallint</td><td>Sí</td><td></td><td>Cada cuántos meses se repite (2 a 24); solo con &#x27;every_n_months&#x27;.</td></tr>
+<tr><td>from_month</td><td>app.month</td><td>No</td><td></td><td>Primer mes en que aplica.</td></tr>
+<tr><td>until_month</td><td>app.month</td><td>Sí</td><td></td><td>Último mes en que aplica; NULL = sin término.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+<tr><td>origin</td><td>text</td><td>No</td><td></td><td>Origen del dato: &#x27;real&#x27;, &#x27;provider_test&#x27; (modo de prueba del proveedor) o &#x27;demo&#x27;. La app rotula lo que no es real. Por defecto: &#x27;real&#x27;. Restricción: origin IN (&#x27;real&#x27;, &#x27;provider_test&#x27;, &#x27;demo&#x27;).</td></tr>
+<tr><td>source_movement_id</td><td>uuid</td><td>Sí</td><td>FK</td><td>Movimiento bancario desde el que el usuario confirmó el registro; NULL si es manual o si se borró el dato bancario.</td></tr>
+</table>
+<h3>Tabla expenses</h3><p>Gastos fijos y gastos variables estimados del usuario. Trazabilidad: HU02.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario dueño del registro. Toda lectura y escritura se filtra por este campo (RLS).</td></tr>
+<tr><td>label</td><td>app.label</td><td>No</td><td></td><td>Nombre que el usuario da al registro.</td></tr>
+<tr><td>nature</td><td>text</td><td>No</td><td></td><td>Tipo de gasto: &#x27;fixed&#x27; (fijo) o &#x27;variable_estimate&#x27; (variable estimado). Restricción: nature IN (&#x27;fixed&#x27;, &#x27;variable_estimate&#x27;).</td></tr>
+<tr><td>amount</td><td>app.clp</td><td>No</td><td></td><td>Monto en pesos chilenos (entero). Restricción: amount &gt; 0.</td></tr>
+<tr><td>schedule_kind</td><td>text</td><td>No</td><td></td><td>Periodicidad: &#x27;once&#x27; (un mes), &#x27;monthly&#x27; (mensual) o &#x27;every_n_months&#x27; (cada N meses). Restricción: schedule_kind IN (&#x27;once&#x27;, &#x27;monthly&#x27;, &#x27;every_n_months&#x27;).</td></tr>
+<tr><td>interval_months</td><td>smallint</td><td>Sí</td><td></td><td>Cada cuántos meses se repite (2 a 24); solo con &#x27;every_n_months&#x27;.</td></tr>
+<tr><td>from_month</td><td>app.month</td><td>No</td><td></td><td>Primer mes en que aplica.</td></tr>
+<tr><td>until_month</td><td>app.month</td><td>Sí</td><td></td><td>Último mes en que aplica; NULL = sin término.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+<tr><td>origin</td><td>text</td><td>No</td><td></td><td>Origen del dato: &#x27;real&#x27;, &#x27;provider_test&#x27; (modo de prueba del proveedor) o &#x27;demo&#x27;. La app rotula lo que no es real. Por defecto: &#x27;real&#x27;. Restricción: origin IN (&#x27;real&#x27;, &#x27;provider_test&#x27;, &#x27;demo&#x27;).</td></tr>
+<tr><td>source_movement_id</td><td>uuid</td><td>Sí</td><td>FK</td><td>Movimiento bancario desde el que el usuario confirmó el registro; NULL si es manual o si se borró el dato bancario.</td></tr>
+</table>
+<h3>Tabla debts</h3><p>Deuda en cuotas del usuario. Lo pendiente está en debt_installments. Trazabilidad: HU03.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario dueño del registro. Toda lectura y escritura se filtra por este campo (RLS).</td></tr>
+<tr><td>label</td><td>app.label</td><td>No</td><td></td><td>Nombre que el usuario da al registro.</td></tr>
+<tr><td>total_installments</td><td>smallint</td><td>Sí</td><td></td><td>Número total de cuotas informado al registrar (para mostrar &quot;cuota 3 de 12&quot;). Restricción: (total_installments &gt;= 1) AND (total_installments &lt;= 600).</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla debt_installments</h3><p>Calendario explícito de cuotas pendientes de una deuda: una fila por mes, lo que también representa cuotas desiguales. Trazabilidad: HU03.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>debt_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Deuda a la que pertenece la cuota.</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Dueño; la clave compuesta asegura que coincide con el de la deuda.</td></tr>
+<tr><td>month</td><td>app.month</td><td>No</td><td>PK</td><td>Mes de vencimiento de la cuota.</td></tr>
+<tr><td>amount</td><td>app.clp</td><td>No</td><td></td><td>Monto de la cuota en pesos. Restricción: amount &gt; 0.</td></tr>
+</table>
+<h2>Agregación bancaria</h2>
+<h3>Tabla bank_links</h3><p>Vínculo con un banco a través de Fintoc (modo de prueba) o del banco de demostración. Guarda el link_token cifrado con AES-256-GCM. Trazabilidad: HU36, ADR-002.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario dueño del registro. Toda lectura y escritura se filtra por este campo (RLS).</td></tr>
+<tr><td>provider</td><td>text</td><td>No</td><td></td><td>Proveedor: &#x27;fintoc&#x27; o &#x27;demo&#x27;. Restricción: provider IN (&#x27;fintoc&#x27;, &#x27;demo&#x27;).</td></tr>
+<tr><td>provider_link_id</td><td>text</td><td>No</td><td></td><td>Identificador del vínculo en el proveedor. Restricción: (length(provider_link_id) &gt;= 1) AND (length(provider_link_id) &lt;= 128).</td></tr>
+<tr><td>institution_name</td><td>text</td><td>No</td><td></td><td>Nombre del banco. Restricción: (length(institution_name) &gt;= 1) AND (length(institution_name) &lt;= 120).</td></tr>
+<tr><td>token_ciphertext</td><td>bytea</td><td>No</td><td></td><td>link_token de Fintoc cifrado por la aplicación con AES-256-GCM.</td></tr>
+<tr><td>token_nonce</td><td>bytea</td><td>No</td><td></td><td>Nonce de 12 bytes del cifrado AES-256-GCM. Restricción: length(token_nonce) = 12.</td></tr>
+<tr><td>token_key_version</td><td>smallint</td><td>No</td><td></td><td>Versión de la clave de cifrado usada (permite rotarla). Restricción: token_key_version &gt; 0.</td></tr>
+<tr><td>origin</td><td>text</td><td>No</td><td></td><td>Origen del dato: &#x27;real&#x27;, &#x27;provider_test&#x27; (modo de prueba del proveedor) o &#x27;demo&#x27;. La app rotula lo que no es real. Restricción: origin IN (&#x27;real&#x27;, &#x27;provider_test&#x27;, &#x27;demo&#x27;).</td></tr>
+<tr><td>status</td><td>text</td><td>No</td><td></td><td>Estado del vínculo: &#x27;active&#x27; o &#x27;revoked&#x27;. Por defecto: &#x27;active&#x27;. Restricción: status IN (&#x27;active&#x27;, &#x27;revoked&#x27;).</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>last_synced_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Última sincronización exitosa.</td></tr>
+</table>
+<h3>Tabla bank_accounts</h3><p>Cuentas bancarias obtenidas de un vínculo. Trazabilidad: HU36.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario dueño del registro. Toda lectura y escritura se filtra por este campo (RLS).</td></tr>
+<tr><td>link_id</td><td>uuid</td><td>No</td><td>FK</td><td>Vínculo bancario del que proviene la cuenta.</td></tr>
+<tr><td>external_id</td><td>text</td><td>No</td><td></td><td>Identificador del registro en el proveedor bancario. Restricción: (length(external_id) &gt;= 1) AND (length(external_id) &lt;= 128).</td></tr>
+<tr><td>name</td><td>text</td><td>No</td><td></td><td>Nombre de la cuenta informado por el banco. Restricción: (length(name) &gt;= 1) AND (length(name) &lt;= 120).</td></tr>
+<tr><td>account_type</td><td>text</td><td>No</td><td></td><td>Tipo de cuenta informado por el proveedor. Restricción: (length(account_type) &gt;= 1) AND (length(account_type) &lt;= 40).</td></tr>
+<tr><td>available_balance</td><td>app.clp</td><td>No</td><td></td><td>Saldo disponible en pesos.</td></tr>
+<tr><td>origin</td><td>text</td><td>No</td><td></td><td>Origen del dato: &#x27;real&#x27;, &#x27;provider_test&#x27; (modo de prueba del proveedor) o &#x27;demo&#x27;. La app rotula lo que no es real. Restricción: origin IN (&#x27;real&#x27;, &#x27;provider_test&#x27;, &#x27;demo&#x27;).</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última actualización desde el proveedor. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla bank_movements</h3><p>Movimientos bancarios importados. Volver a sincronizar es idempotente. Trazabilidad: HU36.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario dueño del registro. Toda lectura y escritura se filtra por este campo (RLS).</td></tr>
+<tr><td>account_id</td><td>uuid</td><td>No</td><td>FK</td><td>Cuenta a la que pertenece el movimiento.</td></tr>
+<tr><td>external_id</td><td>text</td><td>No</td><td></td><td>Identificador del registro en el proveedor bancario. Restricción: (length(external_id) &gt;= 1) AND (length(external_id) &lt;= 128).</td></tr>
+<tr><td>posted_on</td><td>date</td><td>No</td><td></td><td>Fecha contable del movimiento.</td></tr>
+<tr><td>amount</td><td>app.clp</td><td>No</td><td></td><td>Monto en pesos: negativo = cargo, positivo = abono. Nunca cero. Restricción: amount &lt;&gt; 0.</td></tr>
+<tr><td>description</td><td>text</td><td>No</td><td></td><td>Glosa del banco. Texto no confiable: siempre se escapa al mostrarlo. Restricción: length(description) &lt;= 500.</td></tr>
+<tr><td>origin</td><td>text</td><td>No</td><td></td><td>Origen del dato: &#x27;real&#x27;, &#x27;provider_test&#x27; (modo de prueba del proveedor) o &#x27;demo&#x27;. La app rotula lo que no es real. Restricción: origin IN (&#x27;real&#x27;, &#x27;provider_test&#x27;, &#x27;demo&#x27;).</td></tr>
+<tr><td>imported_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de importación. Por defecto: now().</td></tr>
+</table>
+<h2>Hogar</h2>
+<h3>Tabla households</h3><p>Hogar: espacio común compartido por sus miembros. Trazabilidad: HU12.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>name</td><td>app.label</td><td>No</td><td></td><td>Nombre del hogar.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla household_members</h3><p>Pertenencia de un usuario a un hogar y su rol. En el MVP, un usuario pertenece como máximo a un hogar. Trazabilidad: HU12, HU16.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>household_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Hogar al que pertenece el registro.</td></tr>
+<tr><td>user_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Miembro del hogar (único: un hogar por usuario en el MVP).</td></tr>
+<tr><td>role</td><td>text</td><td>No</td><td></td><td>Rol en el hogar: &#x27;admin&#x27; o &#x27;member&#x27;. Restricción: role IN (&#x27;admin&#x27;, &#x27;member&#x27;).</td></tr>
+<tr><td>display_name</td><td>app.label</td><td>No</td><td></td><td>Nombre visible para los demás miembros; el correo nunca se expone.</td></tr>
+<tr><td>joined_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de ingreso al hogar. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla household_invitations</h3><p>Invitaciones de un solo uso a un hogar, guardadas como hash, con vigencia máxima de 7 días. Trazabilidad: HU12, HU31.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>household_id</td><td>uuid</td><td>No</td><td>FK</td><td>Hogar al que pertenece el registro.</td></tr>
+<tr><td>token_hash</td><td>bytea</td><td>No</td><td>UK</td><td>Hash SHA-256 del token; el token en claro nunca se guarda. Restricción: length(token_hash) = 32.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>expires_at</td><td>timestamptz</td><td>No</td><td></td><td>Expiración; como máximo 7 días después de su creación.</td></tr>
+<tr><td>accepted_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora de aceptación; una invitación aceptada no vuelve a servir.</td></tr>
+</table>
+<h3>Tabla household_expenses</h3><p>Gastos comunes del hogar, visibles para todos los miembros junto con quién los registró. Trazabilidad: HU13.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>household_id</td><td>uuid</td><td>No</td><td>FK</td><td>Hogar al que pertenece el registro.</td></tr>
+<tr><td>created_by</td><td>uuid</td><td>Sí</td><td>FK</td><td>Miembro que registró el gasto; NULL si eliminó su cuenta (HU21).</td></tr>
+<tr><td>created_by_name</td><td>app.label</td><td>No</td><td></td><td>Nombre de quien lo registró, fijado por el servidor; pasa a &#x27;Ex miembro&#x27; si se borra su cuenta.</td></tr>
+<tr><td>label</td><td>app.label</td><td>No</td><td></td><td>Nombre que el usuario da al registro.</td></tr>
+<tr><td>amount</td><td>app.clp</td><td>No</td><td></td><td>Monto en pesos chilenos (entero). Restricción: amount &gt; 0.</td></tr>
+<tr><td>schedule_kind</td><td>text</td><td>No</td><td></td><td>Periodicidad: &#x27;once&#x27; (un mes), &#x27;monthly&#x27; (mensual) o &#x27;every_n_months&#x27; (cada N meses). Restricción: schedule_kind IN (&#x27;once&#x27;, &#x27;monthly&#x27;, &#x27;every_n_months&#x27;).</td></tr>
+<tr><td>interval_months</td><td>smallint</td><td>Sí</td><td></td><td>Cada cuántos meses se repite (2 a 24); solo con &#x27;every_n_months&#x27;.</td></tr>
+<tr><td>from_month</td><td>app.month</td><td>No</td><td></td><td>Primer mes en que aplica.</td></tr>
+<tr><td>until_month</td><td>app.month</td><td>Sí</td><td></td><td>Último mes en que aplica; NULL = sin término.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla contribution_rules</h3><p>Regla de aporte de cada gasto común: partes iguales, porcentajes o asignado a un miembro. Trazabilidad: HU14, HU15.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>expense_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Gasto común al que aplica la regla (una regla por gasto).</td></tr>
+<tr><td>household_id</td><td>uuid</td><td>No</td><td>FK</td><td>Hogar del gasto; la clave compuesta impide mezclar hogares.</td></tr>
+<tr><td>mode</td><td>text</td><td>No</td><td></td><td>Modo de reparto: &#x27;equal&#x27;, &#x27;percentage&#x27; o &#x27;assigned&#x27;. Restricción: mode IN (&#x27;equal&#x27;, &#x27;percentage&#x27;, &#x27;assigned&#x27;).</td></tr>
+<tr><td>assigned_user_id</td><td>uuid</td><td>Sí</td><td></td><td>Miembro que asume el gasto; solo con &#x27;assigned&#x27;. Debe ser miembro actual (trigger).</td></tr>
+</table>
+<h3>Tabla contribution_shares</h3><p>Porcentaje de cada miembro cuando la regla es por porcentajes. La suma debe ser exactamente 100 % (se verifica al confirmar la transacción). Trazabilidad: HU14.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>expense_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Gasto común.</td></tr>
+<tr><td>household_id</td><td>uuid</td><td>No</td><td>FK</td><td>Hogar; la clave compuesta mantiene el porcentaje en el mismo hogar que la regla.</td></tr>
+<tr><td>user_id</td><td>uuid</td><td>No</td><td>PK</td><td>Miembro que aporta. Debe ser miembro actual del hogar (trigger).</td></tr>
+<tr><td>basis_points</td><td>integer</td><td>No</td><td></td><td>Porcentaje en puntos básicos enteros (10.000 = 100 %). Restricción: (basis_points &gt;= 1) AND (basis_points &lt;= 10000).</td></tr>
+</table>
+<h2>Suscripción y pagos</h2>
+<h3>Tabla plans</h3><p>Catálogo de planes del modelo freemium y sus límites (Tabla 13). Datos de referencia cargados por la migración. Trazabilidad: HU18, HU30.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>code</td><td>text</td><td>No</td><td>PK</td><td>Código del plan: &#x27;free&#x27;, &#x27;paid&#x27; o &#x27;family&#x27;. Restricción: code IN (&#x27;free&#x27;, &#x27;paid&#x27;, &#x27;family&#x27;).</td></tr>
+<tr><td>name</td><td>app.label</td><td>No</td><td></td><td>Nombre visible del plan.</td></tr>
+<tr><td>price_clp</td><td>app.clp</td><td>Sí</td><td></td><td>Precio por período en pesos; NULL = no está a la venta (el informe aún no fija precios). Restricción: (price_clp IS NULL) OR (price_clp &gt; 0).</td></tr>
+<tr><td>period_months</td><td>smallint</td><td>No</td><td></td><td>Duración del período pagado, en meses. Por defecto: 1. Restricción: (period_months &gt;= 1) AND (period_months &lt;= 12).</td></tr>
+<tr><td>max_saved_scenarios</td><td>integer</td><td>Sí</td><td></td><td>Máximo de escenarios guardados; NULL = ilimitado. Restricción: (max_saved_scenarios IS NULL) OR (max_saved_scenarios &gt;= 0).</td></tr>
+<tr><td>max_compared_scenarios</td><td>integer</td><td>Sí</td><td></td><td>Máximo de escenarios comparables contra la base; NULL = ilimitado. Restricción: (max_compared_scenarios IS NULL) OR (max_compared_scenarios &gt;= 1).</td></tr>
+<tr><td>full_history</td><td>boolean</td><td>No</td><td></td><td>Acceso al historial completo de meses.</td></tr>
+<tr><td>user_prepayments</td><td>boolean</td><td>No</td><td></td><td>Permite simular prepagos definidos por el usuario.</td></tr>
+<tr><td>household_space</td><td>boolean</td><td>No</td><td></td><td>Incluye el espacio común del hogar.</td></tr>
+</table>
+<h3>Tabla subscriptions</h3><p>Período pagado vigente de un usuario. Sin fila, el usuario está en el plan gratuito. El estado de la Tabla 14 se deriva de las fechas; no se almacena. Trazabilidad: HU19, HU20.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>user_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Usuario suscrito (una suscripción vigente por usuario).</td></tr>
+<tr><td>plan_code</td><td>text</td><td>No</td><td>FK</td><td>Plan contratado. Restricción: plan_code &lt;&gt; &#x27;free&#x27;.</td></tr>
+<tr><td>period_start</td><td>date</td><td>No</td><td></td><td>Inicio del período pagado (fecha de Chile).</td></tr>
+<tr><td>period_end</td><td>date</td><td>No</td><td></td><td>Fin del período pagado; luego el usuario vuelve al plan gratuito sin perder datos (HU20).</td></tr>
+<tr><td>cancel_at_period_end</td><td>boolean</td><td>No</td><td></td><td>El usuario canceló: conserva el acceso hasta period_end y no se renueva. Por defecto: false.</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla payment_orders</h3><p>Órdenes de pago de Webpay Plus. buy_order único hace idempotente la activación. Nunca se guardan datos de tarjeta. Trazabilidad: HU19, HU26, RNF09.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>buy_order</td><td>text</td><td>No</td><td>PK</td><td>Orden de compra enviada a Webpay. Única: confirmar dos veces no activa dos veces. Restricción: buy_order ~ &#x27;^[A-Za-z0-9_-]{1,26}$&#x27;.</td></tr>
+<tr><td>user_id</td><td>uuid</td><td>Sí</td><td>FK</td><td>Usuario que paga; NULL si eliminó su cuenta (se conserva para conciliar con Transbank).</td></tr>
+<tr><td>plan_code</td><td>text</td><td>No</td><td>FK</td><td>Plan contratado. Restricción: plan_code &lt;&gt; &#x27;free&#x27;.</td></tr>
+<tr><td>amount</td><td>app.clp</td><td>No</td><td></td><td>Monto esperado según el plan. Restricción: amount &gt; 0.</td></tr>
+<tr><td>provider_token</td><td>text</td><td>Sí</td><td>UK</td><td>token_ws de Webpay. Restricción: length(provider_token) &lt;= 128.</td></tr>
+<tr><td>status</td><td>text</td><td>No</td><td></td><td>Resultado: &#x27;created&#x27;, &#x27;authorized&#x27;, &#x27;rejected&#x27;, &#x27;aborted&#x27; o &#x27;amount_mismatch&#x27;. Por defecto: &#x27;created&#x27;. Restricción: status IN (&#x27;created&#x27;, &#x27;authorized&#x27;, &#x27;rejected&#x27;, &#x27;aborted&#x27;, &#x27;amount_mismatch&#x27;).</td></tr>
+<tr><td>authorized_amount</td><td>app.clp</td><td>Sí</td><td></td><td>Monto informado por Transbank; se compara con amount.</td></tr>
+<tr><td>response_code</td><td>text</td><td>Sí</td><td></td><td>Código de respuesta de Transbank. Restricción: length(response_code) &lt;= 32.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>committed_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora del commit desde el servidor.</td></tr>
+<tr><td>activated_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora en que se activó el plan; solo si status = authorized.</td></tr>
+</table>
+<h2>Escenarios</h2>
+<h3>Tabla scenarios</h3><p>Escenario de simulación: nombre, referencia al estado base y decisiones. El estado base nunca se copia, así que el escenario no puede alterarlo (regla 3). Trazabilidad: HU06, HU07, HU09, HU11.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario dueño del registro. Toda lectura y escritura se filtra por este campo (RLS).</td></tr>
+<tr><td>name</td><td>app.label</td><td>No</td><td></td><td>Nombre del escenario.</td></tr>
+<tr><td>base_kind</td><td>text</td><td>No</td><td></td><td>Estado base: &#x27;personal&#x27; o &#x27;household&#x27;. Restricción: base_kind IN (&#x27;personal&#x27;, &#x27;household&#x27;).</td></tr>
+<tr><td>household_id</td><td>uuid</td><td>Sí</td><td>FK</td><td>Hogar cuyo estado se usa como base; solo con &#x27;household&#x27;. Si el hogar desaparece o el usuario sale, el escenario pasa a personal (trigger).</td></tr>
+<tr><td>decisions</td><td>jsonb</td><td>No</td><td></td><td>Decisiones del escenario (arreglo JSON, máx. 20 y 64 KB). El núcleo las valida al simular. Por defecto: &#x27;[]&#x27;. Restricción: (jsonb_typeof(decisions) = &#x27;array&#x27;) AND (jsonb_array_length(decisions) &lt;= 20) AND (octet_length(decisions) &lt;= 65536).</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+</table>
+<h2>Auditoría</h2>
+<h3>Tabla audit_log</h3><p>Traza de auditoría de solo inserción, encadenada por hash: alterar o borrar una entrada rompe la cadena y es detectable. Trazabilidad: RNF10, RNF22, HU25.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>bigint</td><td>No</td><td>PK</td><td>Identificador interno autoincremental. Por defecto: identidad.</td></tr>
+<tr><td>seq</td><td>bigint</td><td>No</td><td>UK</td><td>Posición en la cadena, asignada por el trigger con bloqueo.</td></tr>
+<tr><td>occurred_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora del evento, fijada por el servidor.</td></tr>
+<tr><td>actor_type</td><td>text</td><td>No</td><td></td><td>Quién actuó: &#x27;user&#x27;, &#x27;admin&#x27; o &#x27;system&#x27;. Restricción: actor_type IN (&#x27;user&#x27;, &#x27;admin&#x27;, &#x27;system&#x27;).</td></tr>
+<tr><td>actor_id</td><td>uuid</td><td>Sí</td><td></td><td>Identificador del actor. Sin clave foránea: sobrevive al borrado de la cuenta como seudónimo.</td></tr>
+<tr><td>action</td><td>text</td><td>No</td><td></td><td>Acción realizada, p. ej. &#x27;user.suspend&#x27;. Restricción: action ~ &#x27;^[a-z][a-z0-9_.]{0,63}$&#x27;.</td></tr>
+<tr><td>target_type</td><td>text</td><td>No</td><td></td><td>Tipo de recurso afectado. Restricción: target_type ~ &#x27;^[a-z][a-z0-9_]{0,63}$&#x27;.</td></tr>
+<tr><td>target_id</td><td>uuid</td><td>Sí</td><td></td><td>Identificador del recurso afectado.</td></tr>
+<tr><td>origin_ip</td><td>inet</td><td>Sí</td><td></td><td>IP de origen vista por la API (HU25).</td></tr>
+<tr><td>details</td><td>jsonb</td><td>No</td><td></td><td>Detalle en JSON: solo identificadores y nombres de campos, nunca valores personales ni montos. Por defecto: &#x27;{}&#x27;. Restricción: (jsonb_typeof(details) = &#x27;object&#x27;) AND (octet_length(details) &lt;= 4096).</td></tr>
+<tr><td>prev_hash</td><td>bytea</td><td>No</td><td></td><td>Hash de la entrada anterior (encadenamiento). Restricción: length(prev_hash) = 32.</td></tr>
+<tr><td>hash</td><td>bytea</td><td>No</td><td>UK</td><td>Hash SHA-256 de esta entrada. Restricción: length(hash) = 32.</td></tr>
+</table>
+</body></html>
