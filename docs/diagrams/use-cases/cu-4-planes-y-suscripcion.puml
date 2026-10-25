@@ -4,34 +4,49 @@ title Casos de uso · Planes, suscripción y pago en línea (E7)
 left to right direction
 
 actor "Usuario registrado" as U
-actor "Transbank Webpay Plus" <<sistema externo>> as TBK
 
 rectangle "Fin de Mes" {
-  usecase "Conocer las capacidades\nde cada plan\n<size:9>HU18</size>" as HU18 <<S>>
-  usecase "Contratar un plan pagado\n<size:9>HU19</size>" as HU19 <<S>>
-  usecase "Confirmar la transacción\ndesde el servidor\n<size:9>HU19</size>" as COMMIT <<S>>
-  usecase "Conservar los datos al\nvencer la suscripción\n<size:9>HU20</size>" as HU20 <<S>>
+  usecase "Comparar los planes con\nel plan vigente\n<size:9>CU-48 · HU18</size>" as HU18 <<S>>
+  usecase HU19 <<S>> as "Contratar un plan pagado
+<size:9>CU-49 · HU19</size>
+--
+<size:9>puntos de extensión:</size>
+<size:9>activación del plan</size>"
+  usecase "Confirmar el pago\ncon Transbank\n<size:9>CU-50 · HU19</size>" as COMMIT <<S>>
+  usecase "Restablecer el acceso\ncompleto al renovar\n<size:9>CU-51 · HU20</size>" as RESTORE <<S>>
+  usecase "Pasar al plan gratuito al\nvencer, sin perder datos\n<size:9>CU-52 · HU20</size>" as HU20 <<S>>
 }
+
+actor "Transbank Webpay Plus" <<sistema externo>> as TBK
 
 U -- HU18
 U -- HU19
 U -- HU20
 
 HU19 ..> COMMIT : <<include>>
+RESTORE .[norank].> HU19 : <<extend>>
+note right on link
+  condición: [la suscripción
+  anterior estaba vencida]
+  punto de extensión:
+  activación del plan
+end note
+
 HU19 -- TBK
 COMMIT -- TBK
 
-note right of COMMIT
-  Commit contra Transbank, verificación
-  del monto contra el plan y activación
-  idempotente (buy_order único). No
-  depende del retorno del navegador.
-  Nunca se almacenan datos de tarjeta.
+note bottom of COMMIT
+  Lo inicia el servidor de Fin de Mes,
+  no el navegador. Verifica el monto
+  contra el precio del plan; un mismo
+  pago nunca activa el plan dos veces.
+  No se guardan datos de tarjeta.
 end note
 
-note right of HU20
-  Al vencer, el usuario vuelve al
-  plan gratuito sin perder datos.
+note bottom of HU20
+  Lo dispara la fecha de término
+  del período pagado. El espacio
+  común del hogar queda en solo lectura.
 end note
 
 note "Fuera del alcance (prioridad W):\nHU38 renovación automática (Oneclick)." as OUT

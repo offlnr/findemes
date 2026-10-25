@@ -3,41 +3,60 @@
 title Casos de uso · Hogar, gastos comunes y reglas de aporte (E5)
 left to right direction
 
+actor "Administrador de hogar" as AH
 actor "Visitante" as V
 actor "Miembro del hogar" as M
-actor "Administrador de hogar" as AH
-actor "Proveedor de correo" <<sistema externo>> as MAIL
 
 M <|-- AH
 
 rectangle "Fin de Mes" {
-  usecase "Crear un hogar\n<size:9>HU12</size>" as HU12 <<S>>
-  usecase "Invitar miembros\n<size:9>HU12</size>" as INV <<S>>
-  usecase "Registrar gastos comunes\n<size:9>HU13</size>" as HU13 <<S>>
-  usecase "Configurar las reglas\nde aporte\n<size:9>HU14</size>" as HU14 <<S>>
-  usecase "Consultar los gastos\ncomunes\n<size:9>HU13</size>" as HU13C <<S>>
-  usecase "Ver mi aporte en mi\nproyección individual\n<size:9>HU15</size>" as HU15 <<S>>
-  usecase "Mantener privados ingresos,\ndeudas y escenarios\n<size:9>HU16</size>" as HU16 <<M>>
-  usecase "Aceptar una invitación\ny crear la cuenta\n<size:9>HU31</size>" as HU31 <<S>>
-  usecase "Crear una cuenta\n<size:9>HU17 (ver cu-1)</size>" as HU17 <<M>>
+  usecase "Crear un hogar\n<size:9>CU-38 · HU12</size>" as CREATE <<S>>
+  usecase "Invitar a un miembro\n<size:9>CU-39 · HU12</size>" as INVITE <<S>>
+  usecase "Remover a un miembro\n<size:9>CU-47 · HU12</size>" as REMOVE <<S>>
+  usecase "Configurar la regla de\naporte de un gasto común\n<size:9>CU-42 · HU14</size>" as RULE <<S>>
+
+  usecase "Aceptar una invitación\na un hogar\n<size:9>CU-40 · HU12, HU31</size>\n--\n<size:9>puntos de extensión:</size>\n<size:9>identificación del invitado</size>" as ACCEPT <<S>>
+  usecase "Crear una cuenta\n<size:9>CU-08 · HU17 (Ilustración 15)</size>" as HU17 <<M>>
+
+  usecase "Registrar un gasto común\n<size:9>CU-41 · HU13</size>" as ADDEXP <<S>>
+  usecase "Consultar los gastos comunes\n<size:9>CU-43 · HU13, HU16</size>" as LISTEXP <<S>>
+  usecase "Modificar o eliminar\nun gasto común\n<size:9>CU-44 · HU13</size>" as EDITEXP <<S>>
+  usecase "Ver la proyección del\nflujo de caja mensual\n<size:9>CU-23 · HU05 (Ilustración 16)</size>\n--\n<size:9>puntos de extensión:</size>\n<size:9>compromisos del mes</size>\n<size:9>horizonte</size>" as HU05 <<M>>
+  usecase "Salir del hogar\n<size:9>CU-46 · HU12</size>" as LEAVE <<S>>
+  usecase "Incorporar mi aporte\nal hogar en la proyección\n<size:9>CU-45 · HU15, HU16</size>" as SHARE <<S>>
 }
 
-AH -- HU12
-AH -- INV
-AH -- HU13
-AH -- HU14
-M -- HU13C
-M -- HU15
-M -- HU16
-V -- HU31
+actor "Proveedor de correo" <<sistema externo>> as MAIL
 
-HU31 ..> HU17 : <<include>>
-INV -- MAIL
+AH -- CREATE
+AH -- INVITE
+AH -- REMOVE
+AH -- RULE
+
+
+V -- ACCEPT
+
+M -- ADDEXP
+M -- LISTEXP
+M -- EDITEXP
+M -- HU05
+M -- LEAVE
+
+ACCEPT <.. HU17 : <<extend>>\n[el invitado aún\nno tiene cuenta]
+HU05 <.. SHARE : <<extend>>\n[el usuario pertenece\na un hogar]
+
+INVITE -- MAIL
+HU17 -[hidden]- MAIL
+SHARE -[hidden]- MAIL
+
+note "<b>{restricción} Privacidad del hogar · HU16 (M)</b>\nAplica a todos los casos de este diagrama: la información fluye\ndel espacio común hacia el perfil individual, nunca al revés.\nNingún miembro, ni siquiera el administrador de hogar,\naccede al ingreso, las deudas, los gastos personales\no los escenarios de otro miembro." as PRIV
 
 legend right
-  Reglas de aporte (HU14): partes iguales, porcentajes que suman 100 % o gasto asignado a un miembro.
-  Privacidad (HU16): la información fluye del espacio común a los perfiles individuales, nunca al revés.
-  Invitación (HU31): enlace de un solo uso con vigencia máxima de 7 días.
+  Reglas de aporte (HU14): partes iguales, porcentajes que suman 100 % o asignación a un miembro.
+  Modificar o eliminar un gasto común (HU13): solo quien lo registró o el administrador de hogar.
+  Salir del hogar: si sale el administrador, la administración pasa al miembro más antiguo; sin miembros, el hogar se elimina.
+  Invitación: enlace de un solo uso con vigencia máxima de 7 días.
+  Crear un hogar requiere el plan Familiar vigente (Tabla 13); si vence, el espacio común queda de solo lectura.
   Prioridad MoSCoW: <back:#9CC3EE> M </back> imprescindible · <back:#DCEBFA> S </back> importante · <back:#F4F6F8> C </back> deseable
 end legend
 @enduml
