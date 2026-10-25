@@ -198,7 +198,7 @@ El motor es mensual: responde "en qué mes", no "en qué semana".
 ## Informe 2
 - La versión de trabajo está en `Archivos para informe 2/Nueva version de informe/` (fuera del
   repositorio): `Informe 2 - Fin de Mes vX.Y.docx`, su PDF, `Flujo de caja - Fin de Mes vX.Y.xlsx` y
-  `Carta Gantt ajustada - Fin de Mes vX.Y.xlsx` (hoy v0.12). Cada versión lleva un
+  `Carta Gantt ajustada - Fin de Mes vX.Y.xlsx` (hoy v0.13). Cada versión lleva un
   `Cambios vX.Y.txt` con lo que cambió y lo pendiente. Cada versión anterior queda congelada en
   `versiones-anteriores/vX.Y (fecha)/` y el historial está en `Archivos para informe 2/versiones.md`;
   al cerrar una versión se archiva su carpeta y se sube el número. Se evalúa con la pauta

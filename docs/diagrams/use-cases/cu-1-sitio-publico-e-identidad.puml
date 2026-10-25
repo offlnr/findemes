@@ -8,20 +8,35 @@ actor "Usuario registrado" as U
 actor "Proveedor de correo" <<sistema externo>> as MAIL
 
 rectangle "Fin de Mes" {
-  usecase "Probar el simulador con\nun caso de ejemplo\n<size:9>HU27</size>" as HU27 <<M>>
-  usecase "Ingresar datos mínimos y\nver la proyección\n<size:9>HU28</size>" as HU28 <<M>>
-  usecase "Revisar casos resueltos\ncon cifras concretas\n<size:9>HU33</size>" as HU33 <<C>>
-  usecase "Conocer los planes y\nsus capacidades\n<size:9>HU30</size>" as HU30 <<S>>
-  usecase "Conocer qué datos se\nalmacenan y cómo se tratan\n<size:9>HU32</size>" as HU32 <<S>>
-  usecase "Contactar al equipo\n<size:9>HU34</size>" as HU34 <<C>>
-  usecase "Crear una cuenta\n<size:9>HU17</size>" as HU17 <<M>>
-  usecase "Verificar el correo\n<size:9>HU17</size>" as VERIFY <<M>>
-  usecase "Conservar lo trabajado\nen la demostración\n<size:9>HU29</size>" as HU29 <<S>>
-  usecase "Iniciar sesión\n<size:9>HU17.1</size>" as HU171 <<M>>
-  usecase "Recuperar el acceso\n<size:9>HU17.2</size>" as HU172 <<M>>
-  usecase "Cerrar sesión\n<size:9>HU17.3</size>" as HU173 <<S>>
-  usecase "Cambiar la contraseña\n<size:9>HU17.4</size>" as HU174 <<S>>
-  usecase "Ejercer derechos sobre\nlos datos personales\n<size:9>HU21</size>" as HU21 <<S>>
+  ' --- Modo demostración (E9) ---
+  usecase "Probar el simulador con\nun caso de ejemplo\n<size:9>CU-01 · HU27</size>" as HU27 <<M>>
+  usecase "Ingresar datos mínimos y\nver la proyección\n<size:9>CU-02 · HU28</size>" as HU28 <<M>>
+  usecase "Simular una decisión\nen la demostración\n<size:9>CU-03 · HU27, HU28</size>" as SIMDEMO <<M>>
+
+  ' --- Sitio público (E9) ---
+  usecase "Revisar casos resueltos\ncon cifras concretas\n<size:9>CU-04 · HU33</size>" as HU33 <<C>>
+  usecase "Conocer los planes y\nsus capacidades\n<size:9>CU-05 · HU30</size>" as HU30 <<S>>
+  usecase "Conocer qué datos se\nalmacenan y cómo se tratan\n<size:9>CU-06 · HU32</size>" as HU32 <<S>>
+  usecase "Contactar al equipo\n<size:9>CU-07 · HU34</size>" as HU34 <<C>>
+
+  ' --- Identidad (E6) ---
+  usecase HU17 <<M>> as "Crear una cuenta
+<size:9>CU-08 · HU17</size>
+--
+<size:9>punto de extensión:</size>
+<size:9>cuenta activada</size>"
+  usecase "Verificar el correo\n<size:9>CU-09 · HU17</size>" as VERIFY <<M>>
+  usecase "Conservar lo trabajado\nen la demostración\n<size:9>CU-10 · HU29</size>" as HU29 <<S>>
+  usecase "Iniciar sesión\n<size:9>CU-11 · HU17.1</size>" as HU171 <<M>>
+  usecase "Recuperar el acceso\n<size:9>CU-12 · HU17.2</size>" as HU172 <<M>>
+
+  ' --- Gestión de la cuenta (E6) ---
+  usecase "Cerrar sesión\n<size:9>CU-13 · HU17.3</size>" as HU173 <<S>>
+  usecase "Cambiar la contraseña\n<size:9>CU-14 · HU17.4</size>" as HU174 <<S>>
+  usecase "Exportar mis datos\npersonales\n<size:9>CU-15 · HU21</size>" as EXP <<S>>
+  usecase "Rectificar mis datos\npersonales\n<size:9>CU-16 · HU21</size>" as RECT <<S>>
+  usecase "Retirar un\nconsentimiento\n<size:9>CU-17 · HU21, HU32, HU36</size>" as CONS <<S>>
+  usecase "Eliminar mi cuenta\n<size:9>CU-18 · HU21</size>" as DEL <<S>>
 }
 
 V -- HU27
@@ -36,21 +51,19 @@ V -- HU172
 
 U -- HU173
 U -- HU174
-U -- HU21
+U -- EXP
+U -- RECT
+U -- CONS
+U -- DEL
 
+HU27 ..> SIMDEMO : <<include>>
+HU28 ..> SIMDEMO : <<include>>
 HU17 ..> VERIFY : <<include>>
-HU29 .[norank].> HU17 : <<extend>>
-HU33 .[norank].> HU27 : <<extend>>
+HU17 <.. HU29 : <<extend>>\n[hay datos de la demostración\ny el visitante confirma]
 
 VERIFY -- MAIL
 HU172 -- MAIL
 HU174 -- MAIL
-
-note right of HU21
-  Exportar en formato estructurado,
-  rectificar y eliminar la cuenta
-  con borrado efectivo (Ley 21.719).
-end note
 
 note "Fuera del alcance (prioridad W):\nHU35 boletín de educación financiera." as OUT
 

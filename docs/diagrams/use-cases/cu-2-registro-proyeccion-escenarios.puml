@@ -7,40 +7,87 @@ actor "Usuario registrado" as U
 actor "Fintoc" <<sistema externo>> as FIN
 
 rectangle "Fin de Mes" {
-  usecase "Registrar ingresos\nrecurrentes y esporádicos\n<size:9>HU01</size>" as HU01 <<M>>
-  usecase "Registrar gastos\nfijos y variables\n<size:9>HU02</size>" as HU02 <<M>>
-  usecase "Registrar deudas con\nsus cuotas pendientes\n<size:9>HU03</size>" as HU03 <<M>>
-  usecase "Registrar el saldo inicial\n<size:9>HU04</size>" as HU04 <<M>>
-  usecase "Sincronizar movimientos\nbancarios\n<size:9>HU36</size>" as HU36 <<S>>
-  usecase "Ver la proyección del\nflujo de caja mensual\n<size:9>HU05</size>" as HU05 <<M>>
-  usecase "Ver la salud financiera\n<size:9>HU39</size>" as HU39 <<M>>
-  usecase "Crear un escenario\n<size:9>HU06</size>" as HU06 <<M>>
-  usecase "Aplicar decisiones\nsobre un escenario\n<size:9>HU07</size>" as HU07 <<M>>
-  usecase "Comparar escenarios\n<size:9>HU09</size>" as HU09 <<S>>
-  usecase "Ver los indicadores\nde un escenario\n<size:9>HU08</size>" as HU08 <<M>>
-  usecase "Recibir la explicación\ndel resultado\n<size:9>HU10</size>" as HU10 <<M>>
-  usecase "Editar y eliminar\nescenarios\n<size:9>HU11</size>" as HU11 <<S>>
+  ' E1 · Registro de la situación financiera
+  usecase "Registrar ingresos\nrecurrentes y esporádicos\n<size:9>CU-19 · HU01</size>" as HU01 <<M>>
+  usecase "Registrar gastos\nfijos y variables\n<size:9>CU-20 · HU02</size>" as HU02 <<M>>
+  usecase "Registrar deudas con\nsus cuotas pendientes\n<size:9>CU-21 · HU03</size>" as HU03 <<M>>
+  usecase "Registrar el saldo inicial\n<size:9>CU-22 · HU04</size>" as HU04 <<M>>
+
+  ' E2 · Proyección
+  usecase "Ver la proyección del\nflujo de caja mensual\n<size:9>CU-23 · HU05</size>\n--\n<size:9>puntos de extensión:</size>\n<size:9>compromisos del mes</size>\n<size:9>horizonte</size>" as HU05 <<M>>
+  usecase "Cambiar el horizonte\nde la proyección\n<size:9>CU-24 · HU05</size>" as HOR <<M>>
+  usecase "Ver la salud financiera\n<size:9>CU-26 · HU39</size>" as HU39 <<M>>
+  usecase "Calcular la proyección\ny los indicadores\n<size:9>CU-25 · HU05, HU08, HU39</size>" as CALC <<M>>
+
+  ' E3 · Escenarios y simulación
+  usecase "Crear un escenario\n<size:9>CU-27 · HU06</size>" as HU06 <<M>>
+  usecase "Aplicar decisiones\nsobre un escenario\n<size:9>CU-28 · HU07</size>\n--\n<size:9>puntos de extensión:</size>\n<size:9>parámetros del prepago</size>" as HU07 <<M>>
+  usecase "Elegir la modalidad\ndel prepago de deuda\n<size:9>CU-29 · HU07</size>" as MOD <<M>>
+  usecase "Ver los indicadores\nde un escenario\n<size:9>CU-30 · HU08</size>" as HU08 <<M>>
+  usecase "Comparar escenarios\n<size:9>CU-32 · HU09</size>" as HU09 <<S>>
+  usecase "Editar y eliminar\nescenarios\n<size:9>CU-33 · HU11</size>" as HU11 <<S>>
+
+  ' E4 · Explicación
+  usecase "Recibir la explicación\ndel resultado\n<size:9>CU-31 · HU10</size>" as HU10 <<M>>
+
+  ' E1 · Agregación bancaria (HU36)
+  usecase "Conectar un banco\n<size:9>CU-34 · HU36</size>" as CON <<S>>
+  usecase "Sincronizar movimientos\nbancarios\n<size:9>CU-35 · HU36</size>\n--\n<size:9>puntos de extensión:</size>\n<size:9>revisión de movimientos</size>" as HU36 <<S>>
+  usecase "Confirmar movimientos\nrecurrentes\n<size:9>CU-36 · HU36</size>" as REC <<S>>
+  usecase "Desvincular un banco\n<size:9>CU-37 · HU36</size>" as UNL <<S>>
 }
 
 U -- HU01
 U -- HU02
 U -- HU03
 U -- HU04
-U -- HU36
 U -- HU05
 U -- HU39
 U -- HU06
 U -- HU07
-U -- HU09
 U -- HU08
+U -- HU09
 U -- HU11
+U -- CON
+U -- HU36
+U -- UNL
 
-HU08 .[norank].> HU10 : <<include>>
-HU09 .[norank].> HU08 : <<include>>
+CON -- FIN
 HU36 -- FIN
+UNL -- FIN
+' Orden vertical de la columna principal (solo diagramación)
+HU01 -[hidden]> HU02
+HU02 -[hidden]> HU03
+HU03 -[hidden]> HU04
+HU04 -[hidden]> HU05
+HU05 -[hidden]> HU39
+HU39 -[hidden]> HU06
+HU06 -[hidden]> HU07
+HU07 -[hidden]> HU08
+HU08 -[hidden]> HU09
+HU09 -[hidden]> HU11
+
+HU11 -[hidden]> HU36
+HU36 -[hidden]> CON
+CON -[hidden]> UNL
+
+' «include»: comportamiento obligatorio y reutilizado (base -> incluido)
+HU36 <. CON : <<include>>
+HU05 ..> CALC : <<include>>
+HU39 ..> CALC : <<include>>
+HU08 ..> CALC : <<include>>
+HU09 ..> CALC : <<include>>
+HU08 ..> HU10 : <<include>>
+
+' «extend»: comportamiento opcional (extensión -> base)
+HU36 <.. REC : <<extend>>\n[el usuario marca\nmovimientos como recurrentes]
+HU05 <.. HOR : <<extend>>\n[el usuario cambia\nel horizonte]
+HU07 <.. MOD : <<extend>>\n[decisión de prepago y el usuario\ncambia la modalidad por defecto]
 
 legend right
-  HU37 (recomendar qué decisión tomar) está excluida por diseño: el sistema describe, no recomienda.
+  Fuera de alcance (W): HU37, recomendar qué decisión tomar. El sistema describe, no recomienda.
+  Iniciar sesión es una precondición de todos los casos, no un «include».
+  El punto «compromisos del mes» lo usa «Incorporar mi aporte al hogar en la proyección» (CU-45, Ilustración 17).
   Prioridad MoSCoW: <back:#9CC3EE> M </back> imprescindible · <back:#DCEBFA> S </back> importante · <back:#F4F6F8> C </back> deseable
 end legend
 @enduml

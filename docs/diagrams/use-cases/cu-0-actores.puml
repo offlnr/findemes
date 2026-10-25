@@ -9,34 +9,34 @@ actor "Miembro del hogar" as M
 actor "Administrador de hogar" as AH
 actor "Administrador de la plataforma" as AP
 
-actor "Transbank Webpay Plus" <<sistema externo>> as TBK
-actor "Fintoc" <<sistema externo>> as FIN
 actor "Proveedor de correo" <<sistema externo>> as MAIL
+actor "Fintoc" <<sistema externo>> as FIN
+actor "Transbank Webpay Plus" <<sistema externo>> as TBK
 
-U <|-- M
-M <|-- AH
+U <|- M
+M <|- AH
 
 rectangle "Fin de Mes" {
-  rectangle "Sitio público, demostración\ne identidad (cu-1)" <<subsistema>> as P1
-  rectangle "Registro financiero, proyección\ny escenarios (cu-2)" <<subsistema>> as P2
-  rectangle "Hogar (cu-3)" <<subsistema>> as P3
-  rectangle "Planes y suscripción (cu-4)" <<subsistema>> as P4
-  rectangle "Administración de la\nplataforma (cu-5)" <<subsistema>> as P5
+  rectangle "Sitio público, demostración\ne identidad (Ilustración 15)" <<subsistema>> as P1
+  rectangle "Registro financiero, proyección\ny escenarios (Ilustración 16)" <<subsistema>> as P2
+  rectangle "Hogar, gastos comunes y\nreglas de aporte (Ilustración 17)" <<subsistema>> as P3
+  rectangle "Planes, suscripción y\npago en línea (Ilustración 18)" <<subsistema>> as P4
+  rectangle "Administración y monitoreo\nde la plataforma (Ilustración 19)" <<subsistema>> as P5
 }
 
-V --> P1
-V --> P3
-U --> P1
-U --> P2
-U --> P4
-M --> P3
-AP --> P5
+V -- P1
+V -- P3
+U -- P1
+U -- P2
+U -- P4
+M -- P3
+AP -- P5
 
-P2 --> FIN
-P1 --> MAIL
-P3 --> MAIL
-P4 --> TBK
-P5 --> TBK
+P1 -- MAIL
+P3 -- MAIL
+P2 -- FIN
+P4 -- TBK
+P5 -- TBK
 
 note right of AH
   Generalización: un administrador de hogar
@@ -45,8 +45,9 @@ note right of AH
 end note
 
 note bottom of AP
-  Usuario registrado con rol de administrador
-  y segundo factor TOTP. Entra solo por el
-  panel separado, alcanzable por Tailscale.
+  Cuenta con rol de administración y segundo
+  factor de autenticación. Entra solo por el panel
+  de administración, separado del sitio público y
+  alcanzable únicamente desde la red privada del equipo.
 end note
 @enduml

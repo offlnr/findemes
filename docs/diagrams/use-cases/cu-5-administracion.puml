@@ -4,30 +4,59 @@ title Casos de uso · Administración y monitoreo de la plataforma (E8)
 left to right direction
 
 actor "Administrador de la plataforma" as AP
-actor "Transbank Webpay Plus" <<sistema externo>> as TBK
 
-rectangle "Fin de Mes · panel de administración (solo por Tailscale)" {
-  usecase "Acceder al panel con\nsegundo factor (TOTP)\n<size:9>HU22</size>" as HU22 <<S>>
-  usecase "Consultar y gestionar el\nestado de las cuentas\n<size:9>HU23</size>" as HU23 <<S>>
-  usecase "Consultar la traza\nde auditoría\n<size:9>HU25</size>" as HU25 <<S>>
-  usecase "Monitorear disponibilidad\ny desempeño\n<size:9>HU24</size>" as HU24 <<C>>
-  usecase "Revisar y conciliar las\ntransacciones de suscripción\n<size:9>HU26</size>" as HU26 <<C>>
+rectangle "Fin de Mes · panel de administración (solo por la red privada del equipo)" {
+  usecase "Acceder al panel con\nsegundo factor\n<size:9>CU-53 · HU22</size>" as HU22 <<S>>
+  usecase CONSULT <<S>> as "Consultar el estado
+de una cuenta
+<size:9>CU-54 · HU23</size>
+--
+<size:9>puntos de extensión:</size>
+<size:9>cambio de estado</size>"
+  usecase "Suspender una cuenta\n<size:9>CU-55 · HU23</size>" as SUSP <<S>>
+  usecase "Reactivar una cuenta\n<size:9>CU-56 · HU23</size>" as REACT <<S>>
+  usecase "Registrar el evento en\nla traza de auditoría\n<size:9>CU-57 · HU25</size>" as LOG <<S>>
+  usecase "Consultar la traza\nde auditoría\n<size:9>CU-58 · HU25</size>" as HU25 <<S>>
+  usecase "Monitorear disponibilidad\ny desempeño\n<size:9>CU-59 · HU24</size>" as HU24 <<C>>
+  usecase "Recibir una alerta\npor umbral superado\n<size:9>CU-60 · HU24</size>" as ALERT <<C>>
+  usecase TX <<C>> as "Revisar las transacciones
+de suscripción
+<size:9>CU-61 · HU26</size>
+--
+<size:9>puntos de extensión:</size>
+<size:9>conciliación del período</size>"
+  usecase "Conciliar las transacciones\ncon Transbank\n<size:9>CU-62 · HU26</size>" as CONC <<C>>
 }
 
-AP -- HU23
+actor "Transbank Webpay Plus" <<sistema externo>> as TBK
+
+AP -- HU22
+AP -- CONSULT
 AP -- HU25
 AP -- HU24
-AP -- HU26
+AP -- ALERT
+AP -- TX
 
-HU23 ..> HU22 : <<include>>
-HU25 ..> HU22 : <<include>>
-HU24 ..> HU22 : <<include>>
-HU26 ..> HU22 : <<include>>
-HU26 -- TBK
+CONSULT <.. SUSP : <<extend>>\n[uso indebido]
+CONSULT <.. REACT : <<extend>>\n[cuenta suspendida]
+
+HU22 ...> LOG : <<include>>
+CONSULT ...> LOG : <<include>>
+SUSP ..> LOG : <<include>>
+REACT ..> LOG : <<include>>
+
+TX <.. CONC : <<extend>>\n[el administrador\npide conciliar]
+CONC -- TBK
+
+note "Precondición de todos los casos (salvo el acceso):\nsesión iniciada en el panel con segundo factor.\nNo es «include»: autenticarse ocurre antes, no dentro\nde cada caso. El rol de administración nunca ve\ningresos, gastos, deudas ni escenarios (HU23)." as PRE
+
+note bottom of LOG
+  Solo se agregan registros;
+  nadie puede modificarlos ni
+  borrarlos, tampoco desde el panel.
+end note
 
 legend right
-  HU23: suspender y reactivar cuentas; el rol de administración no lee datos financieros.
-  HU25: traza de solo inserción, encadenada por hash.
   Prioridad MoSCoW: <back:#9CC3EE> M </back> imprescindible · <back:#DCEBFA> S </back> importante · <back:#F4F6F8> C </back> deseable
 end legend
 @enduml
