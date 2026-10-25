@@ -6,7 +6,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from generate_c4 import Diagram, TEXT, DATE  # noqa: E402
+from generate_c4 import Diagram, TEXT, DATE_NET  # noqa: E402
 
 ZONE = ('rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF7B3;strokeColor=#B8A100;fontColor=#4D4300;'
         'align=center;verticalAlign=top;spacingTop=4;fontSize=12;fontStyle=1;container=1;collapsible=0;'
@@ -29,7 +29,7 @@ def icon(d, cid, kind, label, x, y, w, h, parent='1'):
 def build():
     d = Diagram('topologia-fisica')
     d.title('[Topología física] Fin de Mes · topología en estrella extendida',
-            'Internet es el nodo central de la estrella · dentro de AWS la red es jerárquica · ' + DATE, w=1600)
+            'Internet es el nodo central de la estrella · dentro de AWS la red es jerárquica · ' + DATE_NET, w=1600)
 
     # Center of the star.
     icon(d, 'inet', 'storage.cloud', '<b>Internet</b>', 730, 420, 280, 160)
@@ -68,17 +68,22 @@ def build():
     icon(d, 'ant', 'wireless.radio_tower', 'Antena de red<br>móvil 4G/5G', 1320, 450, 40, 60, 'z_use')
 
     # AWS zone (hierarchical).
-    d.add('z_aws', 'Nube de AWS · región us-east-1', ZONE_AWS, 1060, 600, 700, 400)
-    icon(d, 'edge', 'security.firewall', 'Borde de AWS: CloudFront<br>y API Gateway (única entrada)', 1100, 660, 64,
-         50, 'z_aws')
+    d.add('z_aws', 'Nube de AWS · región us-east-1', ZONE_AWS, 1060, 600, 700, 430)
+    # CloudFront and API Gateway are the public entry point, not a firewall: the firewalls are the security groups.
+    icon(d, 'edge', 'servers.www_server', 'Borde de AWS: CloudFront<br>(AWS Shield Standard)<br>y API Gateway '
+         '(única entrada)', 1105, 650, 50, 62, 'z_aws')
     icon(d, 'igw', 'routers.router;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle', 'Router de la VPC<br>(Internet Gateway)<br>10.0.0.0/16', 1320, 665, 60, 40,
          'z_aws')
-    icon(d, 'sw_pub', 'switches.workgroup_switch;labelPosition=left;verticalLabelPosition=middle;align=right;verticalAlign=middle', 'Subred pública<br>10.0.1.0/24', 1230, 780, 64, 32, 'z_aws')
-    icon(d, 'ec2_api', 'servers.fileserver', 'Servidor EC2<br>API pública', 1150, 880, 40, 58, 'z_aws')
-    icon(d, 'ec2_adm', 'servers.fileserver', 'Servidor EC2<br>administración', 1320, 880, 40, 58, 'z_aws')
+    icon(d, 'fw_pub', 'security.firewall;labelPosition=right;verticalLabelPosition=middle;align=left;'
+         'verticalAlign=middle', 'Firewall: grupos de<br>seguridad de los EC2', 1218, 740, 64, 50, 'z_aws')
+    icon(d, 'fw_priv', 'security.firewall;labelPosition=right;verticalLabelPosition=middle;align=left;'
+         'verticalAlign=middle', 'Firewall: grupo de<br>seguridad de RDS', 1460, 740, 64, 50, 'z_aws')
+    icon(d, 'sw_pub', 'switches.workgroup_switch;labelPosition=left;verticalLabelPosition=middle;align=right;verticalAlign=middle', 'Subred pública<br>10.0.1.0/24', 1218, 830, 64, 32, 'z_aws')
+    icon(d, 'ec2_api', 'servers.fileserver', 'Servidor EC2<br>API pública', 1150, 915, 40, 58, 'z_aws')
+    icon(d, 'ec2_adm', 'servers.fileserver', 'Servidor EC2<br>administración', 1320, 915, 40, 58, 'z_aws')
     icon(d, 'sw_priv', 'switches.workgroup_switch', 'Subredes privadas<br>10.0.11.0/24 y 10.0.12.0/24',
-         1490, 780, 64, 32, 'z_aws')
-    icon(d, 'rds', 'storage.relational_database', 'Base de datos RDS<br>PostgreSQL 18', 1665, 766, 45, 60, 'z_aws')
+         1460, 830, 64, 32, 'z_aws')
+    icon(d, 'rds', 'storage.relational_database', 'Base de datos RDS<br>PostgreSQL 18', 1665, 816, 45, 60, 'z_aws')
 
     # Star links to Internet.
     for z in ('r_dev1', 'r_dev2', 'r_mnt', 'r_use', 'ant', 'edge', 'fin', 'tbk', 'mail', 'gh'):
@@ -93,14 +98,16 @@ def build():
     d.rel('pc', 'r_use', style=WIFI)
     d.rel('cel', 'ant', style=WIFI)
     d.rel('edge', 'igw', style=LINK)
-    d.rel('igw', 'sw_pub', style=LINK)
-    d.rel('igw', 'sw_priv', style=LINK)
+    d.rel('igw', 'fw_pub', style=LINK)
+    d.rel('fw_pub', 'sw_pub', style=LINK)
+    d.rel('igw', 'fw_priv', style=LINK)
+    d.rel('fw_priv', 'sw_priv', style=LINK)
     d.rel('sw_pub', 'ec2_api', style=LINK)
     d.rel('sw_pub', 'ec2_adm', style=LINK)
     d.rel('sw_priv', 'rds', style=LINK)
     # Administration tunnel (overlay network over Internet).
     d.rel('op', 'ec2_adm', 'Túnel cifrado de administración (Tailscale sobre internet)', style=TUNNEL,
-          exit=(0, 0.5), entry=(1, 0.5), pts=[(60, 682), (60, 1040), (1400, 1040), (1400, 909)], lpos=-0.1)
+          exit=(0, 0.5), entry=(1, 0.5), pts=[(60, 682), (60, 1070), (1400, 1070), (1400, 944)], lpos=-0.1)
 
     # Legend.
     d.add('lg', '<b>Leyenda</b>', ZONE_EXT.replace('#EDEDED', '#FFFFFF').replace('align=center', 'align=left')

@@ -7,6 +7,8 @@ import os
 import sys
 
 DATE = '20-10-2026'
+# Deployment and topology views were updated to show the security groups (firewall).
+DATE_NET = '25-10-2026'
 
 PERSON = ('html=1;fontSize=11;whiteSpace=wrap;fillColor=#083F75;strokeColor=#06315C;fontColor=#ffffff;'
           'shape=mxgraph.c4.person2;align=center;verticalAlign=bottom;spacingBottom=14;spacingLeft=12;'
@@ -38,6 +40,10 @@ NODE_ADMIN = NODE.replace('strokeColor=#5B6770', 'strokeColor=#D68910;strokeWidt
 NOTE = ('rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFBE6;strokeColor=#D6B656;fontColor=#333333;'
         'align=left;verticalAlign=top;spacing=8;fontSize=10;')
 TEXT = 'text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontColor=#333333;'
+# Firewall boundary: an AWS security group around the resource it protects.
+FIREWALL = ('rounded=1;arcSize=2;absoluteArcSize=1;whiteSpace=wrap;html=1;fillColor=#FDF2F1;strokeColor=#B03A2E;'
+            'fontColor=#922B21;dashed=1;dashPattern=4 3;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=8;'
+            'spacingTop=2;fontSize=10;container=1;collapsible=0;pointerEvents=0;')
 
 REL = ('endArrow=blockThin;endFill=1;endSize=10;html=1;fontSize=10;fontColor=#404040;strokeColor=#707070;'
        'strokeWidth=1.2;rounded=1;arcSize=8;edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jumpStyle=arc;'
@@ -512,7 +518,7 @@ def deployment():
     d = Diagram('c4-4-despliegue')
     d.title('[Diagrama de despliegue] Fin de Mes · ambiente de integración',
             'Nivel C4 de despliegue · AWS, región us-east-1, plan gratuito · cada flecha parte de quien inicia la '
-            'conexión · ' + DATE, w=1900)
+            'conexión · ' + DATE_NET, w=1900)
 
     # Externals (right column).
     d.add('x_fin', c4('Fintoc', 'Sistema externo · llaves sk_test_', 'API de movimientos y widget.'),
@@ -540,7 +546,7 @@ def deployment():
 
     # AWS account.
     d.add('aws', node_label('AWS · cuenta findemes-int · región us-east-1', 'Nodo: plan gratuito (créditos)'),
-          NODE, 600, 300, 1260, 1150)
+          NODE, 600, 300, 1260, 1170)
     d.add('cf', node_label('Amazon CloudFront', 'Nodo: distribución global, TLS gestionado, AWS Shield Standard',
                            'Único punto de entrada público. Enruta / al sitio y /v1/* a la API.'),
           NODE, 640, 360, 380, 150, 'aws')
@@ -559,29 +565,36 @@ def deployment():
           1500, 600, 320, 90, 'aws')
 
     d.add('vpc', node_label('VPC findemes-int · 10.0.0.0/16', 'Nodo: red privada virtual'), NODE_GRAY,
-          630, 760, 1210, 670, 'aws')
+          630, 760, 1210, 690, 'aws')
     d.add('pub', node_label('Subred pública 10.0.1.0/24', 'Nodo: us-east-1a · sin reglas de entrada desde internet'),
-          NODE, 660, 810, 1150, 230, 'vpc')
-    d.add('ec2', node_label('EC2 api · t4g.micro', 'Nodo: Amazon Linux + Docker',
-                            'Grupo de seguridad: entrada solo desde el VPC Link.'), NODE, 680, 850, 520, 170, 'pub')
-    d.add('mig', c4('Migrador', 'Contenedor: job previo', 'Rol dueño.', 10), CONTAINER, 700, 925, 180, 80, 'ec2')
+          NODE, 660, 810, 1150, 250, 'vpc')
+    # Each security group is drawn as a firewall boundary around the resource it protects.
+    d.add('sg_api', '<b>Firewall · grupo de seguridad sg-api</b> · entrada: solo 8080 desde el VPC Link',
+          FIREWALL, 670, 848, 540, 202, 'pub')
+    d.add('ec2', node_label('EC2 api · t4g.micro', 'Nodo: Amazon Linux + Docker'), NODE, 680, 878, 520, 162,
+          'sg_api')
+    d.add('mig', c4('Migrador', 'Contenedor: job previo', 'Rol dueño.', 10), CONTAINER, 700, 953, 180, 80, 'ec2')
     d.add('api', c4('API pública', 'Contenedor: Node.js 24, Fastify', 'Sirve /v1 con el motor en proceso.', 10),
-          CONTAINER, 910, 925, 270, 80, 'ec2')
-    d.add('adm', node_label('EC2 admin · t4g.nano', 'Nodo: Amazon Linux + cliente Tailscale',
-                            'Grupo de seguridad: 0 reglas de entrada.'), NODE_ADMIN, 1240, 850, 550, 170, 'pub')
+          CONTAINER, 910, 953, 270, 80, 'ec2')
+    d.add('sg_adm', '<b>Firewall · grupo de seguridad sg-admin</b> · entrada: ninguna (escucha solo en Tailscale)',
+          FIREWALL, 1230, 848, 570, 202, 'pub')
+    d.add('adm', node_label('EC2 admin · t4g.nano', 'Nodo: Amazon Linux + cliente Tailscale'), NODE_ADMIN,
+          1240, 878, 550, 162, 'sg_adm')
     d.add('aapi', c4('API de administración', 'Contenedor: Node.js 24, Fastify', 'TOTP · rol app_admin.', 10),
-          CONTAINER, 1260, 925, 250, 80, 'adm')
+          CONTAINER, 1260, 953, 250, 80, 'adm')
     d.add('pan', c4('Panel de administración', 'Contenedor: aplicación web', 'Estático.', 10),
-          CONTAINER + PLANNED, 1530, 925, 240, 80, 'adm')
+          CONTAINER + PLANNED, 1530, 953, 240, 80, 'adm')
     d.add('priv', node_label('Subredes privadas 10.0.11.0/24 y 10.0.12.0/24',
-                             'Nodo: us-east-1a y us-east-1b · sin ruta a internet'), NODE, 660, 1070, 1150, 340, 'vpc')
+                             'Nodo: us-east-1a y us-east-1b · sin ruta a internet'), NODE, 660, 1090, 1150, 340, 'vpc')
+    d.add('sg_rds', '<b>Firewall · grupo de seguridad sg-rds</b> · entrada: solo 5432 desde sg-api y sg-admin',
+          FIREWALL, 670, 1128, 580, 182, 'priv')
     d.add('rds', node_label('Amazon RDS for PostgreSQL', 'Nodo: db.t4g.micro, Single-AZ, 20 GB cifrados con KMS'),
-          NODE, 680, 1110, 560, 160, 'priv')
+          NODE, 680, 1150, 560, 150, 'sg_rds')
     d.add('db', c4('Base de datos findemes', 'Contenedor: PostgreSQL 18',
                    'RLS · roles app_api y app_admin · auditoría solo inserciones, encadenada por hash.', 10),
-          DB, 700, 1165, 520, 95, 'rds')
-    d.add('pgnote', 'Grupo de seguridad: 5432 solo desde los grupos de las dos instancias. Respaldo automático diario '
-          'con recuperación a un punto en el tiempo (30 días). Sin acceso público.', NOTE, 680, 1290, 560, 90, 'priv')
+          DB, 700, 1200, 520, 92, 'rds')
+    d.add('pgnote', 'Respaldo automático diario con recuperación a un punto en el tiempo (30 días). Sin acceso '
+          'público.', NOTE, 680, 1325, 560, 70, 'priv')
 
     d.add('opd', node_label('Equipo del operador', 'Nodo: dispositivo tag:admin de la tailnet',
                             'Aprobación manual · MFA en el proveedor de identidad.'),
@@ -592,7 +605,7 @@ def deployment():
     d.add('prod', '<b>Producción (fuera del alcance del MVP):</b> misma topología en otra cuenta de AWS, con las '
           'instancias en subredes privadas y salida por NAT Gateway, RDS Multi-AZ, dos instancias de API en zonas '
           'distintas registradas en Cloud Map, AWS WAF en CloudFront y credenciales propias. Webpay requiere afiliación comercial y Fintoc, llaves live y consentimiento según '
-          'la Ley 21.719.', NOTE, 600, 1480, 1260, 70)
+          'la Ley 21.719.', NOTE, 600, 1500, 1260, 70)
 
     # Relations.
     d.rel('web', 'cf', 'Descarga la app<br>y llama a /v1', 'HTTPS 443, TLS', exit=right(d, 'web', 470),
@@ -615,7 +628,7 @@ def deployment():
           entry=top(d, 'db', 1045))
     d.rel('mig', 'db', 'rol dueño', 'TLS, 5432', exit=bottom(d, 'mig', 790), entry=top(d, 'db', 790), lpos=-0.5)
     d.rel('aapi', 'db', 'rol app_admin', 'TLS verify-full, 5432', exit=bottom(d, 'aapi', 1385),
-          entry=right(d, 'db', 1212), pts=[(1385, 1212)])
+          entry=right(d, 'db', 1246), pts=[(1385, 1246)])
     d.rel('web', 'x_tbk', 'Va al formulario de pago y vuelve a la URL de retorno fija', 'HTTPS', REL_BROWSER,
           exit=top(d, 'web', 300), entry=right(d, 'x_tbk', 575), pts=[(300, 250), (2300, 250), (2300, 575)],
           lpos=-0.55)
@@ -632,6 +645,7 @@ def deployment():
         (NODE.replace('container=1;', ''), 'Nodo de despliegue'),
         (NODE_UNTRUSTED.replace('container=1;', ''), 'Nodo no confiable (internet)'),
         (NODE_ADMIN.replace('container=1;', ''), 'Plano de administración (tailnet)'),
+        (FIREWALL.replace('container=1;', ''), 'Firewall: grupo de seguridad de AWS'),
         (CONTAINER, 'Instancia de contenedor'),
         (EXTERNAL, 'Sistema externo'),
         ('edge:' + REL, 'Conexión (la inicia el origen)'),
@@ -651,6 +665,7 @@ Z_VPC = ZONE + 'fillColor=#E9F7EF;strokeColor=#239B56;fontColor=#145A32;strokeWi
 Z_PRIV = ZONE + 'fillColor=#D5F5E3;strokeColor=#1E8449;fontColor=#145A32;'
 Z_EXT = ZONE + 'fillColor=#F4F2F6;strokeColor=#8C8496;fontColor=#4A4453;'
 Z_TAIL = ZONE + 'fillColor=#FEF5E7;strokeColor=#D68910;fontColor=#A6610A;strokeWidth=2;'
+Z_FW = FIREWALL.replace('fontSize=10', 'fontSize=15').replace('spacingTop=2', 'spacingTop=4')
 DEV = ('rounded=1;whiteSpace=wrap;html=1;arcSize=8;absoluteArcSize=1;fillColor=#FFFFFF;strokeColor=#5B6770;'
        'fontColor=#222222;fontSize=18;spacing=6;')
 
@@ -665,7 +680,7 @@ def topology():
     d.font_scale = 1.5
     d.title('[Topología de comunicaciones] Fin de Mes · ambiente de integración',
             'Zonas de confianza, protocolos, puertos y cifrado · cada flecha parte de quien inicia la conexión · '
-            + DATE, w=1900)
+            + DATE_NET, w=1900)
 
     # Zone 1: internet.
     d.add('z_net', 'Zona 1 · Internet (no confiable)', Z_NET, 40, 110, 420, 720)
@@ -691,17 +706,23 @@ def topology():
 
     # Zone 3: VPC.
     d.add('z_vpc', 'Zona 3 · VPC findemes-int 10.0.0.0/16 (us-east-1)', Z_VPC, 1000, 110, 600, 720)
-    d.add('n_igw', dev('Internet Gateway', 'Solo tráfico saliente', 'Ninguna regla de entrada abierta'), DEV,
+    d.add('n_igw', dev('Internet Gateway', 'Salida a internet de la subred pública'), DEV,
           1040, 170, 520, 70, 'z_vpc')
-    d.add('z_pub', 'Subred pública 10.0.1.0/24', Z_PRIV.replace('#D5F5E3', '#FFFFFF'), 1030, 270, 540, 250, 'z_vpc')
-    d.add('n_api', dev('EC2 api (t4g.micro)', 'API pública y migrador en Docker',
-                       'Entrada: 8080 solo desde el VPC Link'), DEV, 1060, 320, 230, 110, 'z_pub')
-    d.add('n_adm', dev('EC2 admin (t4g.nano)', 'API y panel de administración',
-                       'Entrada: ninguna; escucha en Tailscale'), DEV + 'strokeColor=#D68910;strokeWidth=2;', 1310,
-          320, 230, 110, 'z_pub')
+    d.add('z_pub', 'Subred pública 10.0.1.0/24', Z_PRIV.replace('#D5F5E3', '#FFFFFF'), 1030, 250, 540, 285, 'z_vpc')
+    # Security groups (firewall) around each resource, with their inbound rule.
+    d.add('fw_api', '<b>Firewall (sg-api)</b><br>Entrada: 8080 desde VPC Link', Z_FW, 1045, 290, 255,
+          175, 'z_pub')
+    d.add('n_api', dev('EC2 api (t4g.micro)', 'API pública y migrador en Docker'), DEV, 1058, 355, 230, 100,
+          'fw_api')
+    d.add('fw_adm', '<b>Firewall (sg-admin)</b><br>Entrada: ninguna', Z_FW, 1310, 290, 250,
+          175, 'z_pub')
+    d.add('n_adm', dev('EC2 admin (t4g.nano)', 'API y panel de administración'),
+          DEV + 'strokeColor=#D68910;strokeWidth=2;', 1320, 355, 230, 100, 'fw_adm')
     d.add('z_priv', 'Subredes privadas 10.0.11.0/24 y 10.0.12.0/24', Z_PRIV, 1030, 550, 540, 250, 'z_vpc')
-    d.add('n_rds', dev('Amazon RDS for PostgreSQL 18', 'db.t4g.micro, cifrado con KMS',
-                       'Entrada: 5432 solo desde EC2 api y EC2 admin'), DEV, 1100, 610, 400, 100, 'z_priv')
+    d.add('fw_rds', '<b>Firewall (sg-rds)</b><br>Entrada: 5432 desde sg-api y sg-admin', Z_FW, 1085, 590,
+          410, 185, 'z_priv')
+    d.add('n_rds', dev('Amazon RDS for PostgreSQL 18', 'db.t4g.micro, cifrado con KMS'), DEV, 1100, 660, 380,
+          100, 'fw_rds')
 
     # Zone 4: external services.
     d.add('z_ext', 'Zona 4 · Servicios externos (SaaS)', Z_EXT, 1660, 110, 400, 720)
@@ -738,8 +759,8 @@ def topology():
     d.rel('n_cf', 'n_s3', '/', 'HTTPS · OAC', exit=bottom(d, 'n_cf', 730), entry=top(d, 'n_s3', 730))
     d.rel('n_cf', 'n_gw', 'Solicitudes a la API', 'HTTPS 443', exit=bottom(d, 'n_cf', 860), entry=top(d, 'n_gw', 860),
           lpos=0.5)
-    d.rel('n_gw', 'n_api', 'VPC Link', 'HTTP 8080', exit=right(d, 'n_gw', 535), entry=bottom(d, 'n_api', 1100),
-          pts=[(1100, 535)], lpos=-0.3)
+    d.rel('n_gw', 'n_api', 'VPC Link', 'HTTP 8080', exit=right(d, 'n_gw', 542), entry=bottom(d, 'n_api', 1100),
+          pts=[(1100, 542)], lpos=-0.3)
     d.rel('n_api', 'n_rds', 'Usuario de la API', 'TLS · 5432', exit=bottom(d, 'n_api', 1150),
           entry=top(d, 'n_rds', 1150), lpos=-0.55)
     d.rel('n_adm', 'n_rds', 'Usuario de administración', 'TLS · 5432', REL_ADMIN, exit=bottom(d, 'n_adm', 1450),
@@ -769,6 +790,7 @@ def topology():
         ('edge:' + REL_BROWSER, 'Redirección del navegador'),
         ('edge:' + REL_SECRET, 'Credencial que nunca toca Fin de Mes'),
         ('edge:' + REL_FAINT, 'Canal de control saliente'),
+        (Z_FW.replace('container=1;', ''), 'Firewall: grupo de seguridad de AWS'),
     ], w=560)
     return d
 
