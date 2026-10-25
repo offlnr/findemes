@@ -1,0 +1,69 @@
+INFORME 2 - FIN DE MES
+Cambios de la versión v0.7 (25-10-2026) respecto de la v0.6
+=============================================================
+
+La v0.7 no cambia cifras, supuestos ni resultados: el VAN, la TIR y la recuperación son los
+de la v0.6. Solo cambia la redacción y la forma de mostrar los montos. La v0.6 quedó en
+versiones-anteriores/v0.6 (2026-10-25)/.
+
+
+1. LENGUAJE MÁS FORMAL EN TODO EL INFORME
+----------------------------------------
+Se revisó todo el texto narrativo (capítulos I a IX y anexos) y las celdas de tablas con
+expresiones coloquiales. Se aplicaron 156 reemplazos (138 expresiones distintas) en tercera
+persona o en forma impersonal, sin cambiar cifras ni el sentido. Ejemplos:
+
+  Antes                                           Ahora
+  «evalúa si Fin de Mes es un negocio rentable    «evalúa la rentabilidad de Fin de Mes y el
+   y en cuánto tiempo devuelve lo invertido»       plazo en que recupera la inversión»
+  «aquí se explican solo las partes que deciden   «en este capítulo se explican únicamente los
+   el resultado»                                   elementos que determinan el resultado»
+  «dinero que entra menos dinero que sale»        «diferencia entre los ingresos y los egresos
+                                                   de dinero de un período»
+  «Conviene invertir si supera el 25 %»           «La inversión es aceptable si la TIR supera
+                                                   el 25 %»
+  «llevado a su valor de hoy»                     «expresado en su valor presente»
+  «se vuelve a sumar, porque no es salida de      «se reincorpora, porque no constituye salida
+   dinero»                                         de dinero»
+  «El punto débil es la conversión»               «La variable más crítica es la conversión»
+  «la API corre en un servidor virtual»           «la API se ejecuta en un servidor virtual»
+  «escribe ahí su clave»                          «ingresa en ella su clave»
+  «se siguen registrando a mano»                  «se continúan registrando de forma manual»
+  «rara vez arma una planilla»                    «rara vez elabora una planilla»
+  «Cómo leer los diagramas»                       «Lectura de los diagramas»
+  «La revisión del cronograma mostró con          «La revisión del cronograma evidenció una
+   honestidad una desviación»                      desviación»
+  «la app»                                        «la aplicación» (en todo el informe)
+
+Se mantuvieron los nombres técnicos necesarios (por ejemplo, el esquema «app» de la base de
+datos y los títulos originales de las referencias).
+
+
+2. SIGNO DE MONEDA EN TODOS LOS COSTOS Y PRECIOS
+-----------------------------------------------
+- Tabla 120 (flujo mensual del primer año): los ingresos, los costos, el acumulado y la caja
+  ahora llevan signo peso; los negativos se escriben «−$4.000.134».
+- Tabla 4 (costo mensual de la configuración mínima, en dólares): cada monto lleva «US$»
+  (por ejemplo «≈ US$32», «US$24 a US$26»).
+- Capítulo III: «US$ 32 al mes» pasa a «US$32 al mes», con el mismo formato que el resto.
+- El resto de los montos del informe (Tablas 112 a 119, texto del capítulo VIII y Anexo C) ya
+  tenía el signo peso.
+
+
+3. ÍNDICES Y PÁGINAS
+--------------------
+- Se actualizaron el índice, el índice de tablas y el de ilustraciones. El informe sigue en
+  139 páginas y se regeneró el PDF.
+
+
+4. PENDIENTE DE ESTA VERSIÓN
+----------------------------
+- Subtítulos a la izquierda: no se aplicó. En el cuerpo del informe, los subtítulos (2.1,
+  2.1.1, 8.1, etc.) ya están alineados al margen izquierdo, sin sangría. Los que aparecen
+  corridos a la derecha son las entradas del índice («Contenido»). Falta confirmar si el
+  cambio se refiere al índice o a otros subtítulos.
+- Revisar en Word la redacción de los párrafos modificados, sobre todo en los capítulos III y
+  VIII, que concentran la mayoría de los cambios.
+- Siguen vigentes los pendientes de la v0.6 (cotización de Fintoc, sueldo, CORFO, comisión de
+  Webpay, revisión de Maximiliano y entrega de la planilla con el nombre
+  «Flujo de caja - Fin de Mes.xlsx»). Ver Cambios v0.6.txt en versiones-anteriores/.

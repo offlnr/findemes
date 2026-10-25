@@ -73,3 +73,49 @@ puerto `BankAggregator` tiene un segundo adaptador, `src/adapters/demo-bank`:
   rotular los datos que no son reales, para no presentar datos inventados como información
   bancaria del usuario.
 
+
+## Varios bancos por usuario (agregado el 19-10-2026)
+
+**Decisión:** un usuario puede conectar más de un banco, por ejemplo BancoEstado y BCI al mismo
+tiempo. La aplicación muestra sus cuentas juntas, pero cada una indica de qué banco viene.
+
+Fundamento en la documentación de Fintoc (revisada el 19-10-2026):
+
+- Un Link es *"una conexión entre un usuario final y una institución financiera"*. Tiene una sola
+  `institution` y todas las cuentas que el titular tiene en ese banco. Por eso, conectar dos bancos
+  significa tener **dos Links**.
+- Cada banco se conecta en un flujo separado: el backend crea un Link Intent nuevo, el widget se
+  abre (con `institutionId` si se quiere dejar el banco elegido, por ejemplo `cl_banco_estado` o
+  `cl_banco_bci`) y el intercambio entrega un `link_token` propio. La documentación no pone un
+  límite de Links por usuario.
+- Para movimientos en Chile, Fintoc soporta: Banco de Chile, Santander, Itaú, BICE, Scotiabank,
+  BCI (`cl_banco_bci`; `cl_banco_bci_360` es el portal de empresas), BancoEstado y Security (solo
+  empresas).
+- Credenciales de prueba para personas: `41614850-3`, `40427672-7` y `41579263-8`, todas con la
+  contraseña `jonsnow`.
+
+Implementación:
+
+- El esquema ya lo permite: `app.bank_links` admite varias filas por `owner_id`. Cada fila tiene
+  su propio `link_token` cifrado, su `institution_name` y su `status`. La restricción
+  `UNIQUE (owner_id, provider, provider_link_id)` evita duplicados cuando se reconecta el mismo
+  banco.
+- Desconectar un banco revoca solo ese Link y borra solo sus cuentas y movimientos (`ON DELETE
+  CASCADE` desde `bank_links`). Los demás bancos no cambian.
+- La API expone la lista de conexiones del usuario y las cuentas agrupadas por conexión. Las
+  pruebas de acceso cruzado (regla 5) cubren también el caso de varios Links.
+- El banco de demostración (`demo-bank`) incluye al menos un perfil con dos bancos, para mostrar
+  el caso en la validación con usuarios y en la defensa, aunque el modo de prueba de Fintoc esté
+  limitado.
+
+Pendiente de verificar en el modo de prueba (la documentación no lo dice):
+
+1. Qué bancos ofrece el widget en modo de prueba. La única lista de bancos de prueba publicada es
+   la de pagos (Santander, Banco de Chile, BancoEstado y Mach), y no incluye BCI.
+2. Si la misma credencial de prueba sirve en dos bancos distintos, y qué cuentas devuelve cada
+   uno.
+
+Para verificarlo: con la llave `sk_test_`, crear un Link Intent con `cl_banco_estado` y otro con
+`cl_banco_bci`, y conectar ambos con `41614850-3` / `jonsnow`. Si BCI no aparece en modo de prueba,
+el caso de dos bancos se hace con dos bancos que sí estén disponibles, y se deja anotado en esta
+sección.

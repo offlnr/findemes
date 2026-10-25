@@ -3,6 +3,7 @@
 Plataforma SaaS de registro y simulación financiera para personas y hogares en Chile.
 Proyecto de Título (Ingeniería en Informática). Equipo: Joaquín Varas (app Flutter y UX) y
 Maximiliano Lizana (backend, motor, API, pagos). Fecha de cierre fija: 01-12-2026.
+Entrega del Informe 2: 26-10-2026 (ver la sección «Informe 2»).
 
 La especificación es el informe `Varas_Lizana_Informe_corregido (1).docx` (43 HU en el Anexo A,
 29 RNF en el Anexo B). El informe **no se versiona** (está en `.gitignore`). Para leerlo se usa
@@ -57,7 +58,7 @@ El calendario de sprints del informe (Tabla 36) es simulado y no se usa para pla
 6. **Pagos.** Nunca almacenar datos de tarjeta. La activación del plan se confirma desde el
    backend contra Transbank y es idempotente; no depende del retorno del navegador.
 7. **Integraciones solo por adaptadores.** Webpay Plus (ambiente de integración), Fintoc
-   (modo de prueba) y correo transaccional. El núcleo funciona sin ninguna de ellas.
+   (modo de prueba) y correo transaccional (Amazon SES). El núcleo funciona sin ninguna de ellas.
 8. **Sin lógica de negocio en el cliente.** Flutter y el panel consumen la API; no recalculan.
 9. **Panel de administración separado.** Ninguna ruta administrativa en la API pública.
 10. **Montos en pesos chilenos como enteros** (sin decimales de punto flotante; `bigint` en
@@ -118,9 +119,24 @@ Ver `docs/adr/001-technical-stack.md`.
 - App: Flutter (una base de código para web, Android e iOS). Manejo de estado: Riverpod.
   Cliente de la API generado desde `docs/openapi.yaml`.
 - CI: GitHub Actions. Remoto: `github.com/joaqovrs/findemes`.
-- Despliegue: contenedores en DigitalOcean App Platform (servicios sin estado). `admin-api` y
-  el panel corren en un Droplet dentro de la VPC de DigitalOcean, accesibles solo por Tailscale
-  (RNF21).
+- **Sin gasto real durante el proyecto.** Toda herramienta o servicio debe ser gratuito o tener un
+  plan gratuito que cubra al menos hasta fines de diciembre de 2026 (AWS con sus créditos).
+- Correo transaccional: Amazon SES (cubierto por los créditos de AWS; pedir la salida del sandbox
+  antes de la validación con usuarios).
+- Panel de administración: Flutter web, aplicación separada que consume `admin-api`.
+- Acceso administrativo: Tailscale plan Personal (gratuito, sin SLA, uso no comercial); producción
+  requiere un plan pagado.
+- Diagramas: draw.io y PlantUML generados por scripts en `docs/diagrams/` (no se editan a mano).
+  BPMN: `docs/diagrams/bpmn/generate_bpmn.py` escribe cada proceso con sus subprocesos contraídos y un
+  archivo `__<subproceso>.bpmn` por subproceso; se importan en Bizagi Modeler, se exportan a PNG y las
+  imágenes recortadas quedan en `docs/diagrams/bpmn/bizagi/`. Modelo de datos y diccionario:
+  `docs/diagrams/data-model/generate_er.py` (lee la base de datos local migrada).
+- Despliegue: AWS con el plan gratuito, región us-east-1 (`docs/adr/005-aws-deployment.md`).
+  CloudFront → S3 (sitio) y API Gateway → VPC Link → EC2 (API sin estado en Docker); RDS for
+  PostgreSQL 18 en subredes privadas. `admin-api` y el panel corren en otra instancia EC2 sin reglas
+  de entrada, accesibles solo por Tailscale (RNF21). Despliegue por Systems Manager, sin SSH.
+- Metodología: Kanban (tablero de GitHub Projects con límites WIP) con prácticas XP (TDD, CI,
+  revisión entre pares). Las fases del cronograma son hitos de entrega, no sprints.
 
 ## Catálogo de decisiones del motor (Tabla 11)
 Compra en N cuotas · Alta o modificación de gasto fijo · Gasto único ·
@@ -156,6 +172,51 @@ El motor es mensual: responde "en qué mes", no "en qué semana".
   defensa. Todo dato agregado declara su origen (`real`, `provider_test` o `demo`), y la app
   rotula lo que no es `real`: nunca se presentan datos de prueba o demostración como reales.
 - **Importación de cartolas:** fuera del MVP.
+
+## Decisiones de alcance (20 al 22-10-2026)
+- **Nube:** AWS con plan gratuito en lugar de DigitalOcean (`docs/adr/005-aws-deployment.md`).
+  **Metodología:** Kanban con prácticas XP en lugar de Scrum.
+- **Consentimientos (Ley 21.719, HU32, HU36):** tabla `app.consents` (migración 0010) con tipo
+  (`terms`, `privacy_policy`, `bank_connection`), versión del documento, fecha de aceptación y de retiro.
+  Un consentimiento vigente por tipo; retirar no borra el historial; se elimina con la cuenta (HU21).
+- **KPI de registro inicial:** `onboarding_started_at` y `onboarding_completed_at` en `app.users`
+  (solo fechas, sin montos; `app_admin` puede leerlas para indicadores agregados).
+- **Hogar:** si el administrador sale o elimina su cuenta, la administración pasa al miembro más
+  antiguo; sin miembros, el hogar se elimina; la supresión de la cuenta nunca se bloquea. Un gasto
+  común sin regla de aporte se reparte en partes iguales entre los miembros actuales.
+- **Modelo de negocio (flujo de caja del Informe 2):** planes gratuito, pagado ($5.990) y familiar
+  ($9.990), sin plan para empresas; 7.500 usuarios activos al lanzamiento (embudo de adquisición);
+  conversión a pago de 4 % (entre la mediana 2,1 % y el cuartil superior 4,5 % de las apps freemium,
+  RevenueCat 2026); Fintoc activo desde el lanzamiento: 10 UF + IVA al mes con hasta 500 cuentas
+  (costo fijo) y, sobre eso, tramos supuestos de 0,015 / 0,010 / 0,007 UF por cuenta (costo de venta),
+  con 1,5 bancos por persona (cotización por volumen pendiente); flujo a 5 años con tasa de descuento
+  de 25 %. Resultado (v0.6 del 25-10-2026, con los equipos aportados en especie y su depreciación
+  acelerada): VAN $56,2 M, TIR 96,0 %, recuperación 2,8 años (2,1 con el subsidio Semilla Inicia de
+  CORFO, que cubre el déficit del primer año, ≈ $11,4 M). Los usuarios subieron de 5.500 a 7.000 el
+  23-10-2026 y de 7.000 a 7.500 el 25-10-2026. Citas y bibliografía en estilo APA 7 de Word.
+
+## Informe 2
+- La versión de trabajo está en `Archivos para informe 2/Nueva version de informe/` (fuera del
+  repositorio): `Informe 2 - Fin de Mes vX.Y.docx`, su PDF, `Flujo de caja - Fin de Mes vX.Y.xlsx` y
+  `Carta Gantt ajustada - Fin de Mes vX.Y.xlsx` (hoy v0.11). Cada versión lleva un
+  `Cambios vX.Y.txt` con lo que cambió y lo pendiente. Cada versión anterior queda congelada en
+  `versiones-anteriores/vX.Y (fecha)/` y el historial está en `Archivos para informe 2/versiones.md`;
+  al cerrar una versión se archiva su carpeta y se sube el número. Se evalúa con la pauta
+  `TIHI84_U2_ES2_EA4.xlsx`.
+- Esta versión se editó en Word: las citas usan el administrador de fuentes de Word y la bibliografía
+  es un campo automático. Los scripts de generación quedaron desfasados: se edita este .docx (respaldo
+  previo en `versiones-anteriores/`) y se actualizan los campos en Word. Las correcciones se registran
+  en `correcciones-informe2.md`.
+- Estilo exigido por el profesor: lenguaje profesional y claro (sin jerga ni nombres del código),
+  sin referencias al repositorio, fichas «tablaCU» por caso de uso, BPMN en Bizagi con su paleta,
+  normas APA 7 (toda referencia citada en el texto) y diccionario de datos en el anexo.
+- Solo se entrega el .docx: el informe no remite a archivos externos (planilla Excel, hojas de
+  cálculo, ADR ni documentos del repositorio); la única referencia permitida es el primer informe.
+  Las planillas de flujo de caja y Carta Gantt son solo respaldo de trabajo del equipo.
+- El informe 2 se basa en el primer informe ya corregido: no menciona revisiones, observaciones ni
+  correcciones del primer informe. Las comparaciones que justifican decisiones de diseño sí se permiten.
+- El informe no usa «supuesto», «hipótesis» ni «por confirmar»: los parámetros del modelo (incluida la
+  tarifa por tramos de Fintoc) se presentan como datos firmes.
 
 ## Definición de terminado
 Pruebas automatizadas en verde en CI, documentación de la API actualizada,
