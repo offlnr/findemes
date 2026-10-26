@@ -468,6 +468,7 @@ def e(s):
 class Page:
     def __init__(self):
         self.cells, self.n, self.rows, self.geo = [], 0, {}, {}
+        self.tgeo, self.rowtable = {}, {}
 
     def nid(self, p='c'):
         self.n += 1
@@ -502,11 +503,13 @@ class Page:
                     'fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;fontSize=12;'
                     'fillColor=%s;fontColor=#FFFFFF;strokeColor=%s;swimlaneFillColor=#FFFFFF;'
                     % (HEAD_H, color, color), x, y, w, HEAD_H + ROW_H * len(cols))
+        self.tgeo[name] = (x, y, w, HEAD_H + ROW_H * len(cols))
         kw, tw = 46, (110 if mode == 'keys' else 128)
         nw = w - kw - tw
         for i, c in enumerate(cols):
             rid = self.nid('r')
             self.rows[(name, c['c'])] = rid
+            self.rowtable[rid] = name
             self.geo[rid] = (column, y + HEAD_H + ROW_H * i + ROW_H // 2)
             key = key_of(t, c['c'])
             pk = 'PK' in key
@@ -550,10 +553,15 @@ class Page:
                 return ('right', cs), 1, 1
             return ('between', min(cs, ct)), (1 if cs < ct else 0), (0 if cs < ct else 1)
 
+        # A bus groups the lines that end on the same key with the same end symbol, so a mandatory "one"
+        # and an optional "zero or one" never share a lane or an end point.
+        def bus_of(tgt, style):
+            return (tgt, style.split('endArrow=')[1].split(';')[0], 'dashed' in style)
+
         buses = {}
         for src, tgt, style in specs:
-            bus = (tgt, 'dashed' in style)
-            buses.setdefault(gap_of(src, tgt)[0], {}).setdefault(bus, (self.geo[tgt][1], bus[1]))
+            bus = bus_of(tgt, style)
+            buses.setdefault(gap_of(src, tgt)[0], {}).setdefault(bus, (self.geo[tgt][1], bus[1:]))
         lane_x = {}
         for gap, targets in buses.items():
             kind, k = gap
@@ -564,11 +572,49 @@ class Page:
             for i, bus in enumerate(order):
                 offset = usable * i / (len(order) - 1) if len(order) > 1 else usable / 2
                 lane_x[(gap, bus)] = int(left + 30 + offset)
+
+        # Several buses entering the same key from the same side get their own entry points, spread along
+        # the side of the target table (the relation is with the table; the FK column names the key).
+        sides = {}
+        for src, tgt, style in specs:
+            sides.setdefault((tgt, gap_of(src, tgt)[2]), set()).add(bus_of(tgt, style))
+        # Lines must not cross: among the buses of one group, the lane that reaches farthest down runs
+        # closest to the target table, and the farthest lane enters highest on the table side.
+        reach = {}
+        for src, tgt, style in specs:
+            k = (gap_of(src, tgt)[0], bus_of(tgt, style))
+            reach[k] = max(reach.get(k, 0), self.geo[src][1])
+        entry_y = {}
+        for (tgt, side), group in sides.items():
+            if len(group) < 2:
+                continue
+            tx, ty, tw, th = self.tgeo[self.rowtable[tgt]]
+            edge_x = tx + tw * side
+            keys = sorted({(gap_of(s, t)[0], bus_of(t, st)) for s, t, st in specs
+                           if t == tgt and gap_of(s, t)[2] == side})
+            xs = sorted((lane_x[k] for k in keys), key=lambda x: abs(x - edge_x))
+            for k, x in zip(sorted(keys, key=lambda k: -reach[k]), xs):
+                lane_x[k] = x
+            step = 26
+            first = self.geo[tgt][1] - step * (len(group) - 1) / 2
+            first = max(ty + 8, min(first, ty + th - 8 - step * (len(group) - 1)))
+            farthest_first = sorted(keys, key=lambda k: -abs(lane_x[k] - edge_x))
+            for i, (gap, bus) in enumerate(farthest_first):
+                entry_y[(bus, side)] = int(first + step * i)
         for src, tgt, style in specs:
             gap, ex, nx = gap_of(src, tgt)
-            lx = lane_x[(gap, (tgt, 'dashed' in style))]
-            self.edge(src, tgt, style + 'exitX=%d;exitY=0.5;exitDx=0;exitDy=0;entryX=%d;entryY=0.5;entryDx=0;'
-                      'entryDy=0;' % (ex, nx), [(lx, self.geo[src][1]), (lx, self.geo[tgt][1])])
+            bus = bus_of(tgt, style)
+            lx = lane_x[(gap, bus)]
+            y = entry_y.get((bus, nx))
+            if y is None:
+                self.edge(src, tgt, style + 'exitX=%d;exitY=0.5;exitDx=0;exitDy=0;entryX=%d;entryY=0.5;entryDx=0;'
+                          'entryDy=0;' % (ex, nx), [(lx, self.geo[src][1]), (lx, self.geo[tgt][1])])
+            else:
+                name = self.rowtable[tgt]
+                tx, ty, tw, th = self.tgeo[name]
+                self.edge(src, 't_' + name, style + 'exitX=%d;exitY=0.5;exitDx=0;exitDy=0;entryX=%d;entryY=%.4f;'
+                          'entryDx=0;entryDy=0;entryPerimeter=0;' % (ex, nx, (y - ty) / th),
+                          [(lx, self.geo[src][1]), (lx, y)])
 
     def legend(self, x, y, modules, logical=True):
         rows = [('ERmandOne', 'ERzeroToMany', 'Uno obligatorio a cero o muchos'),
@@ -631,7 +677,7 @@ VIEWS = [
     ('datos-0-general', 'Modelo de datos · vista general (claves y relaciones)', 'keys', 280,
      [110, 110, 110, 220], [
         ['plans'],
-        ['subscriptions', 'payment_orders', 'audit_log', 'refresh_tokens', 'email_tokens', 'platform_admins',
+        ['payment_orders', 'audit_log', 'subscriptions', 'refresh_tokens', 'email_tokens', 'platform_admins',
          'consents', 'login_throttle', 'trusted_devices', 'login_codes'],
         ['users'],
         ['financial_profiles', 'incomes', 'expenses', 'bank_links', 'debts', 'scenarios', 'household_members',
@@ -665,7 +711,7 @@ VIEWS = [
     ('datos-completo', 'Modelo de datos · completo (todas las columnas)', 'full', 380,
      [120, 120, 120, 230], [
         ['plans'],
-        ['subscriptions', 'payment_orders', 'audit_log', 'refresh_tokens', 'email_tokens', 'platform_admins',
+        ['payment_orders', 'audit_log', 'subscriptions', 'refresh_tokens', 'email_tokens', 'platform_admins',
          'consents', 'login_throttle', 'trusted_devices', 'login_codes'],
         ['users'],
         ['financial_profiles', 'incomes', 'expenses', 'bank_links', 'debts', 'scenarios', 'household_members',
