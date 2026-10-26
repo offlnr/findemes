@@ -1,4 +1,4 @@
-# Local development database. Same major version as DigitalOcean Managed PostgreSQL (18).
+# Local development database. Same major version as Amazon RDS for PostgreSQL in production (18).
 # Credentials here are for local development only; real environments use secrets.
 services:
   db:

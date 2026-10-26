@@ -3,6 +3,9 @@
 - **Estado:** propuesta (requiere revisión de Maximiliano Lizana; los controles nuevos amplían el alcance)
 - **Fecha:** 11-10-2026
 - **Autores:** Joaquín Varas
+- **Nota (20-10-2026):** con el ADR-005 la plataforma pasa a AWS. Donde este ADR dice Droplet, *trusted sources*
+  o Cloud Firewall, léase instancia EC2 de administración y grupos de seguridad sin reglas de entrada; el
+  balanceador público pasa a ser CloudFront con API Gateway. Las amenazas y los controles no cambian.
 - **Afecta al informe:** Ilustración 5 (acceso administrativo por Tailscale), apartado de seguridad,
   RNF21, RNF22, HU19, HU22, HU31 y HU36.
 

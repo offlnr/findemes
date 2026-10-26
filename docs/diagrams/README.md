@@ -2,7 +2,9 @@
 
 | Carpeta | Contenido | Herramienta | Descripción |
 |---|---|---|---|
-| `architecture/` | Arquitectura en notación C4: contexto, contenedores, componentes y despliegue | draw.io | Este archivo |
+| `architecture/` | Arquitectura en notación C4 (contexto, contenedores, componentes, despliegue) y topología de comunicaciones | draw.io | Este archivo |
+| `bpmn/` | Procesos de negocio en BPMN 2.0: decisión de gasto (as-is y to-be), suscripción, hogar y vinculación bancaria | `generate_bpmn.py` + bpmn-js | Informe 2, sección 3.1 |
+| `planning/` | Carta Gantt ajustada (fases F1 a F4, Kanban con XP) | draw.io | Informe 2, capítulo VII |
 | `data-model/` | Modelo de datos en notación pata de gallo | draw.io | `docs/data-dictionary.md` |
 | `use-cases/` | Casos de uso UML | PlantUML | `docs/use-cases-and-components.md` |
 | `components/` | Componentes UML con interfaces provistas y requeridas | PlantUML | `docs/use-cases-and-components.md` |
@@ -22,7 +24,8 @@ Formatos:
 | `c4-1-contexto` | 1 · Contexto del sistema | Nueva ilustración |
 | `c4-2-contenedores` | 2 · Contenedores | Nueva ilustración |
 | `c4-3-componentes-api` | 3 · Componentes de la API pública, en capas hexagonales | Ilustración 6 |
-| `c4-4-despliegue` | Despliegue en DigitalOcean (ambiente de integración) | Ilustración 5 |
+| `c4-4-despliegue` | Despliegue en AWS (ambiente de integración, ADR-005) | Ilustración 5 |
+| `topologia-comunicaciones` | Zonas de confianza, protocolos, puertos y cifrado | Nueva ilustración |
 
 Se generan con `generate_c4.py`, que fija cada elemento y cada recorrido de flecha:
 
@@ -95,3 +98,19 @@ java -jar ~/plantuml.jar -charset UTF-8 -tpng use-cases/*.puml components/*.puml
 - Rojo = credencial que nunca toca Fin de Mes.
 - Naranja = plano de administración, solo accesible por Tailscale (RNF21, ADR-004).
 - Las decisiones que reflejan están en `docs/adr/001` a `004`.
+
+## Procesos BPMN (`bpmn/`)
+
+`generate_bpmn.py` escribe los cinco `.bpmn` (BPMN 2.0 con su diagrama; se importan en Bizagi Modeler con
+*File > Import > BPMN* o en Camunda Modeler). Las imágenes se generan con bpmn-js y Chrome sin interfaz:
+
+```bash
+cd docs/diagrams/bpmn
+python -I generate_bpmn.py .
+# en una carpeta aparte: npm i bpmn-js@17.11.1 puppeteer-core@23.11.1, copiar render.js y luego:
+node render.js <carpeta de salida> docs/diagrams/bpmn/*.bpmn
+```
+
+## Planificación (`planning/`)
+
+`generate_gantt.py` escribe `gantt-fases.drawio`; se exporta con draw.io igual que los diagramas C4.

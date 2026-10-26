@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="defs_vinculacion" targetNamespace="https://findemes.cl/bpmn" exporter="generate_bpmn.py">
+<bpmn:collaboration id="collab_vinculacion">
+<bpmn:participant id="pool_usuario" name="Usuario" processRef="proc_usuario"/>
+<bpmn:participant id="pool_fintoc" name="Fintoc"/>
+<bpmn:participant id="pool_findemes" name="Fin de Mes" processRef="proc_findemes"/>
+<bpmn:messageFlow id="m1" name="Solicitud" sourceRef="u_inicia" targetRef="f_solicitud"/>
+<bpmn:messageFlow id="m2" name="Widget" sourceRef="v_intent" targetRef="u_widget"/>
+<bpmn:messageFlow id="m3" name="Intención de vínculo" sourceRef="v_intent" targetRef="pool_fintoc"/>
+<bpmn:messageFlow id="m4" name="Clave bancaria" sourceRef="u_clave" targetRef="pool_fintoc"/>
+<bpmn:messageFlow id="m5" name="Credencial del vínculo" sourceRef="pool_fintoc" targetRef="v_token"/>
+<bpmn:messageFlow id="m6" name="Consulta de movimientos" sourceRef="z_lee" targetRef="pool_fintoc"/>
+<bpmn:messageFlow id="m7" name="Movimientos sugeridos" sourceRef="f_movs" targetRef="u_movs"/>
+<bpmn:messageFlow id="m8" name="Solicitud" sourceRef="u_desvincula" targetRef="f_desv"/>
+<bpmn:messageFlow id="m9" name="Revocación" sourceRef="d_revoca" targetRef="pool_fintoc"/>
+<bpmn:messageFlow id="m10" name="Confirmación" sourceRef="f_desv_fin" targetRef="u_ok"/>
+</bpmn:collaboration>
+<bpmn:process id="proc_usuario" isExecutable="false">
+<bpmn:startEvent id="u_start" name="Quiere conectar su banco"><bpmn:outgoing>fu1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:userTask id="u_inicia" name="Iniciar la vinculación de un banco"><bpmn:incoming>fu1</bpmn:incoming><bpmn:outgoing>fu2</bpmn:outgoing></bpmn:userTask>
+<bpmn:intermediateCatchEvent id="u_widget" name="Widget de Fintoc abierto"><bpmn:incoming>fu2</bpmn:incoming><bpmn:outgoing>fu3</bpmn:outgoing><bpmn:messageEventDefinition id="u_widget_def"/></bpmn:intermediateCatchEvent>
+<bpmn:userTask id="u_clave" name="Elegir el banco e ingresar la clave en la ventana de Fintoc"><bpmn:incoming>fu3</bpmn:incoming><bpmn:outgoing>fu4</bpmn:outgoing></bpmn:userTask>
+<bpmn:intermediateCatchEvent id="u_movs" name="Movimientos para revisar"><bpmn:incoming>fu4</bpmn:incoming><bpmn:outgoing>fu5</bpmn:outgoing><bpmn:messageEventDefinition id="u_movs_def"/></bpmn:intermediateCatchEvent>
+<bpmn:subProcess id="sp_confirmar" name="Confirmar movimientos recurrentes"><bpmn:incoming>fu5</bpmn:incoming><bpmn:outgoing>fu6</bpmn:outgoing><bpmn:startEvent id="c_start" name=""><bpmn:outgoing>fc1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:exclusiveGateway id="c_merge" name=""><bpmn:incoming>fc1</bpmn:incoming><bpmn:incoming>fc9</bpmn:incoming><bpmn:outgoing>fc2</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:userTask id="c_revisa" name="Revisar el siguiente movimiento sugerido"><bpmn:incoming>fc2</bpmn:incoming><bpmn:outgoing>fc3</bpmn:outgoing></bpmn:userTask>
+<bpmn:exclusiveGateway id="c_rec" name="¿Es recurrente?"><bpmn:incoming>fc3</bpmn:incoming><bpmn:outgoing>fc4</bpmn:outgoing><bpmn:outgoing>fc5</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:userTask id="c_fijo" name="Clasificarlo como ingreso o gasto fijo"><bpmn:incoming>fc4</bpmn:incoming><bpmn:outgoing>fc6</bpmn:outgoing></bpmn:userTask>
+<bpmn:userTask id="c_puntual" name="Dejarlo como movimiento puntual"><bpmn:incoming>fc5</bpmn:incoming><bpmn:outgoing>fc7</bpmn:outgoing></bpmn:userTask>
+<bpmn:exclusiveGateway id="c_merge2" name=""><bpmn:incoming>fc6</bpmn:incoming><bpmn:incoming>fc7</bpmn:incoming><bpmn:outgoing>fc8</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:exclusiveGateway id="c_quedan" name="¿Quedan movimientos?"><bpmn:incoming>fc8</bpmn:incoming><bpmn:outgoing>fc9</bpmn:outgoing><bpmn:outgoing>fc10</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:endEvent id="c_end" name=""><bpmn:incoming>fc10</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="fc1" name="" sourceRef="c_start" targetRef="c_merge"/>
+<bpmn:sequenceFlow id="fc2" name="" sourceRef="c_merge" targetRef="c_revisa"/>
+<bpmn:sequenceFlow id="fc3" name="" sourceRef="c_revisa" targetRef="c_rec"/>
+<bpmn:sequenceFlow id="fc4" name="Sí" sourceRef="c_rec" targetRef="c_fijo"/>
+<bpmn:sequenceFlow id="fc5" name="No" sourceRef="c_rec" targetRef="c_puntual"/>
+<bpmn:sequenceFlow id="fc6" name="" sourceRef="c_fijo" targetRef="c_merge2"/>
+<bpmn:sequenceFlow id="fc7" name="" sourceRef="c_puntual" targetRef="c_merge2"/>
+<bpmn:sequenceFlow id="fc8" name="" sourceRef="c_merge2" targetRef="c_quedan"/>
+<bpmn:sequenceFlow id="fc9" name="Sí" sourceRef="c_quedan" targetRef="c_merge"/>
+<bpmn:sequenceFlow id="fc10" name="No" sourceRef="c_quedan" targetRef="c_end"/></bpmn:subProcess>
+<bpmn:endEvent id="u_fin" name="Estado base actualizado con lo confirmado"><bpmn:incoming>fu6</bpmn:incoming></bpmn:endEvent>
+<bpmn:startEvent id="u_quiere" name="Decide desvincular su banco"><bpmn:outgoing>fu7</bpmn:outgoing></bpmn:startEvent>
+<bpmn:userTask id="u_desvincula" name="Solicitar la desvinculación"><bpmn:incoming>fu7</bpmn:incoming><bpmn:outgoing>fu8</bpmn:outgoing></bpmn:userTask>
+<bpmn:intermediateCatchEvent id="u_ok" name="Desvinculación confirmada"><bpmn:incoming>fu8</bpmn:incoming><bpmn:outgoing>fu9</bpmn:outgoing><bpmn:messageEventDefinition id="u_ok_def"/></bpmn:intermediateCatchEvent>
+<bpmn:endEvent id="u_fin2" name="Banco desvinculado"><bpmn:incoming>fu9</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="fu1" name="" sourceRef="u_start" targetRef="u_inicia"/>
+<bpmn:sequenceFlow id="fu2" name="" sourceRef="u_inicia" targetRef="u_widget"/>
+<bpmn:sequenceFlow id="fu3" name="" sourceRef="u_widget" targetRef="u_clave"/>
+<bpmn:sequenceFlow id="fu4" name="" sourceRef="u_clave" targetRef="u_movs"/>
+<bpmn:sequenceFlow id="fu5" name="" sourceRef="u_movs" targetRef="sp_confirmar"/>
+<bpmn:sequenceFlow id="fu6" name="" sourceRef="sp_confirmar" targetRef="u_fin"/>
+<bpmn:textAnnotation id="n_clave"><bpmn:text>La clave bancaria va directo a Fintoc: nunca pasa por Fin de Mes.</bpmn:text></bpmn:textAnnotation>
+<bpmn:association id="n_clave_a" sourceRef="n_clave" targetRef="u_clave"/>
+<bpmn:sequenceFlow id="fu7" name="" sourceRef="u_quiere" targetRef="u_desvincula"/>
+<bpmn:sequenceFlow id="fu8" name="" sourceRef="u_desvincula" targetRef="u_ok"/>
+<bpmn:sequenceFlow id="fu9" name="" sourceRef="u_ok" targetRef="u_fin2"/>
+</bpmn:process>
+<bpmn:process id="proc_findemes" isExecutable="false">
+<bpmn:startEvent id="f_solicitud" name="Solicitud de vinculación"><bpmn:outgoing>ff1</bpmn:outgoing><bpmn:messageEventDefinition id="f_solicitud_def"/></bpmn:startEvent>
+<bpmn:subProcess id="sp_vincular" name="Vincular el banco"><bpmn:incoming>ff1</bpmn:incoming><bpmn:outgoing>ff2</bpmn:outgoing><bpmn:startEvent id="v_start" name=""><bpmn:outgoing>fv1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:serviceTask id="v_intent" name="Solicitar a Fintoc el inicio del vínculo"><bpmn:incoming>fv1</bpmn:incoming><bpmn:outgoing>fv2</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:intermediateCatchEvent id="v_token" name="Vínculo creado"><bpmn:incoming>fv2</bpmn:incoming><bpmn:outgoing>fv3</bpmn:outgoing><bpmn:messageEventDefinition id="v_token_def"/></bpmn:intermediateCatchEvent>
+<bpmn:serviceTask id="v_cifra" name="Guardar cifrada la credencial del vínculo"><bpmn:incoming>fv3</bpmn:incoming><bpmn:outgoing>fv4</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:endEvent id="v_end" name=""><bpmn:incoming>fv4</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="fv1" name="" sourceRef="v_start" targetRef="v_intent"/>
+<bpmn:sequenceFlow id="fv2" name="" sourceRef="v_intent" targetRef="v_token"/>
+<bpmn:sequenceFlow id="fv3" name="" sourceRef="v_token" targetRef="v_cifra"/>
+<bpmn:sequenceFlow id="fv4" name="" sourceRef="v_cifra" targetRef="v_end"/></bpmn:subProcess>
+<bpmn:subProcess id="sp_sincronizar" name="Sincronizar movimientos"><bpmn:incoming>ff2</bpmn:incoming><bpmn:outgoing>ff3</bpmn:outgoing><bpmn:startEvent id="z_start" name=""><bpmn:outgoing>fz1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:serviceTask id="z_lee" name="Leer cuentas y movimientos en pesos (CLP)"><bpmn:incoming>fz1</bpmn:incoming><bpmn:outgoing>fz2</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:serviceTask id="z_dedup" name="Descartar duplicados y rotular el origen del dato"><bpmn:incoming>fz2</bpmn:incoming><bpmn:outgoing>fz3</bpmn:outgoing><bpmn:dataOutputAssociation id="do_z_dedup_f_datos"><bpmn:targetRef>f_datos</bpmn:targetRef></bpmn:dataOutputAssociation></bpmn:serviceTask>
+<bpmn:serviceTask id="z_sugiere" name="Sugerir los movimientos que se repiten"><bpmn:incoming>fz3</bpmn:incoming><bpmn:outgoing>fz4</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:endEvent id="z_end" name=""><bpmn:incoming>fz4</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="fz1" name="" sourceRef="z_start" targetRef="z_lee"/>
+<bpmn:sequenceFlow id="fz2" name="" sourceRef="z_lee" targetRef="z_dedup"/>
+<bpmn:sequenceFlow id="fz3" name="" sourceRef="z_dedup" targetRef="z_sugiere"/>
+<bpmn:sequenceFlow id="fz4" name="" sourceRef="z_sugiere" targetRef="z_end"/></bpmn:subProcess>
+<bpmn:endEvent id="f_movs" name="Movimientos para confirmar"><bpmn:incoming>ff3</bpmn:incoming><bpmn:messageEventDefinition id="f_movs_def"/></bpmn:endEvent>
+<bpmn:startEvent id="f_desv" name="Solicitud de desvinculación"><bpmn:outgoing>ff4</bpmn:outgoing><bpmn:messageEventDefinition id="f_desv_def"/></bpmn:startEvent>
+<bpmn:subProcess id="sp_desvincular" name="Desvincular el banco"><bpmn:incoming>ff4</bpmn:incoming><bpmn:outgoing>ff5</bpmn:outgoing><bpmn:startEvent id="d_start" name=""><bpmn:outgoing>fd1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:serviceTask id="d_revoca" name="Revocar el vínculo en Fintoc"><bpmn:incoming>fd1</bpmn:incoming><bpmn:outgoing>fd2</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:serviceTask id="d_borra" name="Borrar la credencial cifrada"><bpmn:incoming>fd2</bpmn:incoming><bpmn:outgoing>fd3</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:endEvent id="d_end" name=""><bpmn:incoming>fd3</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="fd1" name="" sourceRef="d_start" targetRef="d_revoca"/>
+<bpmn:sequenceFlow id="fd2" name="" sourceRef="d_revoca" targetRef="d_borra"/>
+<bpmn:sequenceFlow id="fd3" name="" sourceRef="d_borra" targetRef="d_end"/></bpmn:subProcess>
+<bpmn:endEvent id="f_desv_fin" name="Desvinculación confirmada"><bpmn:incoming>ff5</bpmn:incoming><bpmn:messageEventDefinition id="f_desv_fin_def"/></bpmn:endEvent>
+<bpmn:sequenceFlow id="ff1" name="" sourceRef="f_solicitud" targetRef="sp_vincular"/>
+<bpmn:sequenceFlow id="ff2" name="" sourceRef="sp_vincular" targetRef="sp_sincronizar"/>
+<bpmn:sequenceFlow id="ff3" name="" sourceRef="sp_sincronizar" targetRef="f_movs"/>
+<bpmn:dataStoreReference id="f_datos" name="Cuentas, movimientos y origen del dato"/>
+<bpmn:sequenceFlow id="ff4" name="" sourceRef="f_desv" targetRef="sp_desvincular"/>
+<bpmn:sequenceFlow id="ff5" name="" sourceRef="sp_desvincular" targetRef="f_desv_fin"/>
+</bpmn:process>
+<bpmndi:BPMNDiagram id="dia_vinculacion"><bpmndi:BPMNPlane id="plane_vinculacion" bpmnElement="collab_vinculacion">
+<bpmndi:BPMNShape id="pool_usuario_di" bpmnElement="pool_usuario" isHorizontal="true" bioc:fill="#FFFFFF" bioc:stroke="#000000" color:background-color="#FFFFFF" color:border-color="#000000"><dc:Bounds x="0" y="0" width="2640" height="380"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="pool_fintoc_di" bpmnElement="pool_fintoc" isHorizontal="true" bioc:fill="#FFFFFF" bioc:stroke="#000000" color:background-color="#FFFFFF" color:border-color="#000000"><dc:Bounds x="0" y="420" width="2640" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="pool_findemes_di" bpmnElement="pool_findemes" isHorizontal="true" bioc:fill="#FFFFFF" bioc:stroke="#000000" color:background-color="#FFFFFF" color:border-color="#000000"><dc:Bounds x="0" y="560" width="2640" height="420"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_start_di" bpmnElement="u_start"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="72" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="50" y="222" width="80" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_inicia_di" bpmnElement="u_inicia"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="145" y="160" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_widget_di" bpmnElement="u_widget"  bioc:fill="#FFFFFF" bioc:stroke="#03689A" color:background-color="#FFFFFF" color:border-color="#03689A"><dc:Bounds x="432" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="410" y="148" width="80" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_clave_di" bpmnElement="u_clave"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="515" y="160" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_movs_di" bpmnElement="u_movs"  bioc:fill="#FFFFFF" bioc:stroke="#03689A" color:background-color="#FFFFFF" color:border-color="#03689A"><dc:Bounds x="702" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="680" y="148" width="80" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="sp_confirmar_di" bpmnElement="sp_confirmar" isExpanded="true" bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="790" y="40" width="830" height="320"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_start_di" bpmnElement="c_start"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="812" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_merge_di" bpmnElement="c_merge" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="885" y="175" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_revisa_di" bpmnElement="c_revisa"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="965" y="160" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_rec_di" bpmnElement="c_rec" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="1155" y="175" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1210" y="210" width="70" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_fijo_di" bpmnElement="c_fijo"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1245" y="70" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_puntual_di" bpmnElement="c_puntual"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1245" y="250" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_merge2_di" bpmnElement="c_merge2" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="1405" y="175" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_quedan_di" bpmnElement="c_quedan" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="1480" y="175" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1460" y="143" width="90" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="c_end_di" bpmnElement="c_end"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="1567" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_fin_di" bpmnElement="u_fin"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="1672" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1640" y="222" width="100" height="42"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="n_clave_di" bpmnElement="n_clave"  bioc:fill="#FFFFFF" bioc:stroke="#000000" color:background-color="#FFFFFF" color:border-color="#000000"><dc:Bounds x="480" y="30" width="220" height="38"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_quiere_di" bpmnElement="u_quiere"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="1782" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1760" y="222" width="80" height="42"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_desvincula_di" bpmnElement="u_desvincula"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1855" y="160" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_ok_di" bpmnElement="u_ok"  bioc:fill="#FFFFFF" bioc:stroke="#03689A" color:background-color="#FFFFFF" color:border-color="#03689A"><dc:Bounds x="2182" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="2155" y="148" width="90" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="u_fin2_di" bpmnElement="u_fin2"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="2292" y="182" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="2275" y="222" width="70" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="f_solicitud_di" bpmnElement="f_solicitud"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="202" y="662" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="180" y="702" width="80" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="sp_vincular_di" bpmnElement="sp_vincular" isExpanded="true" bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="280" y="590" width="650" height="180"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="v_start_di" bpmnElement="v_start"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="302" y="662" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="v_intent_di" bpmnElement="v_intent"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="355" y="640" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="v_token_di" bpmnElement="v_token"  bioc:fill="#FFFFFF" bioc:stroke="#03689A" color:background-color="#FFFFFF" color:border-color="#03689A"><dc:Bounds x="602" y="662" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="585" y="702" width="70" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="v_cifra_di" bpmnElement="v_cifra"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="685" y="640" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="v_end_di" bpmnElement="v_end"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="862" y="662" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="sp_sincronizar_di" bpmnElement="sp_sincronizar" isExpanded="true" bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="990" y="590" width="670" height="180"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="z_start_di" bpmnElement="z_start"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="1012" y="662" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="z_lee_di" bpmnElement="z_lee"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1075" y="640" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="z_dedup_di" bpmnElement="z_dedup"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1245" y="640" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="z_sugiere_di" bpmnElement="z_sugiere"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1415" y="640" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="z_end_di" bpmnElement="z_end"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="1592" y="662" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="f_movs_di" bpmnElement="f_movs"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="1702" y="662" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1675" y="702" width="90" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="f_datos_di" bpmnElement="f_datos"  bioc:fill="#FFFFFF" bioc:stroke="#000000" color:background-color="#FFFFFF" color:border-color="#000000"><dc:Bounds x="1295" y="800" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1255" y="854" width="130" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="f_desv_di" bpmnElement="f_desv"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="1912" y="862" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1885" y="902" width="90" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="sp_desvincular_di" bpmnElement="sp_desvincular" isExpanded="true" bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1990" y="810" width="510" height="150"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="d_start_di" bpmnElement="d_start"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="2012" y="862" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="d_revoca_di" bpmnElement="d_revoca"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="2075" y="840" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="d_borra_di" bpmnElement="d_borra"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="2255" y="840" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="d_end_di" bpmnElement="d_end"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="2432" y="862" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="f_desv_fin_di" bpmnElement="f_desv_fin"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="2552" y="862" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="2525" y="902" width="90" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="fu1_di" bpmnElement="fu1"><di:waypoint x="108" y="200"/><di:waypoint x="145" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fu2_di" bpmnElement="fu2"><di:waypoint x="295" y="200"/><di:waypoint x="432" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fu3_di" bpmnElement="fu3"><di:waypoint x="468" y="200"/><di:waypoint x="515" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fu4_di" bpmnElement="fu4"><di:waypoint x="665" y="200"/><di:waypoint x="702" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc1_di" bpmnElement="fc1"><di:waypoint x="848" y="200"/><di:waypoint x="885" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc2_di" bpmnElement="fc2"><di:waypoint x="935" y="200"/><di:waypoint x="965" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc3_di" bpmnElement="fc3"><di:waypoint x="1115" y="200"/><di:waypoint x="1155" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc4_di" bpmnElement="fc4"><di:waypoint x="1180" y="175"/><di:waypoint x="1180" y="110"/><di:waypoint x="1245" y="110"/><bpmndi:BPMNLabel><dc:Bounds x="1186" y="155" width="30" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc5_di" bpmnElement="fc5"><di:waypoint x="1180" y="225"/><di:waypoint x="1180" y="290"/><di:waypoint x="1245" y="290"/><bpmndi:BPMNLabel><dc:Bounds x="1186" y="231" width="30" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc6_di" bpmnElement="fc6"><di:waypoint x="1395" y="110"/><di:waypoint x="1430" y="110"/><di:waypoint x="1430" y="175"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc7_di" bpmnElement="fc7"><di:waypoint x="1395" y="290"/><di:waypoint x="1430" y="290"/><di:waypoint x="1430" y="225"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc8_di" bpmnElement="fc8"><di:waypoint x="1455" y="200"/><di:waypoint x="1480" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc9_di" bpmnElement="fc9"><di:waypoint x="1505" y="225"/><di:waypoint x="1505" y="345"/><di:waypoint x="910" y="345"/><di:waypoint x="910" y="225"/><bpmndi:BPMNLabel><dc:Bounds x="1513" y="240" width="30" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fc10_di" bpmnElement="fc10"><di:waypoint x="1530" y="200"/><di:waypoint x="1567" y="200"/><bpmndi:BPMNLabel><dc:Bounds x="1532" y="182" width="30" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fu5_di" bpmnElement="fu5"><di:waypoint x="738" y="200"/><di:waypoint x="790" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fu6_di" bpmnElement="fu6"><di:waypoint x="1620" y="200"/><di:waypoint x="1672" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="n_clave_a_di" bpmnElement="n_clave_a"><di:waypoint x="590" y="68"/><di:waypoint x="590" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fu7_di" bpmnElement="fu7"><di:waypoint x="1818" y="200"/><di:waypoint x="1855" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fu8_di" bpmnElement="fu8"><di:waypoint x="2005" y="200"/><di:waypoint x="2182" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fu9_di" bpmnElement="fu9"><di:waypoint x="2218" y="200"/><di:waypoint x="2292" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fv1_di" bpmnElement="fv1"><di:waypoint x="338" y="680"/><di:waypoint x="355" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fv2_di" bpmnElement="fv2"><di:waypoint x="505" y="680"/><di:waypoint x="602" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fv3_di" bpmnElement="fv3"><di:waypoint x="638" y="680"/><di:waypoint x="685" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fv4_di" bpmnElement="fv4"><di:waypoint x="835" y="680"/><di:waypoint x="862" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fz1_di" bpmnElement="fz1"><di:waypoint x="1048" y="680"/><di:waypoint x="1075" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fz2_di" bpmnElement="fz2"><di:waypoint x="1225" y="680"/><di:waypoint x="1245" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fz3_di" bpmnElement="fz3"><di:waypoint x="1395" y="680"/><di:waypoint x="1415" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fz4_di" bpmnElement="fz4"><di:waypoint x="1565" y="680"/><di:waypoint x="1592" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="ff1_di" bpmnElement="ff1"><di:waypoint x="238" y="680"/><di:waypoint x="280" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="ff2_di" bpmnElement="ff2"><di:waypoint x="930" y="680"/><di:waypoint x="990" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="ff3_di" bpmnElement="ff3"><di:waypoint x="1660" y="680"/><di:waypoint x="1702" y="680"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="do_z_dedup_f_datos_di" bpmnElement="do_z_dedup_f_datos"><di:waypoint x="1320" y="720"/><di:waypoint x="1320" y="770"/><di:waypoint x="1320" y="800"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fd1_di" bpmnElement="fd1"><di:waypoint x="2048" y="880"/><di:waypoint x="2075" y="880"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fd2_di" bpmnElement="fd2"><di:waypoint x="2225" y="880"/><di:waypoint x="2255" y="880"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fd3_di" bpmnElement="fd3"><di:waypoint x="2405" y="880"/><di:waypoint x="2432" y="880"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="ff4_di" bpmnElement="ff4"><di:waypoint x="1948" y="880"/><di:waypoint x="1990" y="885"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="ff5_di" bpmnElement="ff5"><di:waypoint x="2500" y="885"/><di:waypoint x="2552" y="880"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m1_di" bpmnElement="m1"><di:waypoint x="220" y="240"/><di:waypoint x="220" y="662"/><bpmndi:BPMNLabel><dc:Bounds x="226" y="520" width="50" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m2_di" bpmnElement="m2"><di:waypoint x="450" y="640"/><di:waypoint x="450" y="520"/><di:waypoint x="450" y="218"/><bpmndi:BPMNLabel><dc:Bounds x="456" y="300" width="40" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m3_di" bpmnElement="m3"><di:waypoint x="410" y="640"/><di:waypoint x="410" y="500"/><bpmndi:BPMNLabel><dc:Bounds x="330" y="520" width="80" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m4_di" bpmnElement="m4"><di:waypoint x="590" y="240"/><di:waypoint x="590" y="420"/><bpmndi:BPMNLabel><dc:Bounds x="596" y="300" width="70" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m5_di" bpmnElement="m5"><di:waypoint x="620" y="500"/><di:waypoint x="620" y="662"/><bpmndi:BPMNLabel><dc:Bounds x="626" y="520" width="70" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m6_di" bpmnElement="m6"><di:waypoint x="1150" y="640"/><di:waypoint x="1150" y="500"/><bpmndi:BPMNLabel><dc:Bounds x="1156" y="515" width="100" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m7_di" bpmnElement="m7"><di:waypoint x="1720" y="662"/><di:waypoint x="1720" y="530"/><di:waypoint x="720" y="530"/><di:waypoint x="720" y="218"/><bpmndi:BPMNLabel><dc:Bounds x="800" y="532" width="110" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m8_di" bpmnElement="m8"><di:waypoint x="1930" y="240"/><di:waypoint x="1930" y="862"/><bpmndi:BPMNLabel><dc:Bounds x="1936" y="520" width="50" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m9_di" bpmnElement="m9"><di:waypoint x="2150" y="840"/><di:waypoint x="2150" y="500"/><bpmndi:BPMNLabel><dc:Bounds x="2156" y="515" width="60" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="m10_di" bpmnElement="m10"><di:waypoint x="2570" y="862"/><di:waypoint x="2570" y="530"/><di:waypoint x="2200" y="530"/><di:waypoint x="2200" y="218"/><bpmndi:BPMNLabel><dc:Bounds x="2206" y="300" width="60" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>
