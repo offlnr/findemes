@@ -111,3 +111,8 @@ quedaron en versiones-anteriores/v0.13). Se mantiene el diseño corporativo (pal
   banco» incluye elegir el banco, ingresar las credenciales en el widget de Fintoc y la sincronización
   automática de saldo y movimientos; «Confirmar movimientos recurrentes» la extiende. Se quita el
   recuadro de ejemplo y la ficha resumida sigue esos pasos.
+- 26-10-2026: modelo de datos sin símbolos superpuestos. En la vista general varias relaciones llegaban
+  a users.id por el mismo punto y se mezclaban «uno obligatorio», «cero o uno» y la relación lógica de
+  la auditoría. Ahora cada tipo de extremo tiene su propio carril y su punto de entrada, sin cruces junto
+  a users (payment_orders y audit_log pasan arriba de subscriptions). Se reemplazan las Ilustraciones 22,
+  25 y 26 del informe (imágenes del .docx; PDF regenerado, 146 páginas) y la imagen de la diapositiva 9.
