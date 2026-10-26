@@ -1,6 +1,6 @@
 # Diccionario de datos · Fin de Mes
 
-> Generado por `docs/diagrams/data-model/generate_er.py` desde la base de datos con las migraciones 0001-0010 aplicadas (21-10-2026). No se edita a mano: se regenera cuando cambia una migración.
+> Generado por `docs/diagrams/data-model/generate_er.py` desde la base de datos con las migraciones 0001-0010 aplicadas (25-10-2026). No se edita a mano: se regenera cuando cambia una migración.
 
 Esquema `app` de PostgreSQL 18. Diagramas: `docs/diagrams/data-model/datos-*.drawio.svg`. Decisiones de diseño, roles y Row-Level Security: `docs/adr/003-data-model-and-database-security.md`.
 
@@ -25,11 +25,13 @@ Esquema `app` de PostgreSQL 18. Diagramas: `docs/diagrams/data-model/datos-*.dra
 
 | Tabla | Módulo | Descripción | HU / RNF | RLS | app_api | app_admin |
 |---|---|---|---|---|---|---|
-| [`users`](#users) | Identidad y administración | Cuenta de usuario registrada. Base de la identidad y del control de acceso. | HU17, HU17.1-HU17.4, HU23 | Sí | DELETE, INSERT, SELECT, UPDATE (email, onboarding_completed_at, onboarding_started_at, password_hash, updated_at) | SELECT (created_at, email, email_verified_at, id, onboarding_completed_at, onboarding_started_at, status, updated_at), UPDATE (status, updated_at) |
+| [`users`](#users) | Identidad y administración | Cuenta de usuario registrada. Base de la identidad y del control de acceso. | HU17, HU17.1-HU17.4, HU23 | Sí | DELETE, INSERT, SELECT, UPDATE (display_name, email, onboarding_completed_at, onboarding_started_at, password_hash, updated_at) | SELECT (created_at, email, email_verified_at, id, onboarding_completed_at, onboarding_started_at, status, updated_at), UPDATE (status, updated_at) |
 | [`consents`](#consents) | Identidad y administración | Consentimientos otorgados por el usuario (términos, política de privacidad y conexión bancaria) con la versión del documento aceptado. Retirar un consentimiento no borra el historial; se elimina con la cuenta. | HU32, HU36, Ley 21.719 | Sí | INSERT, SELECT, UPDATE (withdrawn_at) | sin acceso |
 | [`refresh_tokens`](#refresh_tokens) | Identidad y administración | Refresh tokens opacos y rotativos, guardados como hash SHA-256. Una familia agrupa los tokens de un mismo inicio de sesión; reutilizar uno consumido revoca la familia. | HU17.1-HU17.3 | Sí | DELETE, INSERT, SELECT, UPDATE | sin acceso |
 | [`email_tokens`](#email_tokens) | Identidad y administración | Enlaces de un solo uso enviados por correo (verificación 24 h, restablecimiento 30 min), guardados como hash SHA-256. | HU17, HU17.2 | Sí | DELETE, INSERT, SELECT, UPDATE | sin acceso |
 | [`login_throttle`](#login_throttle) | Identidad y administración | Contadores del bloqueo temporal de inicio de sesión por cuenta y por IP. Las claves son HMAC del correo normalizado o de la IP: no guarda datos personales en claro. | HU17.1 | No | DELETE, INSERT, SELECT, UPDATE | sin acceso |
+| [`trusted_devices`](#trusted_devices) | Identidad y administración | Dispositivos reconocidos de cada usuario para el código de inicio de sesión. Guarda el hash del identificador que conserva el dispositivo, nunca el identificador. | HU17.1 | Sí | DELETE, INSERT, SELECT, UPDATE (verified_at) | sin acceso |
+| [`login_codes`](#login_codes) | Identidad y administración | Códigos de verificación enviados por correo al iniciar sesión desde un dispositivo nuevo, tras restablecer la contraseña o cada 30 días. Un solo uso, 10 minutos y 5 intentos. | HU17.1 | Sí | DELETE, INSERT, SELECT | sin acceso |
 | [`platform_admins`](#platform_admins) | Identidad y administración | Usuarios con rol de administrador de la plataforma y su segundo factor TOTP. Solo la lee el rol de la API de administración. | HU22, RNF22 | No | sin acceso | SELECT, UPDATE (last_login_at) |
 | [`financial_profiles`](#financial_profiles) | Registro financiero | Saldo inicial del usuario al comienzo de un mes (uno por usuario). | HU04 | Sí | DELETE, INSERT, SELECT, UPDATE | sin acceso |
 | [`incomes`](#incomes) | Registro financiero | Ingresos recurrentes o esporádicos del usuario. | HU01 | Sí | DELETE, INSERT, SELECT, UPDATE | sin acceso |
@@ -68,12 +70,13 @@ Cuenta de usuario registrada. Base de la identidad y del control de acceso. Traz
 | `updated_at` | `timestamptz` | No | `now()` |  |  | Fecha y hora de la última modificación. |
 | `onboarding_started_at` | `timestamptz` | Sí |  |  |  | Inicio del registro inicial (KPI de finalización y tiempo de registro). |
 | `onboarding_completed_at` | `timestamptz` | Sí |  |  |  | Término del registro inicial: saldo inicial y al menos un ingreso (HU01, HU04). |
+| `display_name` | `app.label` | No |  |  | `(length(btrim(display_name)) >= 2) AND (length(btrim(display_name)) <= 40)` | Nombre para mostrar (alias de 2 a 40 caracteres) pedido al registrarse; no es el nombre legal. |
 
 - **Clave primaria:** `id`
 - **Única:** (`email`)
 - **Regla de fila:** `(onboarding_completed_at IS NULL) OR ((onboarding_started_at IS NOT NULL) AND (onboarding_completed_at >= onboarding_started_at))`
 - **RLS:** activa; políticas: `users_admin` (ALL, app_admin), `users_self` (ALL, app_api)
-- **Acceso:** `app_api`: DELETE, INSERT, SELECT, UPDATE (email, onboarding_completed_at, onboarding_started_at, password_hash, updated_at) · `app_admin`: SELECT (created_at, email, email_verified_at, id, onboarding_completed_at, onboarding_started_at, status, updated_at), UPDATE (status, updated_at)
+- **Acceso:** `app_api`: DELETE, INSERT, SELECT, UPDATE (display_name, email, onboarding_completed_at, onboarding_started_at, password_hash, updated_at) · `app_admin`: SELECT (created_at, email, email_verified_at, id, onboarding_completed_at, onboarding_started_at, status, updated_at), UPDATE (status, updated_at)
 
 ### consents
 
@@ -156,6 +159,46 @@ Contadores del bloqueo temporal de inicio de sesión por cuenta y por IP. Las cl
 - **Clave primaria:** `key_hash`
 - **RLS:** no aplica
 - **Acceso:** `app_api`: DELETE, INSERT, SELECT, UPDATE · `app_admin`: sin acceso
+
+### trusted_devices
+
+Dispositivos reconocidos de cada usuario para el código de inicio de sesión. Guarda el hash del identificador que conserva el dispositivo, nunca el identificador. Trazabilidad: HU17.1.
+
+| Columna | Tipo | Nulo | Por defecto | Clave | Restricciones | Descripción |
+|---|---|---|---|---|---|---|
+| `id` | `uuid` | No | `gen_random_uuid()` | PK |  | Identificador único (UUID aleatorio, no secuencial). |
+| `user_id` | `uuid` | No |  | FK |  | Usuario dueño del dispositivo. |
+| `device_hash` | `bytea` | No |  |  | `length(device_hash) = 32` | Hash SHA-256 del identificador aleatorio que guarda el dispositivo. |
+| `created_at` | `timestamptz` | No | `now()` |  |  | Fecha y hora de creación. |
+| `verified_at` | `timestamptz` | No | `now()` |  |  | Última verificación con código en este dispositivo; pasados 30 días se vuelve a pedir. |
+
+- **Clave primaria:** `id`
+- **Clave foránea:** (`user_id`) → `users` (id), ON DELETE CASCADE
+- **Única:** (`user_id`, `device_hash`)
+- **RLS:** activa; políticas: `trusted_devices_self` (ALL, app_api)
+- **Acceso:** `app_api`: DELETE, INSERT, SELECT, UPDATE (verified_at) · `app_admin`: sin acceso
+
+### login_codes
+
+Códigos de verificación enviados por correo al iniciar sesión desde un dispositivo nuevo, tras restablecer la contraseña o cada 30 días. Un solo uso, 10 minutos y 5 intentos. Trazabilidad: HU17.1.
+
+| Columna | Tipo | Nulo | Por defecto | Clave | Restricciones | Descripción |
+|---|---|---|---|---|---|---|
+| `id` | `uuid` | No | `gen_random_uuid()` | PK |  | Identificador único (UUID aleatorio, no secuencial). |
+| `user_id` | `uuid` | No |  | FK |  | Usuario que inicia sesión. |
+| `device_hash` | `bytea` | No |  |  | `length(device_hash) = 32` | Dispositivo desde el que se pidió el código; queda reconocido al verificarlo. |
+| `code_hash` | `bytea` | No |  |  | `length(code_hash) = 32` | HMAC del código de 6 dígitos con una clave del servidor; el código nunca se guarda. |
+| `created_at` | `timestamptz` | No | `now()` |  |  | Fecha y hora de creación. |
+| `expires_at` | `timestamptz` | No |  |  |  | Vencimiento, como máximo 10 minutos después de emitido. |
+| `attempts` | `integer` | No | `0` |  | `(attempts >= 0) AND (attempts <= 5)` | Intentos fallidos; con 5 el código deja de servir. |
+| `used_at` | `timestamptz` | Sí |  |  |  | Fecha y hora de uso; un código usado no vuelve a servir. |
+
+- **Clave primaria:** `id`
+- **Clave foránea:** (`user_id`) → `users` (id), ON DELETE CASCADE
+- **Regla de fila:** `(expires_at > created_at) AND (expires_at <= (created_at + '00:10:00'))`
+- **Índice:** `login_codes_user_idx` (user_id)
+- **RLS:** activa; políticas: `login_codes_self` (ALL, app_api)
+- **Acceso:** `app_api`: DELETE, INSERT, SELECT · `app_admin`: sin acceso
 
 ### platform_admins
 

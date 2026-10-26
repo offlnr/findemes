@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 
-DATE = '21-10-2026'
+DATE = '25-10-2026'
 
 # ---------------------------------------------------------------------------------------------
 # Descriptions (Spanish). Everything structural comes from the database.
@@ -43,6 +43,10 @@ TABLES = {
     'login_throttle': ('idn', 'Contadores del bloqueo temporal de inicio de sesión por cuenta y por IP. Las '
                        'claves son HMAC del correo normalizado o de la IP: no guarda datos personales en claro.',
                        'HU17.1'),
+    'trusted_devices': ('idn', 'Dispositivos reconocidos de cada usuario para el código de inicio de sesión. Guarda el '
+                        'hash del identificador que conserva el dispositivo, nunca el identificador.', 'HU17.1'),
+    'login_codes': ('idn', 'Códigos de verificación enviados por correo al iniciar sesión desde un dispositivo nuevo, '
+                    'tras restablecer la contraseña o cada 30 días. Un solo uso, 10 minutos y 5 intentos.', 'HU17.1'),
     'platform_admins': ('idn', 'Usuarios con rol de administrador de la plataforma y su segundo factor TOTP. '
                         'Solo la lee el rol de la API de administración.', 'HU22, RNF22'),
     'financial_profiles': ('reg', 'Saldo inicial del usuario al comienzo de un mes (uno por usuario).', 'HU04'),
@@ -104,6 +108,7 @@ COMMON = {
 COLUMNS = {
     'users': {
         'email': 'Correo, normalizado (sin espacios y en minúsculas). Único.',
+        'display_name': 'Nombre para mostrar (alias de 2 a 40 caracteres) pedido al registrarse; no es el nombre legal.',
         'password_hash': 'Hash argon2id de la contraseña (RNF07). La API de administración no puede leerlo.',
         'email_verified_at': 'Fecha y hora de verificación del correo; NULL = no verificado.',
         'status': "Estado de la cuenta: 'active' o 'suspended'. Solo un administrador lo cambia (HU23).",
@@ -133,6 +138,19 @@ COLUMNS = {
         'key_hash': 'HMAC del correo normalizado o de la IP.',
         'failures': 'Intentos fallidos consecutivos.',
         'locked_until': 'Bloqueo temporal hasta esta fecha y hora; la espera crece con los fallos.',
+    },
+    'trusted_devices': {
+        'user_id': 'Usuario dueño del dispositivo.',
+        'device_hash': 'Hash SHA-256 del identificador aleatorio que guarda el dispositivo.',
+        'verified_at': 'Última verificación con código en este dispositivo; pasados 30 días se vuelve a pedir.',
+    },
+    'login_codes': {
+        'user_id': 'Usuario que inicia sesión.',
+        'device_hash': 'Dispositivo desde el que se pidió el código; queda reconocido al verificarlo.',
+        'code_hash': 'HMAC del código de 6 dígitos con una clave del servidor; el código nunca se guarda.',
+        'expires_at': 'Vencimiento, como máximo 10 minutos después de emitido.',
+        'attempts': 'Intentos fallidos; con 5 el código deja de servir.',
+        'used_at': 'Fecha y hora de uso; un código usado no vuelve a servir.',
     },
     'platform_admins': {
         'user_id': 'Usuario con rol de administrador.',
@@ -605,7 +623,7 @@ for _n, _c, _r, _rc, _ in LOGICAL:
 REF_COLS = {'users': ['id'], 'households': ['id'], 'bank_accounts': ['id', 'owner_id'],
             'household_members': ['household_id', 'user_id']}
 
-SUBTITLE = 'Esquema app · PostgreSQL 18 · generado desde las migraciones 0001-0010 · ' + DATE
+SUBTITLE = 'Esquema app · PostgreSQL 18 · generado desde las migraciones 0001-0012 · ' + DATE
 
 # Each view: file, title, mode, table width, gaps between columns, columns of tables (or (table, mode)).
 # A relation may only join tables in the same or in neighbouring columns (checked when routing).
@@ -614,7 +632,7 @@ VIEWS = [
      [110, 110, 110, 220], [
         ['plans'],
         ['subscriptions', 'payment_orders', 'audit_log', 'refresh_tokens', 'email_tokens', 'platform_admins',
-         'consents', 'login_throttle'],
+         'consents', 'login_throttle', 'trusted_devices', 'login_codes'],
         ['users'],
         ['financial_profiles', 'incomes', 'expenses', 'bank_links', 'debts', 'scenarios', 'household_members',
          'household_expenses'],
@@ -622,7 +640,7 @@ VIEWS = [
          'contribution_rules', 'contribution_shares'],
     ]),
     ('datos-1-identidad', 'Modelo de datos · Identidad y administración', 'full', 380, [140, 140], [
-        ['refresh_tokens', 'email_tokens'],
+        ['refresh_tokens', 'email_tokens', 'trusted_devices', 'login_codes'],
         ['users'],
         ['platform_admins', 'consents', 'login_throttle'],
     ]),
@@ -648,7 +666,7 @@ VIEWS = [
      [120, 120, 120, 230], [
         ['plans'],
         ['subscriptions', 'payment_orders', 'audit_log', 'refresh_tokens', 'email_tokens', 'platform_admins',
-         'consents', 'login_throttle'],
+         'consents', 'login_throttle', 'trusted_devices', 'login_codes'],
         ['users'],
         ['financial_profiles', 'incomes', 'expenses', 'bank_links', 'debts', 'scenarios', 'household_members',
          'household_expenses'],

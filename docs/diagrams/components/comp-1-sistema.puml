@@ -14,7 +14,7 @@ package "Plano de administración (solo Tailscale)" {
   interface "API REST de administración\n<size:10>HTTPS · JSON · TOTP</size>" as IADM
 }
 
-package "Backend (App Platform)" {
+package "Backend (servidor de la API)" {
   component "API pública\n<size:10>Node.js 24 · TypeScript · Fastify</size>" as API
   component "Motor de simulación\n<size:10>núcleo puro, en proceso</size>" <<núcleo>> as CORE
   component "Migrador\n<size:10>Kysely + SQL versionado</size>" as MIG
@@ -30,7 +30,8 @@ package "Datos" {
 package "Servicios externos" {
   component "Transbank Webpay Plus" <<externo>> as TBK
   component "Fintoc" <<externo>> as FIN
-  component "Proveedor de correo" <<externo>> as MAIL
+  component "Amazon SES\n<size:10>correo transaccional</size>" <<externo>> as MAIL
+  component "AWS Systems Manager\n<size:10>Parameter Store · secretos</size>" <<externo>> as SSM
 }
 
 API -up- IREST
@@ -49,6 +50,8 @@ PAN .down.> IADM : usa
 API .right.> TBK : crea y confirma\n(HTTPS saliente)
 API .right.> FIN : lee movimientos\n(HTTPS saliente)
 API .right.> MAIL : envía correos\n(HTTPS saliente)
+API .right.> SSM : lee los secretos\nal iniciar
+AAPI .left.> SSM : lee los secretos\nal iniciar
 
 legend right
   <b>Notación UML 2.5</b>
