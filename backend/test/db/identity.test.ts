@@ -141,13 +141,116 @@ describe('consume_email_token', () => {
 describe('stored credentials', () => {
   it('only accept argon2id password hashes (RNF07)', async () => {
     await expect(
-      db.owner.query(`INSERT INTO app.users (email, password_hash) VALUES ('x@example.cl', 'plaintext')`),
+      db.owner.query(`INSERT INTO app.users (email, password_hash, display_name) VALUES ('x@example.cl', 'plaintext', 'Equis')`),
     ).rejects.toMatchObject({ code: '23514' });
   });
 
   it('reject emails that are not normalized', async () => {
     await expect(
-      db.owner.query(`INSERT INTO app.users (email, password_hash) VALUES ('Ana@Example.cl', '$argon2id$x')`),
+      db.owner.query(`INSERT INTO app.users (email, password_hash, display_name) VALUES ('Ana@Example.cl', '$argon2id$x', 'Ana')`),
     ).rejects.toMatchObject({ code: '23514' });
+  });
+});
+
+describe('account display name (CU-08)', () => {
+  it('requires an alias of 2 to 40 characters', async () => {
+    await expect(
+      db.owner.query(`INSERT INTO app.users (email, password_hash) VALUES ('sin-alias@example.cl', '$argon2id$x')`),
+    ).rejects.toMatchObject({ code: '23502' });
+    await expect(
+      db.owner.query(`INSERT INTO app.users (email, password_hash, display_name) VALUES ('corto@example.cl', '$argon2id$x', 'A')`),
+    ).rejects.toMatchObject({ code: '23514' });
+  });
+
+  it('lets the owner rectify only their own alias', async () => {
+    const ana = await createUser(db);
+    const bruno = await createUser(db);
+    await asUser(db.api, ana, (c) => c.query(`UPDATE app.users SET display_name = 'Ana' WHERE id = $1`, [ana]));
+    const { rowCount } = await asUser(db.api, ana, (c) =>
+      c.query(`UPDATE app.users SET display_name = 'Intruso' WHERE id = $1`, [bruno]),
+    );
+    expect(rowCount).toBe(0);
+    const { rows } = await db.owner.query<{ display_name: string }>('SELECT display_name FROM app.users WHERE id = $1', [ana]);
+    expect(rows[0]?.display_name).toBe('Ana');
+  });
+});
+
+describe('consume_login_code (CU-11)', () => {
+  const device = (): Buffer => newToken();
+
+  async function issueCode(userId: string, code: Buffer, deviceHash: Buffer): Promise<string> {
+    const { rows } = await asUser(db.api, userId, (c) =>
+      c.query<{ id: string }>(
+        `INSERT INTO app.login_codes (user_id, device_hash, code_hash, expires_at)
+         VALUES ($1, $2, $3, now() + interval '10 minutes') RETURNING id`,
+        [userId, deviceHash, code],
+      ),
+    );
+    const id = rows[0]?.id;
+    if (id === undefined) {
+      throw new Error('code was not issued');
+    }
+    return id;
+  }
+
+  async function consumeCode(challengeId: string, code: Buffer): Promise<string | null> {
+    const { rows } = await db.api.query<{ consume_login_code: string | null }>(
+      'SELECT app.consume_login_code($1, $2)',
+      [challengeId, code],
+    );
+    return rows[0]?.consume_login_code ?? null;
+  }
+
+  it('accepts the right code once and recognizes the device', async () => {
+    const user = await createUser(db);
+    const code = newToken();
+    const deviceHash = device();
+    const challenge = await issueCode(user, code, deviceHash);
+    expect(await consumeCode(challenge, code)).toBe(user);
+    expect(await consumeCode(challenge, code)).toBeNull();
+    const { rowCount } = await asUser(db.api, user, (c) =>
+      c.query('SELECT 1 FROM app.trusted_devices WHERE device_hash = $1', [deviceHash]),
+    );
+    expect(rowCount).toBe(1);
+  });
+
+  it('spends an attempt on a wrong code and stops after five', async () => {
+    const user = await createUser(db);
+    const code = newToken();
+    const challenge = await issueCode(user, code, device());
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      expect(await consumeCode(challenge, newToken())).toBeNull();
+    }
+    expect(await consumeCode(challenge, code)).toBeNull();
+  });
+
+  it('rejects an expired code', async () => {
+    const user = await createUser(db);
+    const code = newToken();
+    const challenge = await issueCode(user, code, device());
+    await db.owner.query(
+      `UPDATE app.login_codes SET created_at = now() - interval '11 minutes', expires_at = now() - interval '1 minute' WHERE id = $1`,
+      [challenge],
+    );
+    expect(await consumeCode(challenge, code)).toBeNull();
+  });
+
+  it('rejects the code of a suspended account', async () => {
+    const user = await createUser(db);
+    const code = newToken();
+    const challenge = await issueCode(user, code, device());
+    await db.owner.query(`UPDATE app.users SET status = 'suspended' WHERE id = $1`, [user]);
+    expect(await consumeCode(challenge, code)).toBeNull();
+  });
+
+  it('keeps codes and devices private to their owner', async () => {
+    const ana = await createUser(db);
+    const bruno = await createUser(db);
+    const code = newToken();
+    await consumeCode(await issueCode(ana, code, device()), code);
+    const codes = await asUser(db.api, bruno, (c) => c.query('SELECT 1 FROM app.login_codes WHERE user_id = $1', [ana]));
+    const devices = await asUser(db.api, bruno, (c) => c.query('SELECT 1 FROM app.trusted_devices WHERE user_id = $1', [ana]));
+    expect(codes.rowCount).toBe(0);
+    expect(devices.rowCount).toBe(0);
   });
 });

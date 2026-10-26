@@ -271,6 +271,7 @@ describe('function privileges', () => {
       'accept_household_invitation',
       'cancel_subscription',
       'consume_email_token',
+      'consume_login_code',
       'create_household',
       'create_scenario_if_under_limit',
       'current_user_id',
