@@ -2,128 +2,93 @@
 !include ../uml-style.iuml
 title Diagrama de componentes · Interior de la API pública (arquitectura hexagonal)
 top to bottom direction
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 70
+skinparam packageStyle rectangle
 
 interface "API REST /v1" as IREST
 
 component "API pública" {
-  component "Controladores REST\n<size:10>api/v1 · Fastify + Zod</size>" <<previsto>> as CTL
-  component "Errores HTTP uniformes\n<size:10>http</size>" as HTTP
-  component "Raíz de composición\n<size:10>composition: conecta puertos y adaptadores</size>" as COMP
-
-  package "Módulos · casos de uso (modules/*/application)" {
-    component "Identidad\n<size:9>identity</size>" <<previsto>> as IDN
-    component "Registro financiero\n<size:9>registry</size>" <<previsto>> as REG
-    component "Escenarios\n<size:9>scenarios</size>" <<previsto>> as SCN
-    component "Hogar\n<size:9>household</size>" <<previsto>> as HOG
-    component "Suscripción\n<size:9>subscription</size>" <<previsto>> as SUB
-    component "Agregación\n<size:9>aggregation</size>" <<previsto>> as AGG
-    component "Privacidad\n<size:9>privacy</size>" <<previsto>> as PRV
-    component "Auditoría\n<size:9>audit</size>" <<previsto>> as AUD
-    component "Demostración\n<size:9>demo</size>" <<previsto>> as DEM
+  package "1. Adaptadores de entrada" as L1 {
+    component "Controladores REST\n<size:10>reciben y validan cada solicitud</size>" <<previsto>> as CTL
+    component "Errores HTTP uniformes" as HTTP
   }
 
-  component "Motor de simulación\n<size:10>core: TypeScript puro, determinista</size>" <<núcleo>> as CORE
-  interface "Simulación" as ISIM
-
-  package "Puertos (interfaces declaradas por cada módulo)" {
-    interface "Cuentas de usuario\n<size:9>UserAccountRepository</size>" as P_ACC
-    interface "Refresh tokens\n<size:9>RefreshTokenStore</size>" as P_RT
-    interface "Límite de intentos\n<size:9>LoginAttemptLimiter</size>" as P_LIM
-    interface "Hash de contraseñas\n<size:9>PasswordHasher</size>" as P_HASH
-    interface "Tokens de acceso\n<size:9>AccessTokenService</size>" as P_JWT
-    interface "Envío de correo\n<size:9>EmailSender</size>" as P_MAIL
-    interface "Estado financiero\n<size:9>FinancialStateReader</size>" as P_FS
-    interface "Escenarios\n<size:9>ScenarioRepository</size>" as P_SCN
-    interface "Hogares\n<size:9>HouseholdRepository</size>" as P_HOG
-    interface "Pasarela de pago\n<size:9>PaymentGateway</size>" as P_PAY
-    interface "Liquidación de pagos\n<size:9>PaymentSettlement</size>" as P_SET
-    interface "Cancelación\n<size:9>SubscriptionCanceller</size>" as P_CAN
-    interface "Agregador bancario\n<size:9>BankAggregator</size>" as P_BANK
-    interface "Datos personales\n<size:9>PersonalDataStore</size>" as P_PD
-    interface "Traza de auditoría\n<size:9>AuditLog</size>" as P_AUD
+  package "2. Casos de uso (un módulo por área)" as L2 {
+    component "Identidad" <<previsto>> as IDN
+    component "Registro\nfinanciero" <<previsto>> as REG
+    component "Escenarios" <<previsto>> as SCN
+    component "Hogar" <<previsto>> as HOG
+    component "Suscripción" <<previsto>> as SUB
+    component "Agregación\nbancaria" <<previsto>> as AGG
+    component "Privacidad" <<previsto>> as PRV
+    component "Auditoría" <<previsto>> as AUD
+    component "Demostración" <<previsto>> as DEM
   }
 
-  package "Adaptadores de salida (adapters/*)" {
-    component "PostgreSQL\n<size:9>repositorios Kysely bajo RLS</size>" <<previsto>> as A_PG
-    component "Seguridad\n<size:9>argon2id · emisor JWT</size>" <<previsto>> as A_SEC
-    component "Correo\n<size:9>adapters/email</size>" <<previsto>> as A_MAIL
-    component "Webpay Plus\n<size:9>adapters/webpay</size>" <<previsto>> as A_WP
-    component "Fintoc\n<size:9>adapters/fintoc</size>" <<previsto>> as A_FIN
-    component "Banco de demostración\n<size:9>adapters/demo-bank</size>" as A_DEMO
+  package "3. Núcleo" as L3 {
+    component "Motor de simulación\n<size:10>cálculo puro y determinista</size>" <<núcleo>> as CORE
+    interface "Simulación" as ISIM
   }
+
+  package "4. Puertos (interfaces que definen los módulos)" as L4 {
+    interface "Persistencia" as P_DB
+    interface "Seguridad de acceso" as P_SEC
+    interface "Envío de correo" as P_MAIL
+    interface "Pasarela de pago" as P_PAY
+    interface "Agregador bancario" as P_BANK
+  }
+
+  package "5. Adaptadores de salida" as L5 {
+    component "PostgreSQL\n<size:10>consultas filtradas por usuario</size>" <<previsto>> as A_PG
+    component "Seguridad\n<size:10>argon2id y emisión de sesiones</size>" <<previsto>> as A_SEC
+    component "Correo transaccional" <<previsto>> as A_MAIL
+    component "Webpay Plus" <<previsto>> as A_WP
+    component "Fintoc" <<previsto>> as A_FIN
+    component "Banco de demostración" as A_DEMO
+  }
+
+  component "Raíz de composición\n<size:10>conecta cada puerto con su adaptador</size>" as COMP
 }
 
-CTL -up- IREST
-CTL ..> IDN
-CTL ..> REG
-CTL ..> SCN
-CTL ..> HOG
-CTL ..> SUB
-CTL ..> AGG
-CTL ..> PRV
-CTL ..> DEM
-CTL ..> HTTP
-COMP ..> CTL : construye
+' Vertical order of the layers.
+IREST -down- CTL
+CTL .down.> L2 : invoca
+CTL .right.> HTTP
+L2 .down.> P_DB : guardan y leen\n(todos salvo Demostración)
 
-CORE -- ISIM
-REG ..> ISIM
-SCN ..> ISIM
-DEM ..> ISIM
+' Core.
+CORE -up- ISIM
+REG .down.> ISIM
+SCN .down.> ISIM
+DEM .down.> ISIM
 
-IDN ..> P_ACC
-IDN ..> P_RT
-IDN ..> P_LIM
-IDN ..> P_HASH
-IDN ..> P_JWT
-IDN ..> P_MAIL
-REG ..> P_FS
-SCN ..> P_SCN
-SCN ..> P_FS
-SCN ..> P_HOG
-HOG ..> P_HOG
-HOG ..> P_MAIL
-SUB ..> P_PAY
-SUB ..> P_SET
-SUB ..> P_CAN
-AGG ..> P_BANK
-PRV ..> P_PD
-AUD ..> P_AUD
+' Specific ports.
+IDN .down.> P_SEC
+IDN .down.> P_MAIL
+HOG .down.> P_MAIL
+SUB .down.> P_PAY
+AGG .down.> P_BANK
 
-A_PG -up- P_ACC
-A_PG -up- P_RT
-A_PG -up- P_LIM
-A_PG -up- P_FS
-A_PG -up- P_SCN
-A_PG -up- P_HOG
-A_PG -up- P_SET
-A_PG -up- P_CAN
-A_PG -up- P_PD
-A_PG -up- P_AUD
-A_SEC -up- P_HASH
-A_SEC -up- P_JWT
+' Adapters implement the ports.
+A_PG -up- P_DB
+A_SEC -up- P_SEC
 A_MAIL -up- P_MAIL
 A_WP -up- P_PAY
 A_FIN -up- P_BANK
 A_DEMO -up- P_BANK
 
-note right of CORE
-  No importa módulos, adaptadores, red,
-  base de datos ni HTTP. Lo verifica la CI
-  con dependency-cruiser.
-end note
-
-note bottom of A_DEMO
-  Implementa el mismo puerto que Fintoc:
-  cambiar de proveedor no toca ni los
-  casos de uso ni el núcleo.
-end note
+COMP ..> L5 : construye
+COMP ..> L1 : construye
 
 legend right
   <b>Notación UML 2.5</b>
-  Bola = interfaz provista (un adaptador implementa el puerto).
-  Flecha discontinua = interfaz requerida o dependencia.
-  Borde discontinuo «previsto» = aún no implementado.
-  Todos los casos de uso, salvo Demostración, escriben en la traza de auditoría.
-  Puertos comunes (Clock, IdGenerator, TransactionRunner) omitidos.
+  Bola = interfaz que ofrece un componente.
+  Flecha discontinua = el componente necesita esa interfaz.
+  Borde discontinuo «previsto» = diseñado, aún no implementado.
+  Las dependencias apuntan siempre hacia el núcleo:
+  cambiar Fintoc por el banco de demostración
+  no modifica los casos de uso ni el motor.
 end legend
 @enduml

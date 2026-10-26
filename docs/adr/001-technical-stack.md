@@ -1,6 +1,6 @@
 # ADR-001: Stack técnico y organización del repositorio
 
-- **Estado:** aceptada
+- **Estado:** aceptada; el despliegue y la administración en DigitalOcean fueron reemplazados por el ADR-005 (AWS)
 - **Fecha:** 02-10-2026
 - **Autores:** Joaquín Varas (revisión pendiente: Maximiliano Lizana)
 

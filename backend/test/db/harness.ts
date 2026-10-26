@@ -87,7 +87,7 @@ export async function asUser<T>(pool: pg.Pool, userId: string | null, work: (cli
 /** Creates a user directly as the owner (fixture). Returns its id. */
 export async function createUser(db: TestDatabase, email = `${randomUUID()}@example.cl`): Promise<string> {
   const { rows } = await db.owner.query<{ id: string }>(
-    `INSERT INTO app.users (email, password_hash) VALUES ($1, '$argon2id$v=19$m=19456,t=2,p=1$fixture') RETURNING id`,
+    `INSERT INTO app.users (email, password_hash, display_name) VALUES ($1, '$argon2id$v=19$m=19456,t=2,p=1$fixture', 'Fixture') RETURNING id`,
     [email],
   );
   const id = rows[0]?.id;

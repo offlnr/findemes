@@ -87,11 +87,11 @@ un hogar nunca debe quedar sin administración ni con reparticiones que sumen me
 si una operación no pasa por el módulo. El módulo de hogar implementará los mismos casos de uso
 de forma explícita, con pruebas que verifiquen que coinciden con este comportamiento.
 
-**Operación en DigitalOcean.**
+**Operación en la base gestionada** (DigitalOcean al escribir este ADR; hoy Amazon RDS, ver ADR-005).
 
 - Las migraciones corren como un trabajo previo al despliegue, por el puerto directo (no por el
   pool), y nunca al iniciar un servicio.
-- Los servicios usan TLS con verificación (`sslmode=verify-full` y el certificado de DigitalOcean).
+- Los servicios usan TLS con verificación (`sslmode=verify-full` y el certificado del proveedor; en RDS, su paquete de certificados).
 - El dueño en producción es un rol sin superusuario. La CI debe probar también con un dueño sin
   superusuario.
 - Los roles son de todo el clúster: staging y producción usan clústeres separados.

@@ -73,6 +73,13 @@ El calendario de sprints del informe (Tabla 36) es simulado y no se usa para pla
   Móvil: `flutter_secure_storage`.
 - **Bloqueo de inicio de sesión (HU17.1):** bloqueo temporal con espera creciente por cuenta,
   más límite por IP. Nunca bloqueo permanente que un tercero pueda provocar.
+- **Código de acceso por correo (CU-11):** tras la contraseña, código de 6 dígitos cuando el
+  dispositivo no está reconocido, tras restablecer la contraseña o cada 30 días. Un solo uso,
+  10 min, 5 intentos (cuentan para el bloqueo), guardado como HMAC; el dispositivo reconocido se
+  guarda como hash (`app.trusted_devices`, `app.login_codes`, `app.consume_login_code`, migración 0012).
+- **Datos mínimos de la cuenta (CU-08):** alias (`display_name`, 2 a 40 caracteres), correo,
+  contraseña, declaración de mayoría de edad (18) y aceptación de términos y privacidad. No se
+  piden RUT, nombre legal, fecha de nacimiento, teléfono ni dirección.
 - **Enlaces por correo:** un solo uso, guardados con hash, con expiración (verificación 24 h,
   restablecimiento 30 min).
 - **Autorización:** denegación por defecto; cada repositorio exige el actor y filtra por
@@ -185,20 +192,22 @@ El motor es mensual: responde "en qué mes", no "en qué semana".
   antiguo; sin miembros, el hogar se elimina; la supresión de la cuenta nunca se bloquea. Un gasto
   común sin regla de aporte se reparte en partes iguales entre los miembros actuales.
 - **Modelo de negocio (flujo de caja del Informe 2):** planes gratuito, pagado ($5.990) y familiar
-  ($9.990), sin plan para empresas; 7.500 usuarios activos al lanzamiento (embudo de adquisición);
+  ($9.990), sin plan para empresas; 7.900 usuarios activos al lanzamiento (embudo de adquisición);
   conversión a pago de 4 % (entre la mediana 2,1 % y el cuartil superior 4,5 % de las apps freemium,
   RevenueCat 2026); Fintoc activo desde el lanzamiento: 10 UF + IVA al mes con hasta 500 cuentas
-  (costo fijo) y, sobre eso, tramos supuestos de 0,015 / 0,010 / 0,007 UF por cuenta (costo de venta),
-  con 1,5 bancos por persona (cotización por volumen pendiente); flujo a 5 años con tasa de descuento
-  de 25 %. Resultado (v0.6 del 25-10-2026, con los equipos aportados en especie y su depreciación
-  acelerada): VAN $56,2 M, TIR 96,0 %, recuperación 2,8 años (2,1 con el subsidio Semilla Inicia de
-  CORFO, que cubre el déficit del primer año, ≈ $11,4 M). Los usuarios subieron de 5.500 a 7.000 el
-  23-10-2026 y de 7.000 a 7.500 el 25-10-2026. Citas y bibliografía en estilo APA 7 de Word.
+  (costo fijo) y tramos de 0,015 / 0,010 / 0,007 UF por cuenta adicional (costo de venta), con 1,5
+  bancos por persona; flujo a 5 años con tasa de descuento de 25 %. El déficit del primer año se
+  financia con un préstamo bancario de $22 M al 20,02 % (interés corriente CMF, Certificado
+  N° 10/2026), 2 años de gracia y capital en 2029-2031; el subsidio Semilla Inicia de CORFO es
+  complementario (no entra en el flujo). Resultado (v0.14 del 25-10-2026): flujo puro VAN $63,4 M y
+  TIR 106,1 %; inversionista VAN $63,5 M y recuperación descontada 2,1 años (2,07; la cifra que se
+  cita). La TIR del inversionista no se informa (el flujo cambia de signo más de una vez). Usuarios:
+  5.500 → 7.000 (23-10), → 7.500 y → 7.900 (25-10). Citas y bibliografía en estilo APA 7 de Word.
 
 ## Informe 2
 - La versión de trabajo está en `Archivos para informe 2/Nueva version de informe/` (fuera del
   repositorio): `Informe 2 - Fin de Mes vX.Y.docx`, su PDF, `Flujo de caja - Fin de Mes vX.Y.xlsx` y
-  `Carta Gantt ajustada - Fin de Mes vX.Y.xlsx` (hoy v0.13). Cada versión lleva un
+  `Carta Gantt ajustada - Fin de Mes vX.Y.xlsx` (hoy v0.14). Cada versión lleva un
   `Cambios vX.Y.txt` con lo que cambió y lo pendiente. Cada versión anterior queda congelada en
   `versiones-anteriores/vX.Y (fecha)/` y el historial está en `Archivos para informe 2/versiones.md`;
   al cerrar una versión se archiva su carpeta y se sube el número. Se evalúa con la pauta
