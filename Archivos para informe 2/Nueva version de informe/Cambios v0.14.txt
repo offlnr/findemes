@@ -99,3 +99,10 @@ quedaron en versiones-anteriores/v0.13). Se mantiene el diseño corporativo (pal
   inversionista (recuperación en 2,1 años), con etiquetas directas.
 - Animaciones: transición de fundido en todas las diapositivas y entrada en cascada del contenido
   (cada tarjeta con su texto; los gráficos con barrido desde abajo), sin clics y en menos de 3 s.
+- 26-10-2026: la diapositiva 7 deja el diagrama de actores y pasa a «Caso de uso principal: aplicar
+  una decisión»: diagrama UML enfocado (CU-27 a CU-31, con «include» y «extend»), ficha resumida de
+  CU-28 y un ejemplo (notebook de $600.000 en 12 cuotas). La cifra de 62 casos en 5 subsistemas queda
+  en el pie de la diapositiva.
+- 26-10-2026: diapositiva nueva 8 «Caso de uso: conectar un banco con Fintoc»: diagrama UML enfocado
+  (CU-34 a CU-36, con Fintoc como sistema externo), ficha resumida de CU-34 y un ejemplo. La
+  presentación pasa a 22 diapositivas.
