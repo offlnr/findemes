@@ -82,4 +82,32 @@ diagramas actualizados y la planilla v0.14 con el préstamo.
 6. PÁGINAS
 ----------
 El informe pasa de 141 a 146 páginas; índices, citas y bibliografía actualizados; PDF regenerado.
-La presentación no se modificó (todavía menciona CORFO y 7.500 usuarios).
+La presentación se actualizó aparte (ver punto 7).
+
+
+7. PRESENTACIÓN
+---------------
+«Presentación Informe 2 - Fin de Mes v0.14.pptx» (21 diapositivas; las dos versiones anteriores
+quedaron en versiones-anteriores/v0.13). Se mantiene el diseño corporativo (paleta «bosque» de la app).
+- Cifras de la v0.14: 7.900 usuarios y embudo, ventas y costos (desde 2028 las ventas superan a los
+  costos), VAN del inversionista $63,5 M, TIR del flujo puro 106,1 %, recuperación descontada de 2,1
+  años y préstamo de $22 M en lugar de CORFO; 62 casos de uso, 27 tablas y 129 pruebas con PostgreSQL.
+- «AWS con plan gratuito» pasa a «AWS por su seguridad».
+- Diagramas nuevos: BPMN del proceso principal, casos de uso (actores y subsistemas), modelo de datos
+  (vista general), topología física y topología lógica.
+- Gráficos nativos nuevos: caja mes a mes de 2027 con el préstamo y flujo descontado acumulado del
+  inversionista (recuperación en 2,1 años), con etiquetas directas.
+- Animaciones: transición de fundido en todas las diapositivas y entrada en cascada del contenido
+  (cada tarjeta con su texto; los gráficos con barrido desde abajo), sin clics y en menos de 3 s.
+- 26-10-2026: la diapositiva 7 deja el diagrama de actores y pasa a «Caso de uso principal: aplicar
+  una decisión»: diagrama UML enfocado (CU-27 a CU-31, con «include» y «extend»), ficha resumida de
+  CU-28 y un ejemplo (notebook de $600.000 en 12 cuotas). La cifra de 62 casos en 5 subsistemas queda
+  en el pie de la diapositiva.
+- 26-10-2026: diapositiva nueva 8 «Caso de uso: conectar un banco con Fintoc»: diagrama UML enfocado
+  (CU-34 a CU-36, con Fintoc como sistema externo), ficha resumida de CU-34 y un ejemplo. La
+  presentación pasa a 22 diapositivas.
+- 26-10-2026: los diagramas de las diapositivas 7 y 8 se redibujan con formas nativas de PowerPoint
+  (solo líneas rectas, sin cruces, en grilla). La diapositiva 8 detalla la conexión: «Conectar un
+  banco» incluye elegir el banco, ingresar las credenciales en el widget de Fintoc y la sincronización
+  automática de saldo y movimientos; «Confirmar movimientos recurrentes» la extiende. Se quita el
+  recuadro de ejemplo y la ficha resumida sigue esos pasos.

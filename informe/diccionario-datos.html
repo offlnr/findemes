@@ -15,6 +15,18 @@
 <tr><td>status</td><td>text</td><td>No</td><td></td><td>Estado de la cuenta: &#x27;active&#x27; o &#x27;suspended&#x27;. Solo un administrador lo cambia (HU23). Por defecto: &#x27;active&#x27;. Restricción: status IN (&#x27;active&#x27;, &#x27;suspended&#x27;).</td></tr>
 <tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
 <tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+<tr><td>onboarding_started_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Inicio del registro inicial (KPI de finalización y tiempo de registro).</td></tr>
+<tr><td>onboarding_completed_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Término del registro inicial: saldo inicial y al menos un ingreso (HU01, HU04).</td></tr>
+<tr><td>display_name</td><td>app.label</td><td>No</td><td></td><td>Nombre para mostrar (alias de 2 a 40 caracteres) pedido al registrarse; no es el nombre legal. Restricción: (length(btrim(display_name)) &gt;= 2) AND (length(btrim(display_name)) &lt;= 40).</td></tr>
+</table>
+<h3>Tabla consents</h3><p>Consentimientos otorgados por el usuario (términos, política de privacidad y conexión bancaria) con la versión del documento aceptado. Retirar un consentimiento no borra el historial; se elimina con la cuenta. Trazabilidad: HU32, HU36, Ley 21.719.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>owner_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario que otorgó el consentimiento.</td></tr>
+<tr><td>kind</td><td>text</td><td>No</td><td></td><td>Tipo: &#x27;terms&#x27; (términos), &#x27;privacy_policy&#x27; (política de privacidad) o &#x27;bank_connection&#x27; (conexión bancaria). Restricción: kind IN (&#x27;terms&#x27;, &#x27;privacy_policy&#x27;, &#x27;bank_connection&#x27;).</td></tr>
+<tr><td>document_version</td><td>text</td><td>No</td><td></td><td>Versión del documento aceptado, por ejemplo 2026-10. Restricción: (length(btrim(document_version)) &gt;= 1) AND (length(btrim(document_version)) &lt;= 20).</td></tr>
+<tr><td>accepted_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de aceptación. Por defecto: now().</td></tr>
+<tr><td>withdrawn_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora de retiro; NULL = vigente. Solo un consentimiento vigente por tipo.</td></tr>
 </table>
 <h3>Tabla refresh_tokens</h3><p>Refresh tokens opacos y rotativos, guardados como hash SHA-256. Una familia agrupa los tokens de un mismo inicio de sesión; reutilizar uno consumido revoca la familia. Trazabilidad: HU17.1-HU17.3.</p>
 <table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
@@ -43,6 +55,25 @@
 <tr><td>failures</td><td>integer</td><td>No</td><td></td><td>Intentos fallidos consecutivos. Por defecto: 0. Restricción: failures &gt;= 0.</td></tr>
 <tr><td>locked_until</td><td>timestamptz</td><td>Sí</td><td></td><td>Bloqueo temporal hasta esta fecha y hora; la espera crece con los fallos.</td></tr>
 <tr><td>updated_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de la última modificación. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla trusted_devices</h3><p>Dispositivos reconocidos de cada usuario para el código de inicio de sesión. Guarda el hash del identificador que conserva el dispositivo, nunca el identificador. Trazabilidad: HU17.1.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>user_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario dueño del dispositivo.</td></tr>
+<tr><td>device_hash</td><td>bytea</td><td>No</td><td></td><td>Hash SHA-256 del identificador aleatorio que guarda el dispositivo. Restricción: length(device_hash) = 32.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>verified_at</td><td>timestamptz</td><td>No</td><td></td><td>Última verificación con código en este dispositivo; pasados 30 días se vuelve a pedir. Por defecto: now().</td></tr>
+</table>
+<h3>Tabla login_codes</h3><p>Códigos de verificación enviados por correo al iniciar sesión desde un dispositivo nuevo, tras restablecer la contraseña o cada 30 días. Un solo uso, 10 minutos y 5 intentos. Trazabilidad: HU17.1.</p>
+<table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
+<tr><td>id</td><td>uuid</td><td>No</td><td>PK</td><td>Identificador único (UUID aleatorio, no secuencial). Por defecto: gen_random_uuid().</td></tr>
+<tr><td>user_id</td><td>uuid</td><td>No</td><td>FK</td><td>Usuario que inicia sesión.</td></tr>
+<tr><td>device_hash</td><td>bytea</td><td>No</td><td></td><td>Dispositivo desde el que se pidió el código; queda reconocido al verificarlo. Restricción: length(device_hash) = 32.</td></tr>
+<tr><td>code_hash</td><td>bytea</td><td>No</td><td></td><td>HMAC del código de 6 dígitos con una clave del servidor; el código nunca se guarda. Restricción: length(code_hash) = 32.</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td>No</td><td></td><td>Fecha y hora de creación. Por defecto: now().</td></tr>
+<tr><td>expires_at</td><td>timestamptz</td><td>No</td><td></td><td>Vencimiento, como máximo 10 minutos después de emitido.</td></tr>
+<tr><td>attempts</td><td>integer</td><td>No</td><td></td><td>Intentos fallidos; con 5 el código deja de servir. Por defecto: 0. Restricción: (attempts &gt;= 0) AND (attempts &lt;= 5).</td></tr>
+<tr><td>used_at</td><td>timestamptz</td><td>Sí</td><td></td><td>Fecha y hora de uso; un código usado no vuelve a servir.</td></tr>
 </table>
 <h3>Tabla platform_admins</h3><p>Usuarios con rol de administrador de la plataforma y su segundo factor TOTP. Solo la lee el rol de la API de administración. Trazabilidad: HU22, RNF22.</p>
 <table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
@@ -204,7 +235,7 @@
 <tr><td>basis_points</td><td>integer</td><td>No</td><td></td><td>Porcentaje en puntos básicos enteros (10.000 = 100 %). Restricción: (basis_points &gt;= 1) AND (basis_points &lt;= 10000).</td></tr>
 </table>
 <h2>Suscripción y pagos</h2>
-<h3>Tabla plans</h3><p>Catálogo de planes del modelo freemium y sus límites (Tabla 13). Datos de referencia cargados por la migración. Trazabilidad: HU18, HU30.</p>
+<h3>Tabla plans</h3><p>Catálogo de planes del modelo freemium y sus límites (Tabla 13 del primer informe). Datos de referencia cargados por la migración. Trazabilidad: HU18, HU30.</p>
 <table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
 <tr><td>code</td><td>text</td><td>No</td><td>PK</td><td>Código del plan: &#x27;free&#x27;, &#x27;paid&#x27; o &#x27;family&#x27;. Restricción: code IN (&#x27;free&#x27;, &#x27;paid&#x27;, &#x27;family&#x27;).</td></tr>
 <tr><td>name</td><td>app.label</td><td>No</td><td></td><td>Nombre visible del plan.</td></tr>
@@ -216,7 +247,7 @@
 <tr><td>user_prepayments</td><td>boolean</td><td>No</td><td></td><td>Permite simular prepagos definidos por el usuario.</td></tr>
 <tr><td>household_space</td><td>boolean</td><td>No</td><td></td><td>Incluye el espacio común del hogar.</td></tr>
 </table>
-<h3>Tabla subscriptions</h3><p>Período pagado vigente de un usuario. Sin fila, el usuario está en el plan gratuito. El estado de la Tabla 14 se deriva de las fechas; no se almacena. Trazabilidad: HU19, HU20.</p>
+<h3>Tabla subscriptions</h3><p>Período pagado vigente de un usuario. Sin fila, el usuario está en el plan gratuito. El estado (Tabla 14 del primer informe) se deriva de las fechas; no se almacena. Trazabilidad: HU19, HU20.</p>
 <table><tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Descripción</th></tr>
 <tr><td>user_id</td><td>uuid</td><td>No</td><td>PK,FK</td><td>Usuario suscrito (una suscripción vigente por usuario).</td></tr>
 <tr><td>plan_code</td><td>text</td><td>No</td><td>FK</td><td>Plan contratado. Restricción: plan_code &lt;&gt; &#x27;free&#x27;.</td></tr>
