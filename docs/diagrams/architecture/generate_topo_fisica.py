@@ -72,18 +72,18 @@ def build():
     # CloudFront and API Gateway are the public entry point, not a firewall: the firewalls are the security groups.
     icon(d, 'edge', 'servers.www_server', 'Borde de AWS: CloudFront<br>(AWS Shield Standard)<br>y API Gateway '
          '(única entrada)', 1105, 650, 50, 62, 'z_aws')
-    icon(d, 'igw', 'routers.router;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle', 'Router de la VPC<br>(Internet Gateway)<br>10.0.0.0/16', 1320, 665, 60, 40,
+    icon(d, 'igw', 'routers.router;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle', 'Router de la VPC (Internet Gateway)<br>10.0.0.0/16 · solo la subred<br>pública tiene ruta a internet', 1320, 665, 60, 40,
          'z_aws')
     icon(d, 'fw_pub', 'security.firewall;labelPosition=right;verticalLabelPosition=middle;align=left;'
          'verticalAlign=middle', 'Firewall: grupos de<br>seguridad de los EC2', 1218, 740, 64, 50, 'z_aws')
-    icon(d, 'fw_priv', 'security.firewall;labelPosition=right;verticalLabelPosition=middle;align=left;'
-         'verticalAlign=middle', 'Firewall: grupo de<br>seguridad de RDS', 1460, 740, 64, 50, 'z_aws')
+    # The database firewall hangs from the public subnet, not from the gateway: only the two servers reach it.
+    icon(d, 'fw_priv', 'security.firewall', 'Firewall: grupo de<br>seguridad de RDS', 1400, 822, 64, 50, 'z_aws')
     icon(d, 'sw_pub', 'switches.workgroup_switch;labelPosition=left;verticalLabelPosition=middle;align=right;verticalAlign=middle', 'Subred pública<br>10.0.1.0/24', 1218, 830, 64, 32, 'z_aws')
     icon(d, 'ec2_api', 'servers.fileserver', 'Servidor EC2<br>API pública', 1150, 915, 40, 58, 'z_aws')
     icon(d, 'ec2_adm', 'servers.fileserver', 'Servidor EC2<br>administración', 1320, 915, 40, 58, 'z_aws')
-    icon(d, 'sw_priv', 'switches.workgroup_switch', 'Subredes privadas<br>10.0.11.0/24 y 10.0.12.0/24',
-         1460, 830, 64, 32, 'z_aws')
-    icon(d, 'rds', 'storage.relational_database', 'Base de datos RDS<br>PostgreSQL 18', 1665, 816, 45, 60, 'z_aws')
+    icon(d, 'sw_priv', 'switches.workgroup_switch', 'Subredes privadas<br>10.0.11.0/24 y 10.0.12.0/24<br>'
+         'sin ruta a internet', 1545, 830, 64, 32, 'z_aws')
+    icon(d, 'rds', 'storage.relational_database', 'Base de datos RDS<br>PostgreSQL 18', 1690, 816, 45, 60, 'z_aws')
 
     # Star links to Internet.
     for z in ('r_dev1', 'r_dev2', 'r_mnt', 'r_use', 'ant', 'edge', 'fin', 'tbk', 'mail', 'gh'):
@@ -100,7 +100,7 @@ def build():
     d.rel('edge', 'igw', style=LINK)
     d.rel('igw', 'fw_pub', style=LINK)
     d.rel('fw_pub', 'sw_pub', style=LINK)
-    d.rel('igw', 'fw_priv', style=LINK)
+    d.rel('sw_pub', 'fw_priv', style=LINK)
     d.rel('fw_priv', 'sw_priv', style=LINK)
     d.rel('sw_pub', 'ec2_api', style=LINK)
     d.rel('sw_pub', 'ec2_adm', style=LINK)
