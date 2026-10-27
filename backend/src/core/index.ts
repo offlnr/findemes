@@ -58,3 +58,10 @@ export type {
   SimulationRequest,
   SimulationResult,
 } from './simulation/simulation.ts';
+
+export { MAX_HORIZON_MONTHS, project } from './projection/project.ts';
+export { computeIndicators, computeVariation } from './indicators/compute.ts';
+export { createMvpCatalog, MVP_DECISION_TYPES } from './decisions/mvp/mvp-catalog.ts';
+export { MAX_DECISION_AMOUNT } from './decisions/params-reader.ts';
+export { simulate } from './simulation/simulate.ts';
+export { formatClpEs, formatMonthEs } from './text/spanish.ts';

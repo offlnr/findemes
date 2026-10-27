@@ -3,7 +3,7 @@ import type { EntryId } from '../financial-state/financial-state.ts';
 import type { Clp } from '../money/clp.ts';
 
 /**
- * Parameters of the five MVP decision types (Tabla 11). Implementations come later, test-first;
+ * Parameters of the five MVP decision types (Tabla 11), implemented in `mvp/`;
  * this file fixes the contract the API and the app build against.
  */
 export const MVP_DECISION_KINDS = [
@@ -18,7 +18,7 @@ export type MvpDecisionKind = (typeof MVP_DECISION_KINDS)[number];
 
 /**
  * "Compra en N cuotas": monto total, número de cuotas, mes de inicio.
- * The split of a total that is not divisible by N is fixed during the engine's TDD.
+ * A total not divisible by N gives one extra peso to each of the first installments.
  */
 export interface PurchaseInInstallmentsParams {
   readonly label: string;
