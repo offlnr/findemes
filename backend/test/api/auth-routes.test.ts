@@ -127,6 +127,13 @@ describe('errors that reveal nothing', () => {
     expect(locked.headers['retry-after']).toBe('60');
   });
 
+  it('answers schema errors with 400, never 500, without echoing values', async () => {
+    const response = await post('/v1/auth/register', { email: EMAIL, password: PASSWORD, displayName: 'Ana', role: 'admin' });
+    expect(response.statusCode).toBe(400);
+    expect(response.json<{ error: string }>().error).toBe('validation_error');
+    expect(response.body).not.toContain(PASSWORD);
+  });
+
   it('reports invalid registration fields without echoing the values', async () => {
     const response = await post('/v1/auth/register', { email: 'ana', password: 'corta123', displayName: 'Ana' });
     expect(response.statusCode).toBe(400);

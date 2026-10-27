@@ -628,12 +628,9 @@ paths:
                 required:
                   - error
                   - message
-                  - issues
                 properties:
                   error:
                     type: string
-                    enum:
-                      - invalid_fields
                   message:
                     type: string
                   issues:
@@ -649,6 +646,10 @@ paths:
                           type: string
                         message:
                           type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
   /v1/auth/verify-email:
     post:
       summary: Confirmar el correo (HU17)
@@ -686,6 +687,23 @@ paths:
                     type: string
                   message:
                     type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
   /v1/auth/login:
     post:
       summary: Iniciar sesión (HU17.1, CU-11)
@@ -1086,43 +1104,33 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - type: object
-                    additionalProperties: false
-                    required:
-                      - error
-                      - message
-                      - issues
-                    properties:
-                      error:
-                        type: string
-                        enum:
-                          - invalid_fields
-                      message:
-                        type: string
-                      issues:
-                        type: array
-                        items:
-                          type: object
-                          additionalProperties: false
-                          required:
-                            - field
-                            - message
-                          properties:
-                            field:
-                              type: string
-                            message:
-                              type: string
-                  - type: object
-                    additionalProperties: false
-                    required:
-                      - error
-                      - message
-                    properties:
-                      error:
-                        type: string
-                      message:
-                        type: string
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
   /v1/auth/password:
     post:
       summary: Cambiar la contraseña (HU17.4)
@@ -1194,12 +1202,9 @@ paths:
                 required:
                   - error
                   - message
-                  - issues
                 properties:
                   error:
                     type: string
-                    enum:
-                      - invalid_fields
                   message:
                     type: string
                   issues:
@@ -1215,6 +1220,10 @@ paths:
                           type: string
                         message:
                           type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
         "401":
           description: Default Response
           content:
@@ -1257,6 +1266,1641 @@ paths:
                   displayName:
                     type: string
         "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/registry:
+    get:
+      summary: Mi registro financiero (HU01-HU04)
+      tags: &a3
+        - registro financiero
+      security: &a4
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - openingBalance
+                  - incomes
+                  - expenses
+                  - debts
+                properties:
+                  openingBalance:
+                    anyOf:
+                      - type: object
+                        additionalProperties: false
+                        required:
+                          - amount
+                          - month
+                        properties:
+                          amount:
+                            type: integer
+                          month:
+                            type: string
+                            pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                            examples:
+                              - 2026-11
+                      - type: "null"
+                  incomes:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - id
+                        - label
+                        - amount
+                        - schedule
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        label:
+                          type: string
+                          minLength: 1
+                          maxLength: 80
+                        amount:
+                          type: integer
+                        schedule:
+                          description: "Periodicidad (HU01): un solo mes, todos los meses o cada N meses
+                            desde el mes de inicio. until null = sin término."
+                          oneOf:
+                            - type: object
+                              additionalProperties: false
+                              required:
+                                - kind
+                                - month
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - once
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                            - type: object
+                              additionalProperties: false
+                              required:
+                                - kind
+                                - from
+                                - until
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - monthly
+                                from:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                until:
+                                  anyOf:
+                                    - type: string
+                                      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                      examples:
+                                        - 2026-11
+                                    - type: "null"
+                            - type: object
+                              additionalProperties: false
+                              required:
+                                - kind
+                                - intervalMonths
+                                - from
+                                - until
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - every_n_months
+                                intervalMonths:
+                                  type: integer
+                                  minimum: 2
+                                  maximum: 24
+                                from:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                until:
+                                  anyOf:
+                                    - type: string
+                                      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                      examples:
+                                        - 2026-11
+                                    - type: "null"
+                  expenses:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - id
+                        - label
+                        - amount
+                        - nature
+                        - schedule
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        label:
+                          type: string
+                          minLength: 1
+                          maxLength: 80
+                        amount:
+                          type: integer
+                        nature:
+                          type: string
+                          enum:
+                            - fixed
+                            - variable_estimate
+                          description: Gasto fijo recurrente o gasto variable estimado (HU02).
+                        schedule:
+                          description: "Periodicidad (HU01): un solo mes, todos los meses o cada N meses
+                            desde el mes de inicio. until null = sin término."
+                          oneOf:
+                            - type: object
+                              additionalProperties: false
+                              required:
+                                - kind
+                                - month
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - once
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                            - type: object
+                              additionalProperties: false
+                              required:
+                                - kind
+                                - from
+                                - until
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - monthly
+                                from:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                until:
+                                  anyOf:
+                                    - type: string
+                                      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                      examples:
+                                        - 2026-11
+                                    - type: "null"
+                            - type: object
+                              additionalProperties: false
+                              required:
+                                - kind
+                                - intervalMonths
+                                - from
+                                - until
+                              properties:
+                                kind:
+                                  type: string
+                                  enum:
+                                    - every_n_months
+                                intervalMonths:
+                                  type: integer
+                                  minimum: 2
+                                  maximum: 24
+                                from:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                until:
+                                  anyOf:
+                                    - type: string
+                                      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                      examples:
+                                        - 2026-11
+                                    - type: "null"
+                  debts:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - id
+                        - label
+                        - totalInstallments
+                        - pendingInstallments
+                        - nextInstallment
+                        - installments
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        label:
+                          type: string
+                          minLength: 1
+                          maxLength: 80
+                        totalInstallments:
+                          anyOf:
+                            - type: integer
+                            - type: "null"
+                        pendingInstallments:
+                          type: integer
+                          description: Cuotas desde el mes actual.
+                        nextInstallment:
+                          anyOf:
+                            - type: object
+                              additionalProperties: false
+                              required:
+                                - month
+                                - amount
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                amount:
+                                  type: integer
+                            - type: "null"
+                        installments:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - month
+                              - amount
+                            properties:
+                              month:
+                                type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                              amount:
+                                type: integer
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/registry/opening-balance:
+    put:
+      summary: Registrar el saldo inicial (HU04)
+      tags: *a3
+      description: Acepta saldo positivo o negativo. Es el punto de partida del primer
+        mes de la proyección.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - amount
+                - month
+              properties:
+                amount:
+                  type: integer
+                  minimum: -1000000000000
+                  maximum: 1000000000000
+                month:
+                  type: string
+                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                  examples:
+                    - 2026-11
+      security: *a4
+      responses:
+        "204":
+          description: Default Response
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/registry/incomes:
+    post:
+      summary: Registrar un ingreso (HU01)
+      tags: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - label
+                - amount
+                - schedule
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                amount:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000000000000
+                schedule:
+                  description: "Periodicidad (HU01): un solo mes, todos los meses o cada N meses
+                    desde el mes de inicio. until null = sin término."
+                  oneOf:
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - month
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - once
+                        month:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - monthly
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - intervalMonths
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - every_n_months
+                        intervalMonths:
+                          type: integer
+                          minimum: 2
+                          maximum: 24
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+      security: *a4
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/registry/incomes/{id}:
+    put:
+      summary: Editar un ingreso (HU01)
+      tags: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - label
+                - amount
+                - schedule
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                amount:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000000000000
+                schedule:
+                  description: "Periodicidad (HU01): un solo mes, todos los meses o cada N meses
+                    desde el mes de inicio. until null = sin término."
+                  oneOf:
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - month
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - once
+                        month:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - monthly
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - intervalMonths
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - every_n_months
+                        intervalMonths:
+                          type: integer
+                          minimum: 2
+                          maximum: 24
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+    delete:
+      summary: Eliminar un ingreso (HU01)
+      tags: *a3
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a4
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/registry/expenses:
+    post:
+      summary: Registrar un gasto (HU02)
+      tags: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - label
+                - amount
+                - nature
+                - schedule
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                amount:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000000000000
+                nature:
+                  type: string
+                  enum:
+                    - fixed
+                    - variable_estimate
+                  description: Gasto fijo recurrente o gasto variable estimado (HU02).
+                schedule:
+                  description: "Periodicidad (HU01): un solo mes, todos los meses o cada N meses
+                    desde el mes de inicio. until null = sin término."
+                  oneOf:
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - month
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - once
+                        month:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - monthly
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - intervalMonths
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - every_n_months
+                        intervalMonths:
+                          type: integer
+                          minimum: 2
+                          maximum: 24
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+      security: *a4
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/registry/expenses/{id}:
+    put:
+      summary: Editar un gasto (HU02)
+      tags: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - label
+                - amount
+                - nature
+                - schedule
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                amount:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000000000000
+                nature:
+                  type: string
+                  enum:
+                    - fixed
+                    - variable_estimate
+                  description: Gasto fijo recurrente o gasto variable estimado (HU02).
+                schedule:
+                  description: "Periodicidad (HU01): un solo mes, todos los meses o cada N meses
+                    desde el mes de inicio. until null = sin término."
+                  oneOf:
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - month
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - once
+                        month:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - monthly
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - intervalMonths
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - every_n_months
+                        intervalMonths:
+                          type: integer
+                          minimum: 2
+                          maximum: 24
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+    delete:
+      summary: Eliminar un gasto (HU02)
+      tags: *a3
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a4
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/registry/debts:
+    post:
+      summary: Registrar una deuda con sus cuotas pendientes (HU03)
+      tags: *a3
+      description: Las cuotas se generan desde el mes de la próxima cuota y se agotan
+        solas al término del plazo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - label
+                - installmentAmount
+                - pendingInstallments
+                - nextInstallmentMonth
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                installmentAmount:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000000000000
+                pendingInstallments:
+                  type: integer
+                  minimum: 1
+                  maximum: 600
+                nextInstallmentMonth:
+                  type: string
+                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                  examples:
+                    - 2026-11
+                totalInstallments:
+                  anyOf:
+                    - type: integer
+                      minimum: 1
+                      maximum: 600
+                    - type: "null"
+      security: *a4
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/registry/debts/{id}:
+    put:
+      summary: Editar una deuda (HU03)
+      tags: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - label
+                - installmentAmount
+                - pendingInstallments
+                - nextInstallmentMonth
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                installmentAmount:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000000000000
+                pendingInstallments:
+                  type: integer
+                  minimum: 1
+                  maximum: 600
+                nextInstallmentMonth:
+                  type: string
+                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                  examples:
+                    - 2026-11
+                totalInstallments:
+                  anyOf:
+                    - type: integer
+                      minimum: 1
+                      maximum: 600
+                    - type: "null"
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+    delete:
+      summary: Eliminar una deuda (HU03)
+      tags: *a3
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a4
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/projection:
+    get:
+      summary: Proyección de mi flujo de caja y salud financiera (HU05, HU39)
+      tags: *a3
+      description: Se recalcula en cada consulta desde el registro. Horizonte
+        configurable de 1 a 36 meses (por defecto 12). No emite recomendaciones.
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[0-9]{1,2}$
+          in: query
+          name: months
+          required: false
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - startMonth
+                  - horizonMonths
+                  - base
+                  - explanation
+                properties:
+                  startMonth:
+                    type: string
+                    pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                    examples:
+                      - 2026-11
+                  horizonMonths:
+                    type: integer
+                  base:
+                    type: object
+                    properties:
+                      months:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            openingBalance:
+                              type: integer
+                            income:
+                              type: integer
+                            expenses:
+                              type: integer
+                            debtPayments:
+                              type: integer
+                            netFlow:
+                              type: integer
+                            closingBalance:
+                              type: integer
+                          required:
+                            - month
+                            - openingBalance
+                            - income
+                            - expenses
+                            - debtPayments
+                            - netFlow
+                            - closingBalance
+                          additionalProperties: false
+                      indicators:
+                        type: object
+                        description: Indicadores de la Tabla 12.
+                        properties:
+                          minimumProjectedBalance:
+                            type: object
+                            description: Saldo mínimo proyectado y primer mes en que ocurre.
+                            properties:
+                              amount:
+                                type: integer
+                              month:
+                                type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                            required:
+                              - amount
+                              - month
+                            additionalProperties: false
+                          breakMonth:
+                            anyOf:
+                              - type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                              - type: "null"
+                            description: Primer mes con saldo negativo; null si no ocurre.
+                          monthlyAvailableMargin:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                amount:
+                                  type: integer
+                              required:
+                                - month
+                                - amount
+                              additionalProperties: false
+                            description: Ingresos menos compromisos totales de cada mes.
+                          debtToIncome:
+                            type: array
+                            description: Puntos básicos enteros (10 000 = 100 %); null si el mes no tiene
+                              ingresos.
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                basisPoints:
+                                  anyOf:
+                                    - type: integer
+                                    - type: "null"
+                              required:
+                                - month
+                                - basisPoints
+                              additionalProperties: false
+                        required:
+                          - minimumProjectedBalance
+                          - breakMonth
+                          - monthlyAvailableMargin
+                          - debtToIncome
+                        additionalProperties: false
+                    required:
+                      - months
+                      - indicators
+                    additionalProperties: false
+                  explanation:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      details:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                      - summary
+                      - details
+                    additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
           description: Default Response
           content:
             application/json:

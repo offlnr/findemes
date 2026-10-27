@@ -4,6 +4,7 @@ import type { FieldIssue } from '../../modules/identity/domain/account-rules.ts'
 import { SESSION_POLICY } from '../../modules/identity/domain/session-policy.ts';
 import type { AccessTokenService, UserAccountRepository } from '../../modules/identity/ports/identity-ports.ts';
 import { noStore, requireActor } from './authenticate.ts';
+import { badRequestSchema } from './common-schemas.ts';
 
 export interface AuthServices {
   readonly identity: IdentityService;
@@ -60,19 +61,6 @@ const errorSchema = {
   properties: { error: { type: 'string' }, message: { type: 'string' } },
 } as const;
 
-const issuesSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['error', 'message', 'issues'],
-  properties: {
-    error: { type: 'string', enum: ['invalid_fields'] },
-    message: { type: 'string' },
-    issues: {
-      type: 'array',
-      items: { type: 'object', additionalProperties: false, required: ['field', 'message'], properties: { field: { type: 'string' }, message: { type: 'string' } } },
-    },
-  },
-} as const;
 
 const accepted = { type: 'object', additionalProperties: false, required: ['message'], properties: { message: { type: 'string' } } } as const;
 
@@ -122,7 +110,7 @@ export const authRoutes: FastifyPluginCallback<AuthRoutesOptions> = (app, option
         description: 'La respuesta es la misma exista o no una cuenta con ese correo; se envía un enlace de verificación.',
         tags: TAGS,
         body: body({ email, password, displayName: { type: 'string', maxLength: 80 } }, ['email', 'password', 'displayName']),
-        response: { 202: accepted, 400: issuesSchema },
+        response: { 202: accepted, 400: badRequestSchema },
       },
     },
     async (request, reply) => {
@@ -136,7 +124,7 @@ export const authRoutes: FastifyPluginCallback<AuthRoutesOptions> = (app, option
     '/auth/verify-email',
     {
       config: limited,
-      schema: { summary: 'Confirmar el correo (HU17)', tags: TAGS, body: body({ token: opaque }, ['token']), response: { 204: { type: 'null' }, 400: errorSchema } },
+      schema: { summary: 'Confirmar el correo (HU17)', tags: TAGS, body: body({ token: opaque }, ['token']), response: { 204: { type: 'null' }, 400: badRequestSchema } },
     },
     async (request, reply) => {
       if (!(await identity.verifyEmail(request.body.token))) {
@@ -307,7 +295,7 @@ export const authRoutes: FastifyPluginCallback<AuthRoutesOptions> = (app, option
         description: 'El enlace sirve una vez y vence en 30 minutos; el cambio cierra todas las sesiones.',
         tags: TAGS,
         body: body({ token: opaque, newPassword: password }, ['token', 'newPassword']),
-        response: { 204: { type: 'null' }, 400: { oneOf: [issuesSchema, errorSchema] } },
+        response: { 204: { type: 'null' }, 400: badRequestSchema },
       },
     },
     async (request, reply) => {
@@ -327,7 +315,7 @@ export const authRoutes: FastifyPluginCallback<AuthRoutesOptions> = (app, option
         tags: TAGS,
         security: [{ bearerAuth: [] }],
         body: body({ currentPassword: password, newPassword: password, client }, ['currentPassword', 'newPassword']),
-        response: { 200: sessionSchema, 400: issuesSchema, 401: errorSchema },
+        response: { 200: sessionSchema, 400: badRequestSchema, 401: errorSchema },
       },
     },
     async (request, reply) => {
