@@ -135,7 +135,10 @@ export function createPgIdentityStores(runner: TransactionRunner, throttleKey: U
     async create(actor, deviceHash, codeHash, expiresAt) {
       const [row] = await asActor<{ id: string }>(
         actor,
-        'INSERT INTO app.login_codes (user_id, device_hash, code_hash, expires_at) VALUES ($1, $2, $3, $4) RETURNING id',
+        // The schema caps codes at 10 minutes from the database clock; LEAST keeps a few
+        // milliseconds of skew between the API and database clocks from violating that CHECK.
+        `INSERT INTO app.login_codes (user_id, device_hash, code_hash, expires_at)
+         VALUES ($1, $2, $3, LEAST($4::timestamptz, now() + interval '10 minutes')) RETURNING id`,
         [actor.userId, bytes(deviceHash), bytes(codeHash), expiresAt],
       );
       if (row === undefined) throw new Error('login code was not stored');
