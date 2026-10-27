@@ -62,3 +62,6 @@ desktop.ini
 .taste-skill/
 .playwright-mcp/
 .impeccable/
+
+# Local development emails (backend/.outbox)
+.outbox/
