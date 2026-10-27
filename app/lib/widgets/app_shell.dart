@@ -14,7 +14,7 @@ class NavEntry {
 }
 
 /// Pantallas que ya muestran datos reales del usuario desde la API.
-const connectedPaths = ['/app/resumen', '/app/registro', '/app/proyeccion'];
+const connectedPaths = ['/app/resumen', '/app/registro', '/app/proyeccion', '/app/escenarios', '/app/comparar'];
 
 const navEntries = [
   NavEntry('Mi situación', '/app/resumen', FdmIcons.steps),

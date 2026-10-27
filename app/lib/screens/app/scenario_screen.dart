@@ -2,71 +2,184 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../data/finance_repository.dart';
-import '../../data/models.dart';
+import '../../data/auth/auth_api.dart';
+import '../../data/demo_api.dart';
+import '../../data/models.dart' show IndicatorComparison;
+import '../../data/registry_api.dart';
+import '../../data/scenario_api.dart';
 import '../../format/money.dart';
+import '../../format/months.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/charts/chart_scale.dart';
 import '../../widgets/charts/charts.dart';
 import '../../widgets/common.dart';
+import '../../widgets/decision_editor.dart';
 import '../../widgets/fdm_icon.dart';
-import '../../widgets/form_row.dart';
+import 'scenarios_screen.dart';
+import 'summary_screen.dart';
 
-/// Detalle de un escenario (HU07, HU08, HU10, HU11). La explicación es descriptiva.
+/// Detalle de un escenario (HU07, HU08, HU10, HU11). Las cifras y la explicación vienen del
+/// servidor; la explicación es descriptiva y no recomienda (regla 4).
 class ScenarioScreen extends ConsumerWidget {
   const ScenarioScreen({super.key, required this.id});
   final String id;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => AsyncBody(
-        ref.watch(scenarioProvider(id)),
-        builder: (s) => PageBody(children: [
-          PageHeader(
-            icon: FdmIcons.copy,
-            title: s.name,
-            subtitle: 'Escenario derivado de tu situación base.',
-            actions: [
+        ref.watch(scenarioListProvider),
+        builder: (list) {
+          final summary = list.scenarios.where((s) => s.id == id).firstOrNull;
+          if (summary == null) {
+            return PageBody(children: [
+              const Notice('No encontramos este escenario.'),
               TextButton(onPressed: () => context.go('/app/escenarios'), child: const Text('← Todos los escenarios')),
-              OutlinedButton(onPressed: () {}, child: const Text('Renombrar')),
-            ],
-          ),
-          ResponsiveRow(breakpoint: 1000, children: [
-            Gap([
-              FdmCard(title: 'Decisiones aplicadas', children: [
-                FdmTable(
-                  columns: const [Col('Decisión', flex: 5), Col('', width: 90)],
-                  rows: [for (final d in s.decisions) [Cell(d), const Cell.w(RemoveButton())]],
-                ),
-              ]),
-              const _DecisionForm(),
+            ]);
+          }
+          final view = ref.watch(scenarioViewProvider(id));
+          return PageBody(children: [
+            PageHeader(
+              icon: FdmIcons.copy,
+              title: summary.name,
+              subtitle: 'Escenario derivado de tu situación base. Tu registro no cambia.',
+              actions: [
+                TextButton(onPressed: () => context.go('/app/escenarios'), child: const Text('← Todos los escenarios')),
+                OutlinedButton(onPressed: () => _rename(context, ref, summary), child: const Text('Renombrar')),
+              ],
+            ),
+            ResponsiveRow(breakpoint: 1000, children: [
+              FdmCard(
+                title: 'Decisiones aplicadas',
+                trailing: FilledButton(onPressed: () => _addDecision(context, ref, summary, list.plan), child: const Text('Agregar decisión')),
+                children: [
+                  if (summary.decisions.isEmpty) const Muted('Sin decisiones: el escenario coincide con tu situación base.'),
+                  for (var i = 0; i < summary.decisions.length; i++)
+                    Row(children: [
+                      Expanded(
+                        child: Text(
+                          // Una frase del motor por decisión, en el mismo orden (HU10).
+                          view.value != null && i < view.value!.details.length
+                              ? view.value!.details[i]
+                              : decisionKindNames[summary.decisions[i].kind] ?? summary.decisions[i].kind,
+                          style: FdmText.ui(14),
+                        ),
+                      ),
+                      TextButton(onPressed: () => _removeDecision(context, ref, summary, i), child: const Text('Quitar')),
+                    ]),
+                ],
+              ),
+              switch (view) {
+                AsyncData(:final value) => _Results(view: value),
+                AsyncError(:final error) => FdmCard(children: [Text(error is AuthApiException ? error.message : 'No pudimos calcular el escenario.')]),
+                _ => const FdmCard(children: [Center(child: CircularProgressIndicator(color: FdmColors.ink))]),
+              },
             ]),
-            Gap([
-              FdmCard(title: 'Indicadores', children: [IndicatorTable(columns: const ['Base', 'Escenario', 'Diferencia'], rows: s.indicators)]),
-              FdmCard(title: 'Saldo al cierre: base y escenario', children: [
-                ChartLegend(_series(s)),
-                LineChart(
-                  height: 260,
-                  semanticLabel: 'Saldo al cierre del escenario y de la base, por mes.',
-                  series: _series(s),
-                  labels: const ['N', 'D', 'E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O'],
-                  min: s.closings.any((v) => v < 0) ? -500000 : 0,
-                  max: 3000000,
-                  ticks: const [0, 1000000, 2000000, 3000000],
-                  marks: [ChartMark(index: s.minIndex, value: s.closings[s.minIndex], label: 'Mín. ${clp(s.closings[s.minIndex])}', below: true)],
-                ),
+            if (view.value case final v?)
+              FdmCard(title: 'Explicación', children: [
+                Text(v.summary, style: FdmText.ui(15, weight: FontWeight.w600, height: 1.4)),
+                Bullets(v.details.skip(v.decisions.length).toList()),
+                const Muted('La explicación describe qué ocurre y qué lo causa; no recomienda.', size: 12),
               ]),
-            ]),
-          ]),
-          FdmCard(title: 'Explicación', children: [
-            Bullets(s.explanation),
-            const Muted('La explicación describe qué ocurre y qué lo causa; no recomienda.', size: 12),
-          ]),
-        ]),
+          ]);
+        },
       );
 
-  List<LineSeries> _series(ScenarioDetail s) => [
-        LineSeries(name: s.name, values: s.closings, color: FdmColors.ink, area: true),
-        LineSeries(name: 'Situación base', values: s.baseClosings, color: FdmColors.muted, dashed: true, width: 2),
-      ];
+  Future<void> _save(BuildContext context, WidgetRef ref, ScenarioSummary s, {String? name, List<ScenarioDecision>? decisions}) async {
+    try {
+      await ref.read(scenarioApiProvider).save(id: s.id, name: name ?? s.name, decisions: decisions ?? s.decisions);
+      ref.invalidate(scenarioListProvider);
+      ref.invalidate(scenarioViewProvider(s.id));
+    } on ScenarioApiException catch (e) {
+      final detail = e.decisionMessages.values.expand((m) => m).join(' ');
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(detail.isEmpty ? e.message : '${e.message} $detail')));
+    } on AuthApiException catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
+  Future<void> _rename(BuildContext context, WidgetRef ref, ScenarioSummary s) async {
+    final name = await showDialog<String>(context: context, builder: (_) => ScenarioNameDialog(title: 'Renombrar escenario', initial: s.name));
+    if (name != null && context.mounted) await _save(context, ref, s, name: name);
+  }
+
+  Future<void> _addDecision(BuildContext context, WidgetRef ref, ScenarioSummary s, PlanInfo plan) async {
+    final registry = await ref.read(registryDataProvider.future);
+    if (!context.mounted) return;
+    final decision = await showDialog<ScenarioDecision>(
+      context: context,
+      builder: (_) => DecisionEditorDialog(
+        fixedExpenses: [for (final e in registry.expenses) if (e.nature == 'fixed' && e.schedule is MonthlySchedule) DecisionTarget(e.id, e.label)],
+        debts: [for (final d in registry.debts) DecisionTarget(d.id, d.label)],
+        prepaymentsAllowed: plan.userPrepayments,
+        planName: plan.name,
+      ),
+    );
+    if (decision != null && context.mounted) await _save(context, ref, s, decisions: [...s.decisions, decision]);
+  }
+
+  Future<void> _removeDecision(BuildContext context, WidgetRef ref, ScenarioSummary s, int index) =>
+      _save(context, ref, s, decisions: [...s.decisions]..removeAt(index));
+}
+
+class _Results extends StatelessWidget {
+  const _Results({required this.view});
+  final ScenarioViewData view;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = view.base.indicators;
+    final scenario = view.scenario.indicators;
+    final series = [
+      LineSeries(name: view.name, values: [for (final m in view.scenario.months) m.closingBalance], color: FdmColors.ink, area: true),
+      LineSeries(name: 'Situación base', values: [for (final m in view.base.months) m.closingBalance], color: FdmColors.muted, dashed: true, width: 2),
+    ];
+    final scale = ChartScale.of([for (final s in series) ...s.values]);
+    return Gap([
+      FdmCard(title: 'Indicadores', children: [
+        IndicatorTable(columns: const ['Base', 'Escenario', 'Diferencia'], rows: indicatorRows(base, scenario, view.variation)),
+      ]),
+      FdmCard(title: 'Saldo al cierre: base y escenario', children: [
+        ChartLegend(series),
+        LineChart(
+          height: 260,
+          semanticLabel: 'Saldo al cierre del escenario y de la base, por mes.',
+          series: series,
+          labels: [for (final m in view.base.months) monthInitial(m.month)],
+          min: scale.min,
+          max: scale.max,
+          ticks: scale.ticks,
+        ),
+      ]),
+    ], gap: 16);
+  }
+}
+
+/// Filas de la Tabla 12 para la base, un escenario y su diferencia (todo calculado por el servidor).
+List<IndicatorComparison> indicatorRows(DemoIndicators base, DemoIndicators scenario, DemoVariation variation) {
+  String breakMonth(String? m) => m == null ? 'No ocurre' : monthShort(m);
+  String ratio(int? bp) => bp == null ? 'Sin ingresos' : percentFromBasisPoints(bp);
+  String ratioDiff(int? bp) => bp == null ? '—' : '${bp > 0 ? '+' : ''}${percentFromBasisPoints(bp)}';
+  return [
+    IndicatorComparison(
+      label: 'Saldo mínimo proyectado',
+      explanation: 'El menor saldo al cierre del horizonte.',
+      values: [clp(base.minimumAmount), clp(scenario.minimumAmount), clpSigned(variation.minimumBalance)],
+    ),
+    IndicatorComparison(
+      label: 'Mes de quiebre',
+      explanation: 'Primer mes con saldo bajo \$0.',
+      values: [breakMonth(base.breakMonth), breakMonth(scenario.breakMonth), base.breakMonth == scenario.breakMonth ? 'Igual' : 'Cambia'],
+    ),
+    IndicatorComparison(
+      label: 'Margen del primer mes',
+      explanation: 'Ingresos menos gastos y cuotas.',
+      values: [clp(base.margin.first.amount), clp(scenario.margin.first.amount), clpSigned(variation.margin.first.amount)],
+    ),
+    IndicatorComparison(
+      label: 'Carga de deuda del primer mes',
+      explanation: 'Parte del ingreso destinada a cuotas.',
+      values: [ratio(base.debtToIncome.first.basisPoints), ratio(scenario.debtToIncome.first.basisPoints), ratioDiff(variation.debtToIncome.first.basisPoints)],
+    ),
+  ];
 }
 
 /// Tabla de indicadores con la explicación de cada uno bajo su nombre.
@@ -83,33 +196,4 @@ class IndicatorTable extends StatelessWidget {
           for (final r in rows) [Cell(r.label, sub: r.explanation), for (final v in r.values) Cell(v, number: true)],
         ],
       );
-}
-
-/// Catálogo de decisiones (Tabla 11). Agregar una solo se envía a la API; aquí avisa que es demo.
-class _DecisionForm extends StatefulWidget {
-  const _DecisionForm();
-  @override
-  State<_DecisionForm> createState() => _DecisionFormState();
-}
-
-class _DecisionFormState extends State<_DecisionForm> {
-  static const _types = {
-    'Compra en N cuotas': [FieldSpec('Qué compras', hint: 'Notebook'), FieldSpec('Monto total', hint: '\$899.990', width: 160), FieldSpec('N.º de cuotas', hint: '12', width: 120), FieldSpec('Primera cuota', options: ['nov 2026', 'dic 2026', 'ene 2027'], width: 160)],
-    'Alta o modificación de gasto fijo': [FieldSpec('Gasto', options: ['Nuevo gasto fijo', 'Modificar: Plan de salud', 'Modificar: Transporte']), FieldSpec('Monto mensual', hint: '\$0', width: 160), FieldSpec('Desde', options: ['nov 2026', 'dic 2026'], width: 140), FieldSpec('Hasta', options: ['Sin término', 'oct 2027'], width: 140)],
-    'Gasto único': [FieldSpec('Qué es', hint: 'Notebook'), FieldSpec('Monto', hint: '\$0', width: 160), FieldSpec('Mes', options: ['dic 2026', 'ene 2027'], width: 140)],
-    'Adelanto o prepago de deuda': [FieldSpec('Deuda', options: ['Crédito de consumo']), FieldSpec('Monto del prepago', hint: '\$0', width: 180), FieldSpec('Mes de aplicación', options: ['nov 2026', 'dic 2026'], width: 160), FieldSpec('Modalidad (depende de tu institución)', options: ['Reducir plazo (cuota igual)', 'Reducir cuota (plazo igual)'], width: 300)],
-    'Variación de ingreso': [FieldSpec('Variación mensual (+/−)', hint: '\$0', width: 200), FieldSpec('Desde', options: ['nov 2026', 'dic 2026'], width: 140), FieldSpec('Hasta', options: ['Sin término', 'oct 2027'], width: 140)],
-  };
-  String _type = _types.keys.first;
-
-  @override
-  Widget build(BuildContext context) => FdmCard(title: 'Agregar una decisión', children: [
-        DropdownButtonFormField<String>(
-          initialValue: _type,
-          decoration: const InputDecoration(labelText: 'Tipo de decisión'),
-          items: [for (final t in _types.keys) DropdownMenuItem(value: t, child: Text(t, style: FdmText.ui(14)))],
-          onChanged: (v) => setState(() => _type = v ?? _type),
-        ),
-        FormRow(key: ValueKey(_type), fields: _types[_type]!, action: 'Agregar al escenario', primary: true),
-      ]);
 }
