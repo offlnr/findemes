@@ -23,3 +23,12 @@ export interface Transaction {
 export interface TransactionRunner {
   withActor<T>(actor: Actor | null, work: (tx: Transaction) => Promise<T>): Promise<T>;
 }
+
+/**
+ * Who changes personal data and from where. Every write appends an audit entry in the same
+ * transaction (HU25: date, account, action and origin), with identifiers only, never values.
+ */
+export interface WriteContext {
+  readonly actor: Actor;
+  readonly ip: string;
+}

@@ -6,6 +6,7 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastif
 import { registerErrorHandling } from '../http/error-handling.ts';
 import type { Clock } from '../modules/shared/ports.ts';
 import type { RegistryService } from '../modules/registry/application/registry-service.ts';
+import type { ScenarioService } from '../modules/scenarios/application/scenario-service.ts';
 import type { AuthRoutesOptions } from './v1/auth-routes.ts';
 import { v1Routes } from './v1/routes.ts';
 
@@ -16,6 +17,7 @@ export interface PublicApiOptions {
   readonly corsOrigins?: readonly string[];
   readonly auth?: AuthRoutesOptions;
   readonly registry?: RegistryService;
+  readonly scenarios?: ScenarioService;
 }
 
 /** Requests in this API are small JSON documents. */
@@ -75,7 +77,7 @@ export async function buildPublicApi(options: PublicApiOptions): Promise<Fastify
     () => ({ status: 'ok' as const }),
   );
 
-  await app.register(v1Routes, { prefix: '/v1', clock: options.clock, ...(options.auth === undefined ? {} : { auth: options.auth }), ...(options.registry === undefined ? {} : { registry: options.registry }) });
+  await app.register(v1Routes, { prefix: '/v1', clock: options.clock, ...(options.auth === undefined ? {} : { auth: options.auth }), ...(options.registry === undefined ? {} : { registry: options.registry }), ...(options.scenarios === undefined ? {} : { scenarios: options.scenarios }) });
 
   return app;
 }

@@ -1,14 +1,9 @@
 import type { Actor } from '../../shared/actor.ts';
+import type { WriteContext } from '../../shared/ports.ts';
+
+export type { WriteContext };
 import type { OpeningBalance, RegistryDebt, RegistryExpense, RegistrySnapshot, ScheduledEntry } from '../domain/registry.ts';
 
-/**
- * Who changes the registry and from where. Every write appends an audit entry in the same
- * transaction (HU25: date, account, action and origin), with identifiers only, never amounts.
- */
-export interface WriteContext {
-  readonly actor: Actor;
-  readonly ip: string;
-}
 
 /**
  * The actor's own financial registry (HU01-HU04). Every method filters by the actor (deny by

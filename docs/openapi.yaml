@@ -2915,3 +2915,1518 @@ paths:
                     type: string
                   message:
                     type: string
+  /v1/scenarios:
+    get:
+      summary: Mis escenarios y el plan vigente (HU06, Tabla 13)
+      tags: &a5
+        - escenarios
+      security: &a6
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - plan
+                  - scenarios
+                properties:
+                  plan:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - code
+                      - name
+                      - maxSavedScenarios
+                      - maxComparedScenarios
+                      - userPrepayments
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - free
+                          - paid
+                          - family
+                      name:
+                        type: string
+                      maxSavedScenarios:
+                        anyOf:
+                          - type: integer
+                          - type: "null"
+                        description: null = sin límite.
+                      maxComparedScenarios:
+                        type: integer
+                      userPrepayments:
+                        type: boolean
+                  scenarios:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - id
+                        - name
+                        - decisions
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        decisions:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - kind
+                              - params
+                            properties:
+                              kind:
+                                type: string
+                                enum:
+                                  - purchase_in_installments
+                                  - fixed_expense_change
+                                  - one_off_expense
+                                  - debt_prepayment
+                                  - income_variation
+                              params:
+                                type: object
+                                description: Parámetros del tipo de decisión (Tabla 11); los valida el motor.
+                                  Meses en formato AAAA-MM.
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+    post:
+      summary: Crear un escenario con decisiones (HU06, HU07)
+      tags: *a5
+      description: El escenario se deriva del registro y no lo modifica. El plan
+        gratuito guarda hasta 2 escenarios y no simula prepagos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - decisions
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                decisions:
+                  type: array
+                  maxItems: 20
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - kind
+                      - params
+                    properties:
+                      kind:
+                        type: string
+                        enum:
+                          - purchase_in_installments
+                          - fixed_expense_change
+                          - one_off_expense
+                          - debt_prepayment
+                          - income_variation
+                      params:
+                        type: object
+                        description: Parámetros del tipo de decisión (Tabla 11); los valida el motor.
+                          Meses en formato AAAA-MM.
+      security: *a6
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "422":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                  - issues
+                properties:
+                  error:
+                    type: string
+                    enum:
+                      - invalid_decisions
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - decisionIndex
+                        - issues
+                      properties:
+                        decisionIndex:
+                          type: integer
+                        issues:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - field
+                              - message
+                            properties:
+                              field:
+                                type: string
+                              message:
+                                type: string
+  /v1/scenarios/compare:
+    get:
+      summary: Comparar escenarios entre sí y con la base (HU09)
+      tags: *a5
+      description: En el orden pedido, sin ordenar por conveniencia ni destacar uno.
+        El plan gratuito compara un escenario frente a la base.
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[0-9a-fA-F-]{36}(,[0-9a-fA-F-]{36}){0,9}$
+          in: query
+          name: ids
+          required: true
+        - schema:
+            type: string
+            pattern: ^[0-9]{1,2}$
+          in: query
+          name: months
+          required: false
+      security: *a6
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - horizonMonths
+                  - base
+                  - scenarios
+                properties:
+                  horizonMonths:
+                    type: integer
+                  base:
+                    type: object
+                    properties:
+                      months:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            openingBalance:
+                              type: integer
+                            income:
+                              type: integer
+                            expenses:
+                              type: integer
+                            debtPayments:
+                              type: integer
+                            netFlow:
+                              type: integer
+                            closingBalance:
+                              type: integer
+                          required:
+                            - month
+                            - openingBalance
+                            - income
+                            - expenses
+                            - debtPayments
+                            - netFlow
+                            - closingBalance
+                          additionalProperties: false
+                      indicators:
+                        type: object
+                        description: Indicadores de la Tabla 12.
+                        properties:
+                          minimumProjectedBalance:
+                            type: object
+                            description: Saldo mínimo proyectado y primer mes en que ocurre.
+                            properties:
+                              amount:
+                                type: integer
+                              month:
+                                type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                            required:
+                              - amount
+                              - month
+                            additionalProperties: false
+                          breakMonth:
+                            anyOf:
+                              - type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                              - type: "null"
+                            description: Primer mes con saldo negativo; null si no ocurre.
+                          monthlyAvailableMargin:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                amount:
+                                  type: integer
+                              required:
+                                - month
+                                - amount
+                              additionalProperties: false
+                            description: Ingresos menos compromisos totales de cada mes.
+                          debtToIncome:
+                            type: array
+                            description: Puntos básicos enteros (10 000 = 100 %); null si el mes no tiene
+                              ingresos.
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                basisPoints:
+                                  anyOf:
+                                    - type: integer
+                                    - type: "null"
+                              required:
+                                - month
+                                - basisPoints
+                              additionalProperties: false
+                        required:
+                          - minimumProjectedBalance
+                          - breakMonth
+                          - monthlyAvailableMargin
+                          - debtToIncome
+                        additionalProperties: false
+                    required:
+                      - months
+                      - indicators
+                    additionalProperties: false
+                  scenarios:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - id
+                        - name
+                        - scenario
+                        - variation
+                        - explanation
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        scenario:
+                          type: object
+                          properties:
+                            months:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  month:
+                                    type: string
+                                    pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                    examples:
+                                      - 2026-11
+                                  openingBalance:
+                                    type: integer
+                                  income:
+                                    type: integer
+                                  expenses:
+                                    type: integer
+                                  debtPayments:
+                                    type: integer
+                                  netFlow:
+                                    type: integer
+                                  closingBalance:
+                                    type: integer
+                                required:
+                                  - month
+                                  - openingBalance
+                                  - income
+                                  - expenses
+                                  - debtPayments
+                                  - netFlow
+                                  - closingBalance
+                                additionalProperties: false
+                            indicators:
+                              type: object
+                              description: Indicadores de la Tabla 12.
+                              properties:
+                                minimumProjectedBalance:
+                                  type: object
+                                  description: Saldo mínimo proyectado y primer mes en que ocurre.
+                                  properties:
+                                    amount:
+                                      type: integer
+                                    month:
+                                      type: string
+                                      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                      examples:
+                                        - 2026-11
+                                  required:
+                                    - amount
+                                    - month
+                                  additionalProperties: false
+                                breakMonth:
+                                  anyOf:
+                                    - type: string
+                                      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                      examples:
+                                        - 2026-11
+                                    - type: "null"
+                                  description: Primer mes con saldo negativo; null si no ocurre.
+                                monthlyAvailableMargin:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      month:
+                                        type: string
+                                        pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                        examples:
+                                          - 2026-11
+                                      amount:
+                                        type: integer
+                                    required:
+                                      - month
+                                      - amount
+                                    additionalProperties: false
+                                  description: Ingresos menos compromisos totales de cada mes.
+                                debtToIncome:
+                                  type: array
+                                  description: Puntos básicos enteros (10 000 = 100 %); null si el mes no tiene
+                                    ingresos.
+                                  items:
+                                    type: object
+                                    properties:
+                                      month:
+                                        type: string
+                                        pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                        examples:
+                                          - 2026-11
+                                      basisPoints:
+                                        anyOf:
+                                          - type: integer
+                                          - type: "null"
+                                    required:
+                                      - month
+                                      - basisPoints
+                                    additionalProperties: false
+                              required:
+                                - minimumProjectedBalance
+                                - breakMonth
+                                - monthlyAvailableMargin
+                                - debtToIncome
+                              additionalProperties: false
+                          required:
+                            - months
+                            - indicators
+                          additionalProperties: false
+                        variation:
+                          type: object
+                          description: "Diferencia de cada indicador: escenario menos base. No indica qué
+                            resultado es preferible."
+                          properties:
+                            minimumProjectedBalance:
+                              type: integer
+                            breakMonth:
+                              type: object
+                              properties:
+                                base:
+                                  anyOf:
+                                    - type: string
+                                      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                      examples:
+                                        - 2026-11
+                                    - type: "null"
+                                scenario:
+                                  anyOf:
+                                    - type: string
+                                      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                      examples:
+                                        - 2026-11
+                                    - type: "null"
+                              required:
+                                - base
+                                - scenario
+                              additionalProperties: false
+                            monthlyAvailableMargin:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  month:
+                                    type: string
+                                    pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                    examples:
+                                      - 2026-11
+                                  amount:
+                                    type: integer
+                                required:
+                                  - month
+                                  - amount
+                                additionalProperties: false
+                            debtToIncome:
+                              type: array
+                              description: Puntos básicos enteros (10 000 = 100 %); null si el mes no tiene
+                                ingresos.
+                              items:
+                                type: object
+                                properties:
+                                  month:
+                                    type: string
+                                    pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                    examples:
+                                      - 2026-11
+                                  basisPoints:
+                                    anyOf:
+                                      - type: integer
+                                      - type: "null"
+                                required:
+                                  - month
+                                  - basisPoints
+                                additionalProperties: false
+                          required:
+                            - minimumProjectedBalance
+                            - breakMonth
+                            - monthlyAvailableMargin
+                            - debtToIncome
+                          additionalProperties: false
+                        explanation:
+                          type: object
+                          properties:
+                            summary:
+                              type: string
+                            details:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                            - summary
+                            - details
+                          additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "422":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                  - issues
+                properties:
+                  error:
+                    type: string
+                    enum:
+                      - invalid_decisions
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - decisionIndex
+                        - issues
+                      properties:
+                        decisionIndex:
+                          type: integer
+                        issues:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - field
+                              - message
+                            properties:
+                              field:
+                                type: string
+                              message:
+                                type: string
+  /v1/scenarios/{id}:
+    get:
+      summary: "Resultado de un escenario: indicadores, variación y explicación (HU08,
+        HU10)"
+      tags: *a5
+      parameters:
+        - schema:
+            type: string
+            pattern: ^[0-9]{1,2}$
+          in: query
+          name: months
+          required: false
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a6
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                  - name
+                  - decisions
+                  - startMonth
+                  - horizonMonths
+                  - base
+                  - scenario
+                  - variation
+                  - explanation
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  decisions:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - params
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - purchase_in_installments
+                            - fixed_expense_change
+                            - one_off_expense
+                            - debt_prepayment
+                            - income_variation
+                        params:
+                          type: object
+                          description: Parámetros del tipo de decisión (Tabla 11); los valida el motor.
+                            Meses en formato AAAA-MM.
+                  startMonth:
+                    type: string
+                  horizonMonths:
+                    type: integer
+                  base:
+                    type: object
+                    properties:
+                      months:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            openingBalance:
+                              type: integer
+                            income:
+                              type: integer
+                            expenses:
+                              type: integer
+                            debtPayments:
+                              type: integer
+                            netFlow:
+                              type: integer
+                            closingBalance:
+                              type: integer
+                          required:
+                            - month
+                            - openingBalance
+                            - income
+                            - expenses
+                            - debtPayments
+                            - netFlow
+                            - closingBalance
+                          additionalProperties: false
+                      indicators:
+                        type: object
+                        description: Indicadores de la Tabla 12.
+                        properties:
+                          minimumProjectedBalance:
+                            type: object
+                            description: Saldo mínimo proyectado y primer mes en que ocurre.
+                            properties:
+                              amount:
+                                type: integer
+                              month:
+                                type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                            required:
+                              - amount
+                              - month
+                            additionalProperties: false
+                          breakMonth:
+                            anyOf:
+                              - type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                              - type: "null"
+                            description: Primer mes con saldo negativo; null si no ocurre.
+                          monthlyAvailableMargin:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                amount:
+                                  type: integer
+                              required:
+                                - month
+                                - amount
+                              additionalProperties: false
+                            description: Ingresos menos compromisos totales de cada mes.
+                          debtToIncome:
+                            type: array
+                            description: Puntos básicos enteros (10 000 = 100 %); null si el mes no tiene
+                              ingresos.
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                basisPoints:
+                                  anyOf:
+                                    - type: integer
+                                    - type: "null"
+                              required:
+                                - month
+                                - basisPoints
+                              additionalProperties: false
+                        required:
+                          - minimumProjectedBalance
+                          - breakMonth
+                          - monthlyAvailableMargin
+                          - debtToIncome
+                        additionalProperties: false
+                    required:
+                      - months
+                      - indicators
+                    additionalProperties: false
+                  scenario:
+                    type: object
+                    properties:
+                      months:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            openingBalance:
+                              type: integer
+                            income:
+                              type: integer
+                            expenses:
+                              type: integer
+                            debtPayments:
+                              type: integer
+                            netFlow:
+                              type: integer
+                            closingBalance:
+                              type: integer
+                          required:
+                            - month
+                            - openingBalance
+                            - income
+                            - expenses
+                            - debtPayments
+                            - netFlow
+                            - closingBalance
+                          additionalProperties: false
+                      indicators:
+                        type: object
+                        description: Indicadores de la Tabla 12.
+                        properties:
+                          minimumProjectedBalance:
+                            type: object
+                            description: Saldo mínimo proyectado y primer mes en que ocurre.
+                            properties:
+                              amount:
+                                type: integer
+                              month:
+                                type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                            required:
+                              - amount
+                              - month
+                            additionalProperties: false
+                          breakMonth:
+                            anyOf:
+                              - type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                              - type: "null"
+                            description: Primer mes con saldo negativo; null si no ocurre.
+                          monthlyAvailableMargin:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                amount:
+                                  type: integer
+                              required:
+                                - month
+                                - amount
+                              additionalProperties: false
+                            description: Ingresos menos compromisos totales de cada mes.
+                          debtToIncome:
+                            type: array
+                            description: Puntos básicos enteros (10 000 = 100 %); null si el mes no tiene
+                              ingresos.
+                            items:
+                              type: object
+                              properties:
+                                month:
+                                  type: string
+                                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                  examples:
+                                    - 2026-11
+                                basisPoints:
+                                  anyOf:
+                                    - type: integer
+                                    - type: "null"
+                              required:
+                                - month
+                                - basisPoints
+                              additionalProperties: false
+                        required:
+                          - minimumProjectedBalance
+                          - breakMonth
+                          - monthlyAvailableMargin
+                          - debtToIncome
+                        additionalProperties: false
+                    required:
+                      - months
+                      - indicators
+                    additionalProperties: false
+                  variation:
+                    type: object
+                    description: "Diferencia de cada indicador: escenario menos base. No indica qué
+                      resultado es preferible."
+                    properties:
+                      minimumProjectedBalance:
+                        type: integer
+                      breakMonth:
+                        type: object
+                        properties:
+                          base:
+                            anyOf:
+                              - type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                              - type: "null"
+                          scenario:
+                            anyOf:
+                              - type: string
+                                pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                                examples:
+                                  - 2026-11
+                              - type: "null"
+                        required:
+                          - base
+                          - scenario
+                        additionalProperties: false
+                      monthlyAvailableMargin:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            amount:
+                              type: integer
+                          required:
+                            - month
+                            - amount
+                          additionalProperties: false
+                      debtToIncome:
+                        type: array
+                        description: Puntos básicos enteros (10 000 = 100 %); null si el mes no tiene
+                          ingresos.
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            basisPoints:
+                              anyOf:
+                                - type: integer
+                                - type: "null"
+                          required:
+                            - month
+                            - basisPoints
+                          additionalProperties: false
+                    required:
+                      - minimumProjectedBalance
+                      - breakMonth
+                      - monthlyAvailableMargin
+                      - debtToIncome
+                    additionalProperties: false
+                  explanation:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      details:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                      - summary
+                      - details
+                    additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "422":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                  - issues
+                properties:
+                  error:
+                    type: string
+                    enum:
+                      - invalid_decisions
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - decisionIndex
+                        - issues
+                      properties:
+                        decisionIndex:
+                          type: integer
+                        issues:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - field
+                              - message
+                            properties:
+                              field:
+                                type: string
+                              message:
+                                type: string
+    put:
+      summary: Renombrar o cambiar las decisiones de un escenario (HU11)
+      tags: *a5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - decisions
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                decisions:
+                  type: array
+                  maxItems: 20
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - kind
+                      - params
+                    properties:
+                      kind:
+                        type: string
+                        enum:
+                          - purchase_in_installments
+                          - fixed_expense_change
+                          - one_off_expense
+                          - debt_prepayment
+                          - income_variation
+                      params:
+                        type: object
+                        description: Parámetros del tipo de decisión (Tabla 11); los valida el motor.
+                          Meses en formato AAAA-MM.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a6
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "422":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                  - issues
+                properties:
+                  error:
+                    type: string
+                    enum:
+                      - invalid_decisions
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - decisionIndex
+                        - issues
+                      properties:
+                        decisionIndex:
+                          type: integer
+                        issues:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - field
+                              - message
+                            properties:
+                              field:
+                                type: string
+                              message:
+                                type: string
+    delete:
+      summary: Eliminar un escenario (HU11)
+      tags: *a5
+      description: No afecta el registro ni a los demás escenarios.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a6
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string

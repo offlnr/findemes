@@ -1,5 +1,5 @@
 import type { Clp } from '../../../core/index.ts';
-import type { UserId } from '../../shared/actor.ts';
+import type { Actor, UserId } from '../../shared/actor.ts';
 
 export interface PaymentStart {
   readonly token: string;
@@ -51,4 +51,20 @@ export interface PaymentSettlement {
 /** Tabla 14 "Cancelada": stops the renewal; access lasts until the end of the paid period. */
 export interface SubscriptionCanceller {
   cancelRenewal(userId: UserId): Promise<boolean>;
+}
+
+/** Capabilities of the plan in force for a user today (Tabla 13). `null` limits mean unlimited. */
+export interface PlanCapabilities {
+  readonly code: 'free' | 'paid' | 'family';
+  readonly name: string;
+  readonly maxSavedScenarios: number | null;
+  readonly maxComparedScenarios: number;
+  /** "Simulación de prepagos definidos por el usuario". */
+  readonly userPrepayments: boolean;
+  readonly householdSpace: boolean;
+}
+
+/** HU20: an expired paid plan falls back to the free plan without deleting data. */
+export interface PlanReader {
+  capabilitiesFor(actor: Actor): Promise<PlanCapabilities>;
 }

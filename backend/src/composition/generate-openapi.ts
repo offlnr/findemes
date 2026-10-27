@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { buildPublicApi } from '../api/build-public-api.ts';
 import type { AuthServices } from '../api/v1/auth-routes.ts';
 import type { RegistryService } from '../modules/registry/application/registry-service.ts';
+import type { ScenarioService } from '../modules/scenarios/application/scenario-service.ts';
 
 export const OPENAPI_FILE = new URL('../../../docs/openapi.yaml', import.meta.url);
 
@@ -23,6 +24,7 @@ export async function renderOpenApi(): Promise<string> {
     logger: false,
     clock: { now: () => new Date(0) },
     registry: notWired as RegistryService,
+    scenarios: notWired as ScenarioService,
     auth: { identity: notWired as AuthServices['identity'], accessTokens: notWired as AuthServices['accessTokens'], accounts: notWired as AuthServices['accounts'], secureCookies: true },
   });
   try {
