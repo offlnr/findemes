@@ -1,3 +1,4 @@
+import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
@@ -8,6 +9,8 @@ import { v1Routes } from './v1/routes.ts';
 export interface PublicApiOptions {
   readonly logger: NonNullable<FastifyServerOptions['logger']>;
   readonly clock: Clock;
+  /** Exact browser origins of the web app; empty means no cross-origin access. */
+  readonly corsOrigins?: readonly string[];
 }
 
 /** Requests in this API are small JSON documents. */
@@ -32,6 +35,12 @@ export async function buildPublicApi(options: PublicApiOptions): Promise<Fastify
   await app.register(swagger, { openapi: { openapi: '3.1.0', info: OPENAPI_INFO } });
 
   registerErrorHandling(app);
+  await app.register(cors, {
+    origin: [...(options.corsOrigins ?? [])],
+    // The web refresh token travels in an HttpOnly cookie (CLAUDE.md, Sesiones).
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
   // Limits apply only to routes that opt in through `config.rateLimit` (e.g. the public demo).
   await app.register(rateLimit, { global: false });
 

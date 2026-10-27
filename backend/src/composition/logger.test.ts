@@ -17,7 +17,7 @@ function captureLogs(): { stream: Writable; lines: string[] } {
 describe('loggerOptions', () => {
   it('redacts sensitive keys at the top level and nested up to two levels', async () => {
     const { stream, lines } = captureLogs();
-    const options = loggerOptions({ environment: 'test', host: '127.0.0.1', port: 0, logLevel: 'info' });
+    const options = loggerOptions({ environment: 'test', host: '127.0.0.1', port: 0, logLevel: 'info', corsOrigins: [] });
     const app = Fastify({ logger: { ...(options as object), stream } });
 
     app.log.info({ email: 'ana@example.cl', password: 'hunter2' }, 'top level');

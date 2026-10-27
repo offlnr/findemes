@@ -8,5 +8,5 @@ import { systemClock } from './system-clock.ts';
 const DEFAULT_PORT = 3000;
 
 const config = loadServiceConfig(process.env, DEFAULT_PORT);
-const app = await buildPublicApi({ logger: loggerOptions(config), clock: systemClock });
+const app = await buildPublicApi({ logger: loggerOptions(config), clock: systemClock, corsOrigins: config.corsOrigins });
 await runService(app, config);
