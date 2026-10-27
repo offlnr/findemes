@@ -40,9 +40,12 @@ class LoginCodeRequired extends LoginOutcome {
 
 /// Error con un mensaje para mostrar y, si corresponde, los mensajes por campo.
 class AuthApiException implements Exception {
-  const AuthApiException(this.message, {this.fieldMessages = const {}});
+  const AuthApiException(this.message, {this.fieldMessages = const {}, this.status});
   final String message;
   final Map<String, String> fieldMessages;
+
+  /// Código HTTP de la respuesta; null si no se pudo contactar al servidor.
+  final int? status;
   @override
   String toString() => message;
 }
@@ -142,6 +145,6 @@ class AuthApi {
     final message = response.statusCode == 429 && map['error'] == null
         ? 'Demasiadas solicitudes. Espera un momento e intenta de nuevo.'
         : (map['message'] as String? ?? 'No pudimos completar la solicitud.');
-    throw AuthApiException(message, fieldMessages: issues);
+    throw AuthApiException(message, fieldMessages: issues, status: response.statusCode);
   }
 }

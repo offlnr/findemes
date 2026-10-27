@@ -114,18 +114,30 @@ class DemoRequest {
 }
 
 class MonthFlow {
-  const MonthFlow({required this.month, required this.income, required this.expenses, required this.debtPayments, required this.closingBalance});
+  const MonthFlow({
+    required this.month,
+    required this.openingBalance,
+    required this.income,
+    required this.expenses,
+    required this.debtPayments,
+    required this.netFlow,
+    required this.closingBalance,
+  });
   factory MonthFlow.fromJson(Map<String, dynamic> json) => MonthFlow(
         month: json['month'] as String,
+        openingBalance: json['openingBalance'] as int,
+        netFlow: json['netFlow'] as int,
         income: json['income'] as int,
         expenses: json['expenses'] as int,
         debtPayments: json['debtPayments'] as int,
         closingBalance: json['closingBalance'] as int,
       );
   final String month;
+  final int openingBalance;
   final int income;
   final int expenses;
   final int debtPayments;
+  final int netFlow;
   final int closingBalance;
 }
 

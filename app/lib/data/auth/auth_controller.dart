@@ -66,6 +66,26 @@ class AuthController extends Notifier<AuthState> {
     await _open(await _api.confirmCode(challengeId: challengeId, code: code));
   }
 
+  /// Ejecuta una llamada autenticada. Si el token de acceso de 15 minutos venció (401), renueva
+  /// la sesión una vez y reintenta; si no puede renovarla, cierra la sesión.
+  Future<T> authorized<T>(Future<T> Function(String accessToken) call) async {
+    final token = state.accessToken;
+    if (token == null) throw const AuthApiException('Se requiere iniciar sesión.', status: 401);
+    try {
+      return await call(token);
+    } on AuthApiException catch (e) {
+      if (e.status != 401) rethrow;
+      try {
+        await _open(await _api.refresh(refreshToken: await _vault.read(refreshTokenKey)), keepAccount: true);
+      } on AuthApiException {
+        await _vault.write(refreshTokenKey, null);
+        state = const AuthState.signedOut();
+        rethrow;
+      }
+      return call(state.accessToken!);
+    }
+  }
+
   Future<void> logout() async {
     final token = state.accessToken;
     final refresh = await _vault.read(refreshTokenKey);
@@ -80,10 +100,11 @@ class AuthController extends Notifier<AuthState> {
     state = const AuthState.signedOut();
   }
 
-  Future<void> _open(AuthSession session) async {
+  Future<void> _open(AuthSession session, {bool keepAccount = false}) async {
     if (session.refreshToken != null) await _vault.write(refreshTokenKey, session.refreshToken);
     if (session.deviceId != null) await _vault.write(deviceIdKey, session.deviceId);
-    final account = await _api.me(session.accessToken);
+    final current = state.account;
+    final account = keepAccount && current != null ? current : await _api.me(session.accessToken);
     state = AuthState.signedIn(accessToken: session.accessToken, account: account);
   }
 }

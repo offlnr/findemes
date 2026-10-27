@@ -35,6 +35,8 @@ MockClient _api(List<String> calls) => MockClient((request) async {
           return _json({'id': '3f2b8c1e-7d4a-4f6b-9c2d-1a2b3c4d5e6f', 'email': 'ana@example.cl', 'displayName': 'Ana Rojas'});
         case '/v1/auth/logout':
           return http.Response('', 204);
+        case '/v1/projection':
+          return _json({'error': 'opening_balance_required', 'message': 'Registra tu saldo inicial para ver la proyección.'}, 409);
       }
       return _json({'error': 'not_found', 'message': 'Recurso no encontrado.'}, 404);
     });
@@ -73,7 +75,7 @@ void main() {
     expect(find.text('Correo o contraseña incorrectos.'), findsOneWidget);
   });
 
-  testWidgets('entra con el código del correo, guarda el refresh token y avisa que las cifras son de ejemplo', (tester) async {
+  testWidgets('entra con el código del correo, guarda el refresh token y pide el saldo inicial', (tester) async {
     final calls = <String>[];
     final vault = await _pumpApp(tester, calls);
 
@@ -89,7 +91,9 @@ void main() {
 
     expect(find.text('Mi situación'), findsWidgets);
     expect(find.text('Ana Rojas'), findsOneWidget);
-    expect(find.text('Las cifras de estas pantallas son de ejemplo: todavía no se conectan a tu registro.'), findsOneWidget);
+    expect(find.text('Falta tu saldo inicial'), findsOneWidget);
+    // Mi situación ya usa datos reales: no lleva el aviso de cifras de ejemplo.
+    expect(find.textContaining('son de ejemplo'), findsNothing);
     expect(vault.values[refreshTokenKey], 'refresh-token-de-prueba-0123456789');
     expect(vault.values[deviceIdKey], 'dispositivo-de-prueba-0123456789');
 

@@ -8,6 +8,7 @@ import '../../data/models.dart';
 import '../../format/money.dart';
 import '../../format/months.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/charts/chart_scale.dart';
 import '../../widgets/charts/charts.dart';
 import '../../widgets/common.dart';
 
@@ -357,7 +358,7 @@ class _DemoScreenState extends ConsumerState<DemoScreen> {
       LineSeries(name: 'Sin la decisión', values: [for (final m in result.base.months) m.closingBalance], color: FdmColors.muted, dashed: scenario != null, area: scenario == null),
       if (scenario != null) LineSeries(name: 'Con la decisión', values: [for (final m in scenario.months) m.closingBalance], color: FdmColors.ink),
     ];
-    final scale = _ChartScale.of([for (final s in series) ...s.values]);
+    final scale = ChartScale.of([for (final s in series) ...s.values]);
 
     return Gap([
       Row(children: [const Pill('Datos de demostración'), const SizedBox(width: 8), Expanded(child: Muted(horizon, size: 12))]),
@@ -388,28 +389,6 @@ class _DemoScreenState extends ConsumerState<DemoScreen> {
   static String _percent(int basisPoints) {
     final tenths = (basisPoints / 10).round();
     return '${tenths ~/ 10},${tenths % 10} %';
-  }
-}
-
-/// Escala del eje vertical: incluye el cero y redondea a un múltiplo legible.
-class _ChartScale {
-  const _ChartScale(this.min, this.max, this.ticks);
-  final int min;
-  final int max;
-  final List<int> ticks;
-
-  factory _ChartScale.of(List<int> values) {
-    final low = values.fold<int>(0, (a, b) => b < a ? b : a);
-    final high = values.fold<int>(0, (a, b) => b > a ? b : a);
-    final span = (high - low) == 0 ? 100000 : high - low;
-    var step = 1;
-    while (step * 4 < span) {
-      step *= 10;
-    }
-    if (step * 2 >= span) step ~/= 2;
-    final min = (low / step).floor() * step;
-    final max = (high / step).ceil() * step;
-    return _ChartScale(min, max == min ? min + step : max, [for (var v = min; v <= max; v += step) v]);
   }
 }
 

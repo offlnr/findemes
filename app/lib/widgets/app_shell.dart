@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../data/auth/auth_controller.dart';
 import '../theme/tokens.dart';
-import 'common.dart';
 import 'fdm_icon.dart';
 
 class NavEntry {
@@ -13,6 +12,9 @@ class NavEntry {
   final String path;
   final FdmIcons icon;
 }
+
+/// Pantallas que ya muestran datos reales del usuario desde la API.
+const connectedPaths = ['/app/resumen', '/app/registro', '/app/proyeccion'];
 
 const navEntries = [
   NavEntry('Mi situación', '/app/resumen', FdmIcons.steps),
@@ -37,8 +39,8 @@ class AppShell extends StatelessWidget {
     final wide = MediaQuery.sizeOf(context).width >= 1000;
     final menu = _Sidebar(location: location);
     final body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      // Rule: demo figures are never presented as the user's own.
-      const ColoredBox(
+      // Las cifras de ejemplo nunca se presentan como propias: se rotulan las pantallas aún no conectadas.
+      if (!connectedPaths.any(location.startsWith)) const ColoredBox(
         color: FdmColors.accentSoft,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -83,10 +85,6 @@ class _Sidebar extends ConsumerWidget {
               ),
               for (final e in navEntries) _NavItem(entry: e, active: location.startsWith(e.path)),
               const Spacer(),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16),
-                child: Pill('Datos de demostración', color: FdmColors.accent),
-              ),
               if (account != null)
                 Row(children: [
                   CircleAvatar(
