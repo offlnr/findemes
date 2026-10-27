@@ -2,7 +2,7 @@
 // the SQL functions in migrations 0002 and 0012 (lookup_login, rotate_refresh_token,
 // consume_email_token, consume_login_code); the PostgreSQL adapters are tested against the real
 // database in test/db.
-import { createHash, createHmac } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import type { IdentityDependencies } from '../../src/modules/identity/application/identity-service.ts';
 import type { AccountStatus, EmailTokenPurpose, LoginAttemptLimiter } from '../../src/modules/identity/ports/identity-ports.ts';
 import { accountLockMs } from '../../src/modules/identity/domain/session-policy.ts';
@@ -82,7 +82,7 @@ export function createInMemoryIdentity() {
       verify: (token) => Promise.resolve(token.startsWith('access:') ? (token.slice(7) as UserId) : null),
     },
     secrets: {
-      opaqueToken: () => `token-${String(++sequence)}`,
+      opaqueToken: () => randomBytes(32).toString('base64url'),
       sixDigitCode: () => String(100_000 + ++sequence).slice(-6),
       sha256: (secret) => new Uint8Array(createHash('sha256').update(secret).digest()),
       hmac: (value) => new Uint8Array(createHmac('sha256', 'test-key').update(value).digest()),
@@ -104,7 +104,7 @@ export function createInMemoryIdentity() {
         if ([...users.values()].some((u) => u.email === draft.email)) {
           return Promise.resolve('email_taken' as const);
         }
-        const id = `user-${String(users.size + 1)}` as UserId;
+        const id = randomUUID() as UserId;
         users.set(id, { id, ...draft, emailVerifiedAt: null, status: 'active' });
         return Promise.resolve(id);
       },
@@ -167,7 +167,7 @@ export function createInMemoryIdentity() {
     },
     challenges: {
       create: (actor, deviceHash, codeHash, expiresAt) => {
-        const id = `challenge-${String(challenges.size + 1)}`;
+        const id = randomUUID();
         challenges.set(id, { userId: actor.userId, deviceHash: hex(deviceHash), codeHash: hex(codeHash), expiresAt, attempts: 0, used: false });
         return Promise.resolve(id);
       },

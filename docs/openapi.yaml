@@ -5,6 +5,11 @@ info:
     forman parte de esta API.
   version: 1.0.0
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas: {}
 paths:
   /health:
@@ -570,3 +575,699 @@ paths:
                         - field
                         - message
                       additionalProperties: false
+  /v1/auth/register:
+    post:
+      summary: Crear una cuenta (HU17)
+      tags: &a2
+        - identidad y sesión
+      description: La respuesta es la misma exista o no una cuenta con ese correo; se
+        envía un enlace de verificación.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - email
+                - password
+                - displayName
+              properties:
+                email:
+                  type: string
+                  minLength: 3
+                  maxLength: 254
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                displayName:
+                  type: string
+                  maxLength: 80
+      responses:
+        "202":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                  - issues
+                properties:
+                  error:
+                    type: string
+                    enum:
+                      - invalid_fields
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+  /v1/auth/verify-email:
+    post:
+      summary: Confirmar el correo (HU17)
+      tags: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  minLength: 16
+                  maxLength: 128
+                  pattern: ^[A-Za-z0-9_-]+$
+      responses:
+        "204":
+          description: Default Response
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/auth/login:
+    post:
+      summary: Iniciar sesión (HU17.1, CU-11)
+      tags: *a2
+      description: Un dispositivo no reconocido recibe un código por correo y debe
+        confirmarlo en /v1/auth/login/code. Correo inexistente y contraseña
+        incorrecta reciben la misma respuesta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  minLength: 3
+                  maxLength: 254
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                client:
+                  type: string
+                  enum:
+                    - web
+                    - mobile
+                  description: "web: el refresh token y el dispositivo viajan en cookies HttpOnly.
+                    mobile: en el cuerpo (flutter_secure_storage)."
+                deviceId:
+                  type: string
+                  minLength: 16
+                  maxLength: 128
+                  pattern: ^[A-Za-z0-9_-]+$
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - status
+                      - session
+                    properties:
+                      status:
+                        type: string
+                        enum:
+                          - authenticated
+                      session:
+                        type: object
+                        additionalProperties: false
+                        required:
+                          - accessToken
+                          - accessTokenExpiresAt
+                        properties:
+                          accessToken:
+                            type: string
+                            description: JWT de 15 minutos; en la web se guarda solo en memoria.
+                          accessTokenExpiresAt:
+                            type: string
+                            format: date-time
+                          refreshToken:
+                            type: string
+                            description: Solo para clientes mobile.
+                          refreshTokenExpiresAt:
+                            type: string
+                            format: date-time
+                          deviceId:
+                            type: string
+                            description: Solo para clientes mobile.
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - status
+                      - challengeId
+                    properties:
+                      status:
+                        type: string
+                        enum:
+                          - code_required
+                      challengeId:
+                        type: string
+                      deviceId:
+                        type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "429":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/auth/login/code:
+    post:
+      summary: Confirmar el código de inicio de sesión (CU-11)
+      tags: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - challengeId
+                - code
+              properties:
+                challengeId:
+                  type: string
+                  format: uuid
+                code:
+                  type: string
+                  pattern: ^\d{6}$
+                client:
+                  type: string
+                  enum:
+                    - web
+                    - mobile
+                  description: "web: el refresh token y el dispositivo viajan en cookies HttpOnly.
+                    mobile: en el cuerpo (flutter_secure_storage)."
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - accessToken
+                  - accessTokenExpiresAt
+                properties:
+                  accessToken:
+                    type: string
+                    description: JWT de 15 minutos; en la web se guarda solo en memoria.
+                  accessTokenExpiresAt:
+                    type: string
+                    format: date-time
+                  refreshToken:
+                    type: string
+                    description: Solo para clientes mobile.
+                  refreshTokenExpiresAt:
+                    type: string
+                    format: date-time
+                  deviceId:
+                    type: string
+                    description: Solo para clientes mobile.
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/auth/refresh:
+    post:
+      summary: Renovar la sesión (rota el refresh token)
+      tags: *a2
+      description: La web envía la cookie; mobile envía refreshToken en el cuerpo.
+        Reusar un token ya usado revoca la sesión completa.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - type: object
+                  additionalProperties: false
+                  required: []
+                  properties:
+                    refreshToken:
+                      type: string
+                      minLength: 16
+                      maxLength: 128
+                      pattern: ^[A-Za-z0-9_-]+$
+                - type: "null"
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - accessToken
+                  - accessTokenExpiresAt
+                properties:
+                  accessToken:
+                    type: string
+                    description: JWT de 15 minutos; en la web se guarda solo en memoria.
+                  accessTokenExpiresAt:
+                    type: string
+                    format: date-time
+                  refreshToken:
+                    type: string
+                    description: Solo para clientes mobile.
+                  refreshTokenExpiresAt:
+                    type: string
+                    format: date-time
+                  deviceId:
+                    type: string
+                    description: Solo para clientes mobile.
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/auth/logout:
+    post:
+      summary: Cerrar esta sesión (HU17.3)
+      tags: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - type: object
+                  additionalProperties: false
+                  required: []
+                  properties:
+                    refreshToken:
+                      type: string
+                      minLength: 16
+                      maxLength: 128
+                      pattern: ^[A-Za-z0-9_-]+$
+                - type: "null"
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/auth/logout-all:
+    post:
+      summary: Cerrar todas las sesiones (HU17.3)
+      tags: *a2
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/auth/password-reset:
+    post:
+      summary: Pedir un enlace para restablecer la contraseña (HU17.2)
+      tags: *a2
+      description: La respuesta es la misma exista o no la cuenta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  minLength: 3
+                  maxLength: 254
+      responses:
+        "202":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+  /v1/auth/password-reset/confirm:
+    post:
+      summary: Elegir una nueva contraseña con el enlace (HU17.2)
+      tags: *a2
+      description: El enlace sirve una vez y vence en 30 minutos; el cambio cierra
+        todas las sesiones.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - token
+                - newPassword
+              properties:
+                token:
+                  type: string
+                  minLength: 16
+                  maxLength: 128
+                  pattern: ^[A-Za-z0-9_-]+$
+                newPassword:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+      responses:
+        "204":
+          description: Default Response
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - error
+                      - message
+                      - issues
+                    properties:
+                      error:
+                        type: string
+                        enum:
+                          - invalid_fields
+                      message:
+                        type: string
+                      issues:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: false
+                          required:
+                            - field
+                            - message
+                          properties:
+                            field:
+                              type: string
+                            message:
+                              type: string
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - error
+                      - message
+                    properties:
+                      error:
+                        type: string
+                      message:
+                        type: string
+  /v1/auth/password:
+    post:
+      summary: Cambiar la contraseña (HU17.4)
+      tags: *a2
+      description: Exige la contraseña vigente, cierra las otras sesiones y avisa por
+        correo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                newPassword:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                client:
+                  type: string
+                  enum:
+                    - web
+                    - mobile
+                  description: "web: el refresh token y el dispositivo viajan en cookies HttpOnly.
+                    mobile: en el cuerpo (flutter_secure_storage)."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - accessToken
+                  - accessTokenExpiresAt
+                properties:
+                  accessToken:
+                    type: string
+                    description: JWT de 15 minutos; en la web se guarda solo en memoria.
+                  accessTokenExpiresAt:
+                    type: string
+                    format: date-time
+                  refreshToken:
+                    type: string
+                    description: Solo para clientes mobile.
+                  refreshTokenExpiresAt:
+                    type: string
+                    format: date-time
+                  deviceId:
+                    type: string
+                    description: Solo para clientes mobile.
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                  - issues
+                properties:
+                  error:
+                    type: string
+                    enum:
+                      - invalid_fields
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/me:
+    get:
+      summary: Datos de la cuenta autenticada
+      tags: *a2
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                  - email
+                  - displayName
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                  displayName:
+                    type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
