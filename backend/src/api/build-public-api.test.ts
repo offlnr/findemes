@@ -6,7 +6,7 @@ describe('public API', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = await buildPublicApi({ logger: false });
+    app = await buildPublicApi({ logger: false, clock: { now: () => new Date('2026-11-15T12:00:00Z') } });
     app.get('/boom-test-only', () => {
       throw new Error('database password is hunter2');
     });
