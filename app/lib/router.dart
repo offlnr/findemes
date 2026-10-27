@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+
+import 'data/auth/auth_controller.dart';
 
 import 'screens/app/account_screen.dart';
 import 'screens/app/banks_screen.dart';
@@ -16,8 +19,18 @@ import 'screens/demo/demo_screen.dart';
 import 'widgets/app_shell.dart';
 
 /// Rutas con hash (#/registro, #/login, #/demo...), las mismas que usa la landing.
-GoRouter buildRouter() => GoRouter(
+/// `/app/*` exige sesión: fuera de sesión se vuelve a `/login`; con sesión, `/login` y
+/// `/registro` llevan a Mi situación. `refresh` avisa cada cambio de [status].
+GoRouter buildRouter({required Listenable refresh, required AuthStatus Function() status}) => GoRouter(
       initialLocation: '/login',
+      refreshListenable: refresh,
+      redirect: (_, state) {
+        final path = state.uri.path;
+        final current = status();
+        if (path.startsWith('/app') && current == AuthStatus.signedOut) return '/login';
+        if ((path == '/login' || path == '/registro') && current == AuthStatus.signedIn) return '/app/resumen';
+        return null;
+      },
       routes: [
         GoRoute(path: '/', redirect: (_, _) => '/login'),
         GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
@@ -29,9 +42,9 @@ GoRouter buildRouter() => GoRouter(
             fromDemo: s.uri.queryParameters['desde'] == 'demo',
           ),
         ),
-        GoRoute(path: '/verificar', builder: (_, s) => VerifyScreen(plan: s.uri.queryParameters['plan'])),
+        GoRoute(path: '/verificar', builder: (_, s) => VerifyScreen(plan: s.uri.queryParameters['plan'], token: s.uri.queryParameters['token'])),
         GoRoute(path: '/recuperar', builder: (_, _) => const RecoverScreen()),
-        GoRoute(path: '/restablecer', builder: (_, _) => const ResetPasswordScreen()),
+        GoRoute(path: '/restablecer', builder: (_, s) => ResetPasswordScreen(token: s.uri.queryParameters['token'])),
         GoRoute(path: '/invitacion', builder: (_, _) => const InvitationScreen()),
         GoRoute(path: '/demo', builder: (_, _) => const DemoScreen()),
         GoRoute(path: '/app', redirect: (_, _) => '/app/resumen'),

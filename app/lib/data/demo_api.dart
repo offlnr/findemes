@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+import 'auth/api_http_client.dart';
+
 /// URL base de la API pública. Se fija al compilar: `--dart-define=API_BASE_URL=https://...`.
 const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000');
 
 final httpClientProvider = Provider<http.Client>((ref) {
-  final client = http.Client();
+  final client = createApiHttpClient();
   ref.onDispose(client.close);
   return client;
 });
