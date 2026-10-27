@@ -297,47 +297,4 @@ class DemoFinanceRepository implements FinanceRepository {
         DeviceSession('Chrome · macOS', 'esta sesión', current: true),
         DeviceSession('App Android', 'hace 2 días'),
       ];
-
-  @override
-  Future<List<DemoProfile>> demoProfiles() async => const [
-        DemoProfile(
-          id: 'estudiante',
-          name: 'Estudiante',
-          opening: 180000,
-          income: 420000,
-          expenses: 380000,
-          debt: 0,
-          indicators: [
-            Indicator(label: 'Saldo mínimo', value: '\$220.000', detail: 'nov 2026', explanation: 'El saldo al cierre más bajo de los próximos 12 meses.'),
-            Indicator(label: 'Mes de quiebre', value: 'No ocurre', detail: '12 meses', explanation: 'Primer mes en que el saldo al cierre quedaría bajo \$0.'),
-          ],
-          closings: [220000, 260000, 300000, 340000, 380000, 420000, 460000, 500000, 540000, 580000, 620000, 660000],
-        ),
-        DemoProfile(
-          id: 'familia',
-          name: 'Familia',
-          opening: 612340,
-          income: 1150000,
-          expenses: 890000,
-          debt: 220000,
-          indicators: [
-            Indicator(label: 'Saldo mínimo', value: '\$652.340', detail: 'nov 2026', explanation: 'El saldo al cierre más bajo de los próximos 12 meses.'),
-            Indicator(label: 'Mes de quiebre', value: 'No ocurre', detail: '12 meses', explanation: 'Primer mes en que el saldo al cierre quedaría bajo \$0.'),
-          ],
-          closings: _base,
-        ),
-        DemoProfile(
-          id: 'profesional',
-          name: 'Profesional con deudas',
-          opening: 950000,
-          income: 2100000,
-          expenses: 1450000,
-          debt: 780000,
-          indicators: [
-            Indicator(label: 'Saldo mínimo', value: '−\$610.000', detail: 'oct 2027', explanation: 'El saldo al cierre más bajo de los próximos 12 meses.'),
-            Indicator(label: 'Mes de quiebre', value: 'jun 2027', detail: 'primer mes bajo \$0', explanation: 'Primer mes en que el saldo al cierre quedaría bajo \$0.'),
-          ],
-          closings: [820000, 690000, 560000, 430000, 300000, 170000, 40000, -90000, -220000, -350000, -480000, -610000],
-        ),
-      ];
 }

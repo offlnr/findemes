@@ -18,7 +18,6 @@ abstract interface class FinanceRepository {
   Future<Household> household();
   Future<Subscription> subscription();
   Future<List<DeviceSession>> deviceSessions();
-  Future<List<DemoProfile>> demoProfiles();
 }
 
 final financeRepositoryProvider = Provider<FinanceRepository>((ref) => const DemoFinanceRepository());
@@ -36,4 +35,3 @@ final compareProvider = FutureProvider.family<Comparison, String>(
 final householdProvider = FutureProvider<Household>((ref) => ref.watch(financeRepositoryProvider).household());
 final subscriptionProvider = FutureProvider<Subscription>((ref) => ref.watch(financeRepositoryProvider).subscription());
 final deviceSessionsProvider = FutureProvider<List<DeviceSession>>((ref) => ref.watch(financeRepositoryProvider).deviceSessions());
-final demoProfilesProvider = FutureProvider<List<DemoProfile>>((ref) => ref.watch(financeRepositoryProvider).demoProfiles());

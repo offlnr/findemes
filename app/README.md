@@ -10,10 +10,15 @@ La app no calcula nada (CLAUDE.md, regla 8). Lee todo a través de `FinanceRepos
 rotulados como demostración. Cuando exista el cliente generado desde `docs/openapi.yaml`, se
 reemplaza el proveedor `financeRepositoryProvider`.
 
+El modo demostración (`#/demo`, HU27-HU28) ya usa la API real (`lib/data/demo_api.dart`):
+`GET /v1/demo/examples` y `POST /v1/demo/projection`. La URL se fija al compilar con
+`--dart-define=API_BASE_URL=...` (por defecto `http://localhost:3000`); la API debe incluir el
+origen de la app en `CORS_ORIGINS`.
+
 ## Comandos
 ```
 flutter pub get
-flutter run -d chrome          # o: flutter run -d web-server
+flutter run -d chrome          # o: flutter run -d web-server --web-port 8080
 flutter test
 flutter analyze
 flutter build web
