@@ -2,6 +2,7 @@ import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import { registerErrorHandling } from '../http/error-handling.ts';
 import type { Clock } from '../modules/shared/ports.ts';
@@ -12,6 +13,8 @@ export interface PublicApiOptions extends Omit<V1RoutesOptions, 'clock'> {
   readonly clock: Clock;
   /** Exact browser origins of the web app; empty means no cross-origin access. */
   readonly corsOrigins?: readonly string[];
+  /** Interactive documentation at /docs to try every route (development and integration only). */
+  readonly docs?: boolean;
 }
 
 /** Requests in this API are small JSON documents. */
@@ -26,7 +29,7 @@ const OPENAPI_INFO = {
 
 /** Builds the public REST API. Contains no administrative route (rule 9). */
 export async function buildPublicApi(options: PublicApiOptions): Promise<FastifyInstance> {
-  const { logger, corsOrigins, ...modules } = options;
+  const { logger, corsOrigins, docs, ...modules } = options;
   const app = Fastify({
     logger,
     bodyLimit: BODY_LIMIT_BYTES,
@@ -41,6 +44,10 @@ export async function buildPublicApi(options: PublicApiOptions): Promise<Fastify
       components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } } },
     },
   });
+
+  if (docs === true) {
+    await app.register(swaggerUi, { routePrefix: '/docs', uiConfig: { docExpansion: 'list', persistAuthorization: false } });
+  }
 
   registerErrorHandling(app);
   await app.register(cookie);

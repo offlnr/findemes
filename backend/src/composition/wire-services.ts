@@ -18,6 +18,8 @@ import { argon2PasswordHasher } from '../adapters/crypto/argon2-password-hasher.
 import { createAccessTokenService } from '../adapters/crypto/jose-access-tokens.ts';
 import { createSecretTools } from '../adapters/crypto/node-secret-tools.ts';
 import { createDevOutboxEmailSender } from '../adapters/email/dev-outbox-email-sender.ts';
+import { createSmtpEmailSender } from '../adapters/email/smtp-email-sender.ts';
+import type { EmailConfig } from './email-config.ts';
 import { createPgHouseholdStore } from '../adapters/postgres/pg-household-store.ts';
 import { createPgIdentityStores } from '../adapters/postgres/pg-identity-stores.ts';
 import { createPgRegistryStore } from '../adapters/postgres/pg-registry-store.ts';
@@ -30,7 +32,6 @@ import { ScenarioService } from '../modules/scenarios/application/scenario-servi
 import { SESSION_POLICY } from '../modules/identity/domain/session-policy.ts';
 import type { EmailSender } from '../modules/notifications/ports/notification-ports.ts';
 import type { Clock } from '../modules/shared/ports.ts';
-import type { ServiceConfig } from './config.ts';
 import type { IdentityConfig } from './identity-config.ts';
 
 export const JWT_ISSUER = 'findemes-api';
@@ -54,20 +55,14 @@ export interface WiredServices {
 
 /** Composition root of the database-backed modules: connects their ports with the adapters. */
 export async function wireServices(
-  service: ServiceConfig,
   config: IdentityConfig,
   payments: PaymentsConfig,
   bank: BankConfig,
+  emailConfig: EmailConfig,
   clock: Clock,
 ): Promise<WiredServices> {
-  let email: EmailSender;
-  if (service.environment === 'development') {
-    email = createDevOutboxEmailSender(DEV_OUTBOX);
-  } else {
-    // Amazon SES is the transactional provider (CLAUDE.md); until its adapter exists, identity
-    // cannot run outside development rather than silently not sending emails.
-    throw new Error('Identity needs the Amazon SES email adapter outside development');
-  }
+  const email: EmailSender =
+    emailConfig.transport === 'outbox' ? createDevOutboxEmailSender(DEV_OUTBOX) : createSmtpEmailSender(emailConfig.smtp);
 
   const pool = createPgPool(config.databaseUrl);
   const runner = createPgTransactionRunner(pool);
