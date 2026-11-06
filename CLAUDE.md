@@ -115,6 +115,9 @@ Ver `docs/adr/001-technical-stack.md`.
   `pnpm --filter @findemes/landing dev` (landing en http://localhost:4322; enlaces a la app según
   `PUBLIC_APP_URL`, ver `landing/.env.example`),
   `openapi:generate` tras cambiar una ruta (una prueba falla si `docs/openapi.yaml` queda desfasado).
+- Entornos de prueba de cada integración (Webpay integración, Fintoc `sk_test_`, Mailpit, Swagger UI en
+  `/docs` de ambas API) y cómo levantar todo: `docs/entornos-de-prueba.md`. En `backend/`: `pnpm smoke`
+  (Webpay, Fintoc y correo), `pnpm dev:admin-api` y `pnpm admin:create <correo>` (rol con TOTP).
 - Base de datos: `docker compose up -d`, luego en `backend/`: `pnpm db:migrate` (aplica migraciones y
   crea los roles de login con los valores de `.env.local`; ver `.env.example`) y `pnpm test:db`
   (pruebas de integración con RLS real). Modelo y roles en `docs/adr/003-data-model-and-database-security.md`.

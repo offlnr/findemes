@@ -184,7 +184,8 @@ export const subscriptionRoutes: FastifyPluginCallback<SubscriptionRoutesOptions
       outcome = await subscriptions.handleReturn(params);
     } catch (error) {
       // Transbank unreachable: the order stays open for reconciliation (HU26).
-      app.log.error({ err: error }, 'webpay return could not be confirmed');
+      // Only the error type: a network error could carry the URL, which includes the token.
+      app.log.error({ provider_error: error instanceof Error ? error.name : 'unknown' }, 'webpay return could not be confirmed');
       outcome = 'pendiente';
     }
     noStore(reply);
