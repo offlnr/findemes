@@ -11,7 +11,8 @@
     "depcruise": "depcruise src test --config .dependency-cruiser.cjs",
     "test": "vitest run --coverage",
     "test:core": "vitest run src/core --coverage",
-    "test:db": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run --config vitest.db.config.ts"
+    "test:db": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run --config vitest.db.config.ts",
+    "smoke:webpay": "node src/composition/smoke/webpay-smoke.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",

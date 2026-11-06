@@ -4430,14 +4430,391 @@ paths:
                     type: string
                   message:
                     type: string
+  /v1/plans:
+    get:
+      summary: Planes y sus capacidades (HU18, HU30, Tabla 13)
+      tags: &a7
+        - planes y pagos
+      description: Sin sesión. El sistema no destaca ningún plan como preferible.
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - plans
+                properties:
+                  plans:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - code
+                        - name
+                        - priceClp
+                        - periodMonths
+                        - capabilities
+                      properties:
+                        code:
+                          type: string
+                          enum:
+                            - free
+                            - paid
+                            - family
+                        name:
+                          type: string
+                        priceClp:
+                          anyOf:
+                            - type: integer
+                            - type: "null"
+                          description: Precio mensual en pesos; null en el plan gratuito.
+                        periodMonths:
+                          type: integer
+                        capabilities:
+                          type: array
+                          description: Tabla 13, en lenguaje claro. Cada capacidad limitada indica el
+                            límite (HU30).
+                          items:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - label
+                              - included
+                              - detail
+                            properties:
+                              label:
+                                type: string
+                              included:
+                                type: boolean
+                              detail:
+                                type: string
+  /v1/subscription:
+    get:
+      summary: Mi plan y el estado de mi suscripción (HU18, HU20, Tabla 14)
+      tags: *a7
+      security: &a8
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - plan
+                  - state
+                  - periodEnd
+                  - cancelAtPeriodEnd
+                  - capabilities
+                  - latestPayment
+                properties:
+                  plan:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - code
+                      - name
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - free
+                          - paid
+                          - family
+                      name:
+                        type: string
+                  state:
+                    type: string
+                    enum:
+                      - gratuito
+                      - pendiente
+                      - activa
+                      - por_vencer
+                      - vencida
+                      - fallida
+                      - cancelada
+                  periodEnd:
+                    anyOf:
+                      - type: string
+                        format: date
+                      - type: "null"
+                    description: Último día de acceso es el anterior a esta fecha.
+                  cancelAtPeriodEnd:
+                    type: boolean
+                  capabilities:
+                    type: array
+                    description: Tabla 13, en lenguaje claro. Cada capacidad limitada indica el
+                      límite (HU30).
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - label
+                        - included
+                        - detail
+                      properties:
+                        label:
+                          type: string
+                        included:
+                          type: boolean
+                        detail:
+                          type: string
+                  latestPayment:
+                    anyOf:
+                      - type: object
+                        additionalProperties: false
+                        required:
+                          - buyOrder
+                          - planCode
+                          - amount
+                          - status
+                          - createdAt
+                        properties:
+                          buyOrder:
+                            type: string
+                          planCode:
+                            type: string
+                          amount:
+                            type: integer
+                          status:
+                            type: string
+                            enum:
+                              - created
+                              - authorized
+                              - rejected
+                              - aborted
+                              - amount_mismatch
+                          createdAt:
+                            type: string
+                            format: date-time
+                      - type: "null"
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/subscription/checkout:
+    post:
+      summary: Contratar un plan con Webpay Plus (HU19)
+      tags: *a7
+      description: Crea la orden y la transacción en Webpay (ambiente de integración
+        durante el proyecto). La app redirige al navegador a redirectUrl; el
+        plan se activa cuando el backend confirma con Transbank.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - plan
+              properties:
+                plan:
+                  type: string
+                  enum:
+                    - paid
+                    - family
+      security: *a8
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - redirectUrl
+                  - buyOrder
+                properties:
+                  redirectUrl:
+                    type: string
+                  buyOrder:
+                    type: string
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/subscription/cancel:
+    post:
+      summary: Cancelar la renovación (Tabla 14, Cancelada)
+      tags: *a7
+      description: El acceso continúa hasta el término del período pagado. No se
+        eliminan datos (HU20).
+      security: *a8
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - cancelled
+                properties:
+                  cancelled:
+                    type: boolean
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/payments/webpay/return:
+    get:
+      summary: Retorno desde Webpay Plus (HU19)
+      tags: *a7
+      description: Lo llama el navegador al volver de Transbank. Confirma la
+        transacción desde el servidor y redirige a la app con el resultado.
+      parameters:
+        - schema:
+            type: string
+            maxLength: 128
+          in: query
+          name: token_ws
+          required: false
+        - schema:
+            type: string
+            maxLength: 128
+          in: query
+          name: TBK_TOKEN
+          required: false
+        - schema:
+            type: string
+            maxLength: 26
+          in: query
+          name: TBK_ORDEN_COMPRA
+          required: false
+        - schema:
+            type: string
+            maxLength: 61
+          in: query
+          name: TBK_ID_SESION
+          required: false
+      responses:
+        "303":
+          description: Redirección a la pantalla de resultado de la app.
+    post:
+      summary: Retorno desde Webpay Plus (HU19)
+      tags: *a7
+      description: Lo llama el navegador al volver de Transbank. Confirma la
+        transacción desde el servidor y redirige a la app con el resultado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                token_ws:
+                  type: string
+                  maxLength: 128
+                TBK_TOKEN:
+                  type: string
+                  maxLength: 128
+                TBK_ORDEN_COMPRA:
+                  type: string
+                  maxLength: 26
+                TBK_ID_SESION:
+                  type: string
+                  maxLength: 61
+      responses:
+        "303":
+          description: Redirección a la pantalla de resultado de la app.
   /v1/household:
     get:
       summary: "Mi hogar: integrantes, gastos comunes y mi aporte (HU12-HU15)"
-      tags: &a7
+      tags: &a9
         - hogar
       description: household es null si no perteneces a un hogar. No incluye datos
         individuales de ningún integrante.
-      security: &a8
+      security: &a10
         - bearerAuth: []
       responses:
         "200":
@@ -4691,7 +5068,7 @@ paths:
                     type: string
     post:
       summary: Crear un hogar (HU12)
-      tags: *a7
+      tags: *a9
       description: Quien lo crea queda como administrador. Requiere el plan Familiar
         (Tabla 13).
       requestBody:
@@ -4713,7 +5090,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 80
-      security: *a8
+      security: *a10
       responses:
         "201":
           description: Default Response
@@ -4823,9 +5200,9 @@ paths:
   /v1/household/invitations:
     post:
       summary: Generar un enlace de invitación (HU12, HU31)
-      tags: *a7
+      tags: *a9
       description: Enlace de un solo uso con vigencia de 7 días. Solo el administrador.
-      security: *a8
+      security: *a10
       responses:
         "201":
           description: Default Response
@@ -4938,7 +5315,7 @@ paths:
   /v1/household/invitations/preview:
     post:
       summary: Ver una invitación antes de aceptarla (HU31)
-      tags: *a7
+      tags: *a9
       description: Sin sesión. Informa el nombre del hogar, cuántos integrantes tiene,
         qué será visible y qué permanece privado.
       requestBody:
@@ -5035,7 +5412,7 @@ paths:
   /v1/household/invitations/accept:
     post:
       summary: Aceptar una invitación (HU12, HU31)
-      tags: *a7
+      tags: *a9
       requestBody:
         required: true
         content:
@@ -5055,7 +5432,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 80
-      security: *a8
+      security: *a10
       responses:
         "200":
           description: Default Response
@@ -5165,7 +5542,7 @@ paths:
   /v1/household/members/{userId}:
     delete:
       summary: Remover un integrante o salir del hogar (HU12)
-      tags: *a7
+      tags: *a9
       description: El administrador remueve integrantes; cualquier integrante puede
         salir indicando su propio id.
       parameters:
@@ -5175,7 +5552,7 @@ paths:
           in: path
           name: userId
           required: true
-      security: *a8
+      security: *a10
       responses:
         "204":
           description: Default Response
@@ -5274,7 +5651,7 @@ paths:
   /v1/household/expenses:
     post:
       summary: Registrar un gasto común (HU13, HU14)
-      tags: *a7
+      tags: *a9
       requestBody:
         required: true
         content:
@@ -5419,7 +5796,7 @@ paths:
                                 type: integer
                                 minimum: 1
                                 maximum: 10000
-      security: *a8
+      security: *a10
       responses:
         "201":
           description: Default Response
@@ -5529,7 +5906,7 @@ paths:
   /v1/household/expenses/{id}:
     put:
       summary: Modificar un gasto común o su regla de aporte (HU13, HU14)
-      tags: *a7
+      tags: *a9
       description: Quien lo registró o el administrador. Solo el administrador cambia
         la regla de aporte.
       requestBody:
@@ -5683,7 +6060,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a8
+      security: *a10
       responses:
         "200":
           description: Default Response
@@ -5792,7 +6169,7 @@ paths:
                     type: string
     delete:
       summary: Eliminar un gasto común (HU13)
-      tags: *a7
+      tags: *a9
       parameters:
         - schema:
             type: string
@@ -5800,7 +6177,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a8
+      security: *a10
       responses:
         "204":
           description: Default Response

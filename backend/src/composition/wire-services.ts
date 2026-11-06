@@ -1,4 +1,8 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import { createWebpayPlusGateway } from '../adapters/webpay/webpay-plus-gateway.ts';
+import { createPgSubscriptionStore } from '../adapters/postgres/pg-subscription-store.ts';
+import { SubscriptionService } from '../modules/subscription/application/subscription-service.ts';
+import type { PaymentsConfig } from './payments-config.ts';
 import type { AuthRoutesOptions } from '../api/v1/auth-routes.ts';
 import { loadBreachedPasswordList } from '../adapters/breached-passwords/breached-password-list.ts';
 import { argon2PasswordHasher } from '../adapters/crypto/argon2-password-hasher.ts';
@@ -26,15 +30,19 @@ export const JWT_AUDIENCE = 'findemes-app';
 const DEV_OUTBOX = new URL('../../.outbox/', import.meta.url);
 
 export interface WiredServices {
-  readonly auth: AuthRoutesOptions;
-  readonly registry: RegistryService;
-  readonly scenarios: ScenarioService;
-  readonly households: HouseholdService;
+  /** Everything the public API mounts under /v1. */
+  readonly modules: {
+    readonly auth: AuthRoutesOptions;
+    readonly registry: RegistryService;
+    readonly scenarios: ScenarioService;
+    readonly households: HouseholdService;
+    readonly subscriptions: { readonly service: SubscriptionService; readonly appBaseUrl: string };
+  };
   close(): Promise<void>;
 }
 
 /** Composition root of the database-backed modules: connects their ports with the adapters. */
-export async function wireServices(service: ServiceConfig, config: IdentityConfig, clock: Clock): Promise<WiredServices> {
+export async function wireServices(service: ServiceConfig, config: IdentityConfig, payments: PaymentsConfig, clock: Clock): Promise<WiredServices> {
   let email: EmailSender;
   if (service.environment === 'development') {
     email = createDevOutboxEmailSender(DEV_OUTBOX);
@@ -74,13 +82,28 @@ export async function wireServices(service: ServiceConfig, config: IdentityConfi
   const plans = createPgPlanReader(runner);
   const households = new HouseholdService({ households: createPgHouseholdStore(runner), plans, secrets, ids, clock, appBaseUrl: config.appBaseUrl });
 
+  const subscriptionStore = createPgSubscriptionStore(runner);
+  const subscriptions = new SubscriptionService({
+    store: subscriptionStore,
+    settlement: subscriptionStore,
+    canceller: subscriptionStore,
+    gateway: createWebpayPlusGateway(payments.webpay),
+    plans,
+    clock,
+    randomHex: () => randomBytes(16).toString('hex'),
+    apiPublicUrl: payments.apiPublicUrl,
+  });
+
   return {
-    // Secure cookies also work on http://localhost: browsers treat it as a secure context.
-    auth: { identity, accessTokens, accounts: stores.accounts, secureCookies: true },
-    // HU15: the household contribution enters the projection and the scenarios.
-    registry: new RegistryService(registryStore, ids, households),
-    scenarios: new ScenarioService({ scenarios: createPgScenarioStore(runner), registry: registryStore, plans, ids, commitments: households }),
-    households,
+    modules: {
+      // Secure cookies also work on http://localhost: browsers treat it as a secure context.
+      auth: { identity, accessTokens, accounts: stores.accounts, secureCookies: true },
+      // HU15: the household contribution enters the projection and the scenarios.
+      registry: new RegistryService(registryStore, ids, households),
+      scenarios: new ScenarioService({ scenarios: createPgScenarioStore(runner), registry: registryStore, plans, ids, commitments: households }),
+      households,
+      subscriptions: { service: subscriptions, appBaseUrl: config.appBaseUrl },
+    },
     close: () => pool.end(),
   };
 }

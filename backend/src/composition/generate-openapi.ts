@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { buildPublicApi } from '../api/build-public-api.ts';
 import type { AuthServices } from '../api/v1/auth-routes.ts';
 import type { HouseholdService } from '../modules/household/application/household-service.ts';
+import type { SubscriptionService } from '../modules/subscription/application/subscription-service.ts';
 import type { RegistryService } from '../modules/registry/application/registry-service.ts';
 import type { ScenarioService } from '../modules/scenarios/application/scenario-service.ts';
 
@@ -27,6 +28,7 @@ export async function renderOpenApi(): Promise<string> {
     registry: notWired as RegistryService,
     scenarios: notWired as ScenarioService,
     households: notWired as HouseholdService,
+    subscriptions: { service: notWired as SubscriptionService, appBaseUrl: 'http://localhost:8080' },
     auth: { identity: notWired as AuthServices['identity'], accessTokens: notWired as AuthServices['accessTokens'], accounts: notWired as AuthServices['accounts'], secureCookies: true },
   });
   try {
