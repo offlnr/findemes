@@ -7,10 +7,10 @@ import { clientOf } from './pg-transaction-runner.ts';
 
 // Months travel as 'YYYY-MM' text and are stored as the first day of the month (app.month), so
 // the driver's time zone handling of DATE never shifts a month.
-const MONTH = (column: string) => `to_char(${column}, 'YYYY-MM')`;
-const toDate = (param: string) => `(${param} || '-01')::date`;
+export const MONTH = (column: string) => `to_char(${column}, 'YYYY-MM')`;
+export const toDate = (param: string) => `(${param} || '-01')::date`;
 
-interface ScheduleRow {
+export interface ScheduleRow {
   id: string;
   label: string;
   amount: string;
@@ -20,7 +20,7 @@ interface ScheduleRow {
   until_month: string | null;
 }
 
-function scheduleOf(row: ScheduleRow): Schedule {
+export function scheduleOf(row: ScheduleRow): Schedule {
   const from = parseYearMonth(row.from_month);
   const until = row.until_month === null ? null : parseYearMonth(row.until_month);
   switch (row.schedule_kind) {
@@ -34,7 +34,7 @@ function scheduleOf(row: ScheduleRow): Schedule {
 }
 
 /** Columns of a schedule: a single month is stored as from_month with no end. */
-function scheduleColumns(schedule: Schedule): [Schedule['kind'], number | null, string, string | null] {
+export function scheduleColumns(schedule: Schedule): [Schedule['kind'], number | null, string, string | null] {
   if (schedule.kind === 'once') return ['once', null, formatYearMonth(schedule.month), null];
   const until = schedule.until === null ? null : formatYearMonth(schedule.until);
   return [schedule.kind, schedule.kind === 'every_n_months' ? schedule.intervalMonths : null, formatYearMonth(schedule.from), until];

@@ -5,19 +5,13 @@ import swagger from '@fastify/swagger';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import { registerErrorHandling } from '../http/error-handling.ts';
 import type { Clock } from '../modules/shared/ports.ts';
-import type { RegistryService } from '../modules/registry/application/registry-service.ts';
-import type { ScenarioService } from '../modules/scenarios/application/scenario-service.ts';
-import type { AuthRoutesOptions } from './v1/auth-routes.ts';
-import { v1Routes } from './v1/routes.ts';
+import { v1Routes, type V1RoutesOptions } from './v1/routes.ts';
 
-export interface PublicApiOptions {
+export interface PublicApiOptions extends Omit<V1RoutesOptions, 'clock'> {
   readonly logger: NonNullable<FastifyServerOptions['logger']>;
   readonly clock: Clock;
   /** Exact browser origins of the web app; empty means no cross-origin access. */
   readonly corsOrigins?: readonly string[];
-  readonly auth?: AuthRoutesOptions;
-  readonly registry?: RegistryService;
-  readonly scenarios?: ScenarioService;
 }
 
 /** Requests in this API are small JSON documents. */
@@ -32,8 +26,9 @@ const OPENAPI_INFO = {
 
 /** Builds the public REST API. Contains no administrative route (rule 9). */
 export async function buildPublicApi(options: PublicApiOptions): Promise<FastifyInstance> {
+  const { logger, corsOrigins, ...modules } = options;
   const app = Fastify({
-    logger: options.logger,
+    logger,
     bodyLimit: BODY_LIMIT_BYTES,
     // Strict validation: unknown fields are rejected (not silently removed) and types are not coerced.
     ajv: { customOptions: { removeAdditional: false, coerceTypes: false } },
@@ -50,7 +45,7 @@ export async function buildPublicApi(options: PublicApiOptions): Promise<Fastify
   registerErrorHandling(app);
   await app.register(cookie);
   await app.register(cors, {
-    origin: [...(options.corsOrigins ?? [])],
+    origin: [...(corsOrigins ?? [])],
     // The web refresh token travels in an HttpOnly cookie (CLAUDE.md, Sesiones).
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -77,7 +72,7 @@ export async function buildPublicApi(options: PublicApiOptions): Promise<Fastify
     () => ({ status: 'ok' as const }),
   );
 
-  await app.register(v1Routes, { prefix: '/v1', clock: options.clock, ...(options.auth === undefined ? {} : { auth: options.auth }), ...(options.registry === undefined ? {} : { registry: options.registry }), ...(options.scenarios === undefined ? {} : { scenarios: options.scenarios }) });
+  await app.register(v1Routes, { prefix: '/v1', ...modules });
 
   return app;
 }

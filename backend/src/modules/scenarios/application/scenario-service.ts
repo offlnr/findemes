@@ -1,6 +1,6 @@
 import { createMvpCatalog, simulate, type DecisionInput, type DecisionIssue, type SimulationResult } from '../../../core/index.ts';
-import type { RegistryRepository } from '../../registry/ports/registry-ports.ts';
-import { toFinancialState } from '../../registry/domain/registry.ts';
+import { loadFinancialState } from '../../registry/application/registry-service.ts';
+import type { CommitmentSource, RegistryRepository } from '../../registry/ports/registry-ports.ts';
 import type { Actor } from '../../shared/actor.ts';
 import type { IdGenerator, WriteContext } from '../../shared/ports.ts';
 import type { PlanCapabilities, PlanReader } from '../../subscription/ports/subscription-ports.ts';
@@ -51,12 +51,14 @@ export class ScenarioService {
   private readonly registry: RegistryRepository;
   private readonly plans: PlanReader;
   private readonly ids: IdGenerator;
+  private readonly commitments: CommitmentSource | null;
 
-  constructor(deps: { scenarios: ScenarioRepository; registry: RegistryRepository; plans: PlanReader; ids: IdGenerator }) {
+  constructor(deps: { scenarios: ScenarioRepository; registry: RegistryRepository; plans: PlanReader; ids: IdGenerator; commitments?: CommitmentSource }) {
     this.scenarios = deps.scenarios;
     this.registry = deps.registry;
     this.plans = deps.plans;
     this.ids = deps.ids;
+    this.commitments = deps.commitments ?? null;
   }
 
   async list(actor: Actor): Promise<{ readonly scenarios: readonly Scenario[]; readonly plan: PlanCapabilities }> {
@@ -140,7 +142,7 @@ export class ScenarioService {
     decisions: readonly DecisionInput[],
     horizonMonths: number,
   ): Promise<{ ok: true; result: SimulationResult } | { ok: false; refusal: ScenarioRefusal }> {
-    const state = toFinancialState(await this.registry.load(actor));
+    const state = await loadFinancialState(this.registry, this.commitments, actor);
     if (state === null) return { ok: false, refusal: { reason: 'opening_balance_required' } };
     const outcome = simulate({ state, decisions, horizonMonths }, catalog);
     // Saved decisions can stop fitting the base (e.g. the debt they prepay was deleted).

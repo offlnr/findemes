@@ -6,6 +6,8 @@ import { registryRoutes } from './registry-routes.ts';
 import { scenarioRoutes } from './scenario-routes.ts';
 import type { ScenarioService } from '../../modules/scenarios/application/scenario-service.ts';
 import type { RegistryService } from '../../modules/registry/application/registry-service.ts';
+import type { HouseholdService } from '../../modules/household/application/household-service.ts';
+import { householdRoutes } from './household-routes.ts';
 
 export interface V1RoutesOptions {
   readonly clock: Clock;
@@ -14,6 +16,7 @@ export interface V1RoutesOptions {
   /** Registry and projection routes; they need identity for the session. */
   readonly registry?: RegistryService;
   readonly scenarios?: ScenarioService;
+  readonly households?: HouseholdService;
 }
 
 /**
@@ -29,6 +32,9 @@ export const v1Routes: FastifyPluginAsync<V1RoutesOptions> = async (app, options
     }
     if (options.scenarios !== undefined) {
       await app.register(scenarioRoutes, { scenarios: options.scenarios, accessTokens: options.auth.accessTokens });
+    }
+    if (options.households !== undefined) {
+      await app.register(householdRoutes, { households: options.households, accessTokens: options.auth.accessTokens });
     }
   }
 };

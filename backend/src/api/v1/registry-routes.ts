@@ -1,5 +1,5 @@
 import type { FastifyPluginCallback, FastifyReply, FastifyRequest } from 'fastify';
-import { compareYearMonth, formatYearMonth, parseYearMonth, type Schedule } from '../../core/index.ts';
+import { compareYearMonth, formatYearMonth, parseYearMonth } from '../../core/index.ts';
 import type { AccessTokenService } from '../../modules/identity/ports/identity-ports.ts';
 import { PROJECTION_HORIZON, type EntryInput, type RegistryService, type WriteResult } from '../../modules/registry/application/registry-service.ts';
 import type { DebtInput, RegistryDebt, RegistryExpense, ScheduledEntry } from '../../modules/registry/domain/registry.ts';
@@ -7,6 +7,7 @@ import { currentMonth } from '../../modules/shared/current-month.ts';
 import type { Clock } from '../../modules/shared/ports.ts';
 import { noStore, requireActor } from './authenticate.ts';
 import { badRequestSchema } from './common-schemas.ts';
+import { amount, id, label, month, scheduleFromJson, scheduleSchema, scheduleToJson, strict, type ScheduleJson } from './schedule-schema.ts';
 import { explanationSchema, outcomeSchema, outcomeView } from './simulation-view.ts';
 
 export interface RegistryRoutesOptions {
@@ -19,25 +20,6 @@ const TAGS = ['registro financiero'];
 const security = [{ bearerAuth: [] }];
 
 // ---- Schemas ----
-
-const month = { type: 'string', pattern: '^\\d{4}-(0[1-9]|1[0-2])$', examples: ['2026-11'] } as const;
-const nullableMonth = { anyOf: [month, { type: 'null' }] } as const;
-const amount = { type: 'integer', minimum: 1, maximum: 1_000_000_000_000 } as const;
-const label = { type: 'string', minLength: 1, maxLength: 80 } as const;
-const id = { type: 'string', format: 'uuid' } as const;
-
-function strict(properties: Record<string, unknown>, required: string[] = Object.keys(properties)) {
-  return { type: 'object', additionalProperties: false, required, properties } as const;
-}
-
-const scheduleSchema = {
-  description: 'Periodicidad (HU01): un solo mes, todos los meses o cada N meses desde el mes de inicio. until null = sin término.',
-  oneOf: [
-    strict({ kind: { type: 'string', enum: ['once'] }, month }),
-    strict({ kind: { type: 'string', enum: ['monthly'] }, from: month, until: nullableMonth }),
-    strict({ kind: { type: 'string', enum: ['every_n_months'] }, intervalMonths: { type: 'integer', minimum: 2, maximum: 24 }, from: month, until: nullableMonth }),
-  ],
-} as const;
 
 const nature = { type: 'string', enum: ['fixed', 'variable_estimate'], description: 'Gasto fijo recurrente o gasto variable estimado (HU02).' } as const;
 const incomeBody = strict({ label, amount, schedule: scheduleSchema });
@@ -70,43 +52,6 @@ const created = strict({ id });
 const idParams = strict({ id });
 
 // ---- Mapping ----
-
-type ScheduleJson =
-  | { kind: 'once'; month: string }
-  | { kind: 'monthly'; from: string; until: string | null }
-  | { kind: 'every_n_months'; intervalMonths: number; from: string; until: string | null };
-
-function scheduleFromJson(json: ScheduleJson): Schedule {
-  switch (json.kind) {
-    case 'once':
-      return { kind: 'once', month: parseYearMonth(json.month) };
-    case 'monthly':
-      return { kind: 'monthly', from: parseYearMonth(json.from), until: json.until === null ? null : parseYearMonth(json.until) };
-    case 'every_n_months':
-      return {
-        kind: 'every_n_months',
-        intervalMonths: json.intervalMonths,
-        from: parseYearMonth(json.from),
-        until: json.until === null ? null : parseYearMonth(json.until),
-      };
-  }
-}
-
-function scheduleToJson(schedule: Schedule): ScheduleJson {
-  switch (schedule.kind) {
-    case 'once':
-      return { kind: 'once', month: formatYearMonth(schedule.month) };
-    case 'monthly':
-      return { kind: 'monthly', from: formatYearMonth(schedule.from), until: schedule.until === null ? null : formatYearMonth(schedule.until) };
-    case 'every_n_months':
-      return {
-        kind: 'every_n_months',
-        intervalMonths: schedule.intervalMonths,
-        from: formatYearMonth(schedule.from),
-        until: schedule.until === null ? null : formatYearMonth(schedule.until),
-      };
-  }
-}
 
 interface EntryJson {
   label: string;

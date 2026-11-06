@@ -5,10 +5,12 @@ import { argon2PasswordHasher } from '../adapters/crypto/argon2-password-hasher.
 import { createAccessTokenService } from '../adapters/crypto/jose-access-tokens.ts';
 import { createSecretTools } from '../adapters/crypto/node-secret-tools.ts';
 import { createDevOutboxEmailSender } from '../adapters/email/dev-outbox-email-sender.ts';
+import { createPgHouseholdStore } from '../adapters/postgres/pg-household-store.ts';
 import { createPgIdentityStores } from '../adapters/postgres/pg-identity-stores.ts';
 import { createPgRegistryStore } from '../adapters/postgres/pg-registry-store.ts';
 import { createPgPlanReader, createPgScenarioStore } from '../adapters/postgres/pg-scenario-store.ts';
 import { createPgPool, createPgTransactionRunner } from '../adapters/postgres/pg-transaction-runner.ts';
+import { HouseholdService } from '../modules/household/application/household-service.ts';
 import { IdentityService } from '../modules/identity/application/identity-service.ts';
 import { RegistryService } from '../modules/registry/application/registry-service.ts';
 import { ScenarioService } from '../modules/scenarios/application/scenario-service.ts';
@@ -27,6 +29,7 @@ export interface WiredServices {
   readonly auth: AuthRoutesOptions;
   readonly registry: RegistryService;
   readonly scenarios: ScenarioService;
+  readonly households: HouseholdService;
   close(): Promise<void>;
 }
 
@@ -67,11 +70,17 @@ export async function wireServices(service: ServiceConfig, config: IdentityConfi
     dummyPasswordHash: await argon2PasswordHasher.hash(randomBytes(32).toString('base64url')),
   });
 
+  const secrets = createSecretTools(config.hmacKey);
+  const plans = createPgPlanReader(runner);
+  const households = new HouseholdService({ households: createPgHouseholdStore(runner), plans, secrets, ids, clock, appBaseUrl: config.appBaseUrl });
+
   return {
     // Secure cookies also work on http://localhost: browsers treat it as a secure context.
     auth: { identity, accessTokens, accounts: stores.accounts, secureCookies: true },
-    registry: new RegistryService(registryStore, ids),
-    scenarios: new ScenarioService({ scenarios: createPgScenarioStore(runner), registry: registryStore, plans: createPgPlanReader(runner), ids }),
+    // HU15: the household contribution enters the projection and the scenarios.
+    registry: new RegistryService(registryStore, ids, households),
+    scenarios: new ScenarioService({ scenarios: createPgScenarioStore(runner), registry: registryStore, plans, ids, commitments: households }),
+    households,
     close: () => pool.end(),
   };
 }

@@ -113,10 +113,10 @@ export function openingBalanceIssues(balance: OpeningBalance): RegistryIssue[] {
 }
 
 /**
- * Engine input built from the registry (HU01-HU04). The projection starts in the month of the
+ * Engine input built from the registry (HU01-HU04) plus outside commitments (HU15). The projection starts in the month of the
  * opening balance, which is where the user's real figures begin; `null` until it is registered.
  */
-export function toFinancialState(snapshot: RegistrySnapshot): FinancialState | null {
+export function toFinancialState(snapshot: RegistrySnapshot, commitments: readonly Expense[] = []): FinancialState | null {
   const balance = snapshot.openingBalance;
   if (balance === null) {
     return null;
@@ -125,9 +125,13 @@ export function toFinancialState(snapshot: RegistrySnapshot): FinancialState | n
     startMonth: balance.month,
     openingBalance: clp(balance.amount),
     incomes: snapshot.incomes.map((entry): Income => ({ id: entry.id as EntryId, label: entry.label, amount: clp(entry.amount), schedule: entry.schedule })),
-    expenses: snapshot.expenses.map(
-      (entry): Expense => ({ id: entry.id as EntryId, label: entry.label, nature: entry.nature, amount: clp(entry.amount), schedule: entry.schedule }),
-    ),
+    expenses: [
+      ...snapshot.expenses.map(
+        (entry): Expense => ({ id: entry.id as EntryId, label: entry.label, nature: entry.nature, amount: clp(entry.amount), schedule: entry.schedule }),
+      ),
+      // HU15: commitments from the household, after the user's own entries.
+      ...commitments,
+    ],
     debts: snapshot.debts.map(
       (debt): Debt => ({
         id: debt.id as EntryId,

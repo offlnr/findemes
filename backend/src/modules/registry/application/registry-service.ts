@@ -13,7 +13,7 @@ import {
   type RegistryIssue,
   type RegistrySnapshot,
 } from '../domain/registry.ts';
-import type { RegistryRepository, WriteContext } from '../ports/registry-ports.ts';
+import type { CommitmentSource, RegistryRepository, WriteContext } from '../ports/registry-ports.ts';
 
 export interface EntryInput {
   readonly label: string;
@@ -48,10 +48,12 @@ const invalid = (issues: readonly RegistryIssue[]): WriteResult => ({ ok: false,
 export class RegistryService {
   private readonly repository: RegistryRepository;
   private readonly ids: IdGenerator;
+  private readonly commitments: CommitmentSource | null;
 
-  constructor(repository: RegistryRepository, ids: IdGenerator) {
+  constructor(repository: RegistryRepository, ids: IdGenerator, commitments: CommitmentSource | null = null) {
     this.repository = repository;
     this.ids = ids;
+    this.commitments = commitments;
   }
 
   snapshot(actor: Actor): Promise<RegistrySnapshot> {
@@ -125,7 +127,7 @@ export class RegistryService {
 
   /** HU05 and HU39: projection of the registered state, recomputed on every read. */
   async projection(actor: Actor, horizonMonths: number = PROJECTION_HORIZON.default): Promise<ProjectionResult> {
-    const state = toFinancialState(await this.repository.load(actor));
+    const state = await loadFinancialState(this.repository, this.commitments, actor);
     if (state === null) {
       return { ok: false, reason: 'opening_balance_required' };
     }
@@ -136,6 +138,12 @@ export class RegistryService {
     }
     return { ok: true, state, horizonMonths, result: outcome.result };
   }
+}
+
+/** The registry plus outside commitments (HU15), as the engine input; `null` without opening balance. */
+export async function loadFinancialState(repository: RegistryRepository, commitments: CommitmentSource | null, actor: Actor): Promise<FinancialState | null> {
+  const [snapshot, extra] = await Promise.all([repository.load(actor), commitments === null ? [] : commitments.commitmentsFor(actor)]);
+  return toFinancialState(snapshot, extra);
 }
 
 function trimmed(input: EntryInput): EntryInput {

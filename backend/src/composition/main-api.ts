@@ -16,7 +16,7 @@ const app = await buildPublicApi({
   logger: loggerOptions(config),
   clock: systemClock,
   corsOrigins: config.corsOrigins,
-  ...(services === null ? {} : { auth: services.auth, registry: services.registry, scenarios: services.scenarios }),
+  ...(services === null ? {} : { auth: services.auth, registry: services.registry, scenarios: services.scenarios, households: services.households }),
 });
 if (services !== null) {
   app.addHook('onClose', () => services.close());
