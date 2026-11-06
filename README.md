@@ -69,10 +69,16 @@ los enlaces de la landing («Conectar mi banco», «Crear cuenta», «Entrar», 
 
 | Carpeta | Contenido |
 |---|---|
-| `backend/` | Motor de simulación (núcleo puro), módulos, adaptadores y API (Node.js + TypeScript) |
+| `backend/` | Motor de simulación (núcleo puro), módulos, adaptadores, API pública y API de administración (Node.js + TypeScript) |
+| `app/` | Aplicación Flutter (web, Android e iOS) conectada a la API pública |
+| `admin/` | Panel de administración (Flutter web) conectado a la API de administración |
+| `landing/` | Sitio público (Astro) |
 | `docs/` | OpenAPI, ADR, diagramas, diccionario de datos, KPI y SLA |
 | `prototype/` | Prototipo navegable de la app y landing de prueba |
 | `PRODUCT.md` | Contexto de producto: usuarios, propósito, principios y restricciones |
+
+Cómo levantar todo en local y el entorno de prueba de cada integración (Webpay, Fintoc, correo,
+documentación interactiva de ambas API): [`docs/entornos-de-prueba.md`](docs/entornos-de-prueba.md).
 
 Las reglas del proyecto y los comandos de desarrollo están en [`CLAUDE.md`](CLAUDE.md); el stack
 técnico, en [`docs/adr/001-technical-stack.md`](docs/adr/001-technical-stack.md).
