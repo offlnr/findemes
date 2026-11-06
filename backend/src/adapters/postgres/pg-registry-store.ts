@@ -54,8 +54,22 @@ export function createPgRegistryStore(runner: TransactionRunner): RegistryReposi
     );
   }
 
+  // KPI of the initial registration (migration 0010): started at the first registry write,
+  // completed once there is an opening balance and at least one income (HU01, HU04). Dates only.
+  const ONBOARDING = `
+    UPDATE app.users u SET
+      onboarding_started_at = coalesce(u.onboarding_started_at, now()),
+      onboarding_completed_at = coalesce(u.onboarding_completed_at,
+        CASE WHEN EXISTS (SELECT 1 FROM app.financial_profiles f WHERE f.owner_id = u.id)
+              AND EXISTS (SELECT 1 FROM app.incomes i WHERE i.owner_id = u.id) THEN now() END)
+    WHERE u.id = $1 AND (u.onboarding_started_at IS NULL OR u.onboarding_completed_at IS NULL)`;
+
   const write = <T>(context: WriteContext, work: (client: pg.PoolClient) => Promise<T>) =>
-    runner.withActor(context.actor, (tx) => work(clientOf(tx)));
+    runner.withActor(context.actor, async (tx) => {
+      const result = await work(clientOf(tx));
+      await clientOf(tx).query(ONBOARDING, [context.actor.userId]);
+      return result;
+    });
 
   function scheduled(table: 'incomes' | 'expenses', targetType: 'income' | 'expense') {
     const extraColumn = table === 'expenses' ? ', nature' : '';
