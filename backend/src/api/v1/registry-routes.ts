@@ -36,8 +36,13 @@ const debtBody = strict(
 );
 const balanceBody = strict({ amount: { type: 'integer', minimum: -1_000_000_000_000, maximum: 1_000_000_000_000 }, month });
 
-const incomeView = strict({ id, label, amount: { type: 'integer' }, schedule: scheduleSchema });
-const expenseView = strict({ id, label, amount: { type: 'integer' }, nature, schedule: scheduleSchema });
+const origin = {
+  type: 'string',
+  enum: ['provider_test', 'demo'],
+  description: 'Solo si el dato viene del modo de prueba del banco o del banco de demostración (HU36): la app lo rotula.',
+} as const;
+const incomeView = strict({ id, label, amount: { type: 'integer' }, schedule: scheduleSchema, origin }, ['id', 'label', 'amount', 'schedule']);
+const expenseView = strict({ id, label, amount: { type: 'integer' }, nature, schedule: scheduleSchema, origin }, ['id', 'label', 'amount', 'nature', 'schedule']);
 const debtView = strict({
   id,
   label,
@@ -117,7 +122,7 @@ export const registryRoutes: FastifyPluginCallback<RegistryRoutesOptions> = (app
         security,
         response: {
           200: strict({
-            openingBalance: { anyOf: [strict({ amount: { type: 'integer' }, month }), { type: 'null' }] },
+            openingBalance: { anyOf: [strict({ amount: { type: 'integer' }, month, origin }, ['amount', 'month']), { type: 'null' }] },
             incomes: { type: 'array', items: incomeView },
             expenses: { type: 'array', items: expenseView },
             debts: { type: 'array', items: debtView },
@@ -130,10 +135,20 @@ export const registryRoutes: FastifyPluginCallback<RegistryRoutesOptions> = (app
       const { actor } = await context(request);
       const snapshot = await registry.snapshot(actor);
       noStore(reply);
+      const origins = snapshot.origins ?? {};
+      const labelled = <T extends { id: string }>(entry: T) => (origins[entry.id] === undefined ? entry : { ...entry, origin: origins[entry.id] });
+      const balanceOrigin = origins['opening_balance'];
       return {
-        openingBalance: snapshot.openingBalance === null ? null : { amount: snapshot.openingBalance.amount, month: formatYearMonth(snapshot.openingBalance.month) },
-        incomes: snapshot.incomes.map(entryJson),
-        expenses: snapshot.expenses.map((expense: RegistryExpense) => ({ ...entryJson(expense), nature: expense.nature })),
+        openingBalance:
+          snapshot.openingBalance === null
+            ? null
+            : {
+                amount: snapshot.openingBalance.amount,
+                month: formatYearMonth(snapshot.openingBalance.month),
+                ...(balanceOrigin === undefined ? {} : { origin: balanceOrigin }),
+              },
+        incomes: snapshot.incomes.map((income) => labelled(entryJson(income))),
+        expenses: snapshot.expenses.map((expense: RegistryExpense) => labelled({ ...entryJson(expense), nature: expense.nature })),
         debts: snapshot.debts.map(debtJson),
       };
     },

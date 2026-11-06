@@ -16,6 +16,8 @@ export interface PrivacyDeps {
   readonly hasher: PasswordHasher;
   /** The actor's own password hash, to confirm an erasure. */
   readonly passwordHashOf: (actor: Actor) => Promise<string | null>;
+  /** Runs before the erasure, e.g. to revoke bank access at the provider (HU21, ADR-002). */
+  readonly beforeErase?: (actor: Actor) => Promise<void>;
 }
 
 /** HU21 and HU32: the user's rights over their personal data and the consents they gave. */
@@ -47,6 +49,7 @@ export class PrivacyService {
   async erase(context: WriteContext, password: string): Promise<'erased' | 'invalid_password'> {
     const hash = await this.deps.passwordHashOf(context.actor);
     if (hash === null || !(await this.deps.hasher.verify(hash, password))) return 'invalid_password';
+    await this.deps.beforeErase?.(context.actor);
     await this.deps.data.eraseForActor(context);
     return 'erased';
   }

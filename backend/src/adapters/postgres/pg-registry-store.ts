@@ -114,13 +114,15 @@ export function createPgRegistryStore(runner: TransactionRunner): RegistryReposi
         const client = clientOf(tx);
         const columns = `id, label, amount, schedule_kind, interval_months, ${MONTH('from_month')} AS from_month, ${MONTH('until_month')} AS until_month`;
         // One connection runs one query at a time, so these are awaited in sequence.
-        const balance = await client.query<{ opening_balance: string; balance_month: string }>(
-          `SELECT opening_balance, ${MONTH('balance_month')} AS balance_month FROM app.financial_profiles WHERE owner_id = $1`,
+        const balance = await client.query<{ opening_balance: string; balance_month: string; origin: string }>(
+          `SELECT opening_balance, ${MONTH('balance_month')} AS balance_month, origin FROM app.financial_profiles WHERE owner_id = $1`,
           [actor.userId],
         );
-        const incomeRows = await client.query<ScheduleRow>(`SELECT ${columns} FROM app.incomes WHERE owner_id = $1 ORDER BY created_at, id`, [actor.userId]);
-        const expenseRows = await client.query<ScheduleRow & { nature: RegistryExpense['nature'] }>(
-          `SELECT ${columns}, nature FROM app.expenses WHERE owner_id = $1 ORDER BY created_at, id`,
+        const incomeRows = await client.query<ScheduleRow & { origin: string }>(`SELECT ${columns}, origin FROM app.incomes WHERE owner_id = $1 ORDER BY created_at, id`, [
+          actor.userId,
+        ]);
+        const expenseRows = await client.query<ScheduleRow & { nature: RegistryExpense['nature']; origin: string }>(
+          `SELECT ${columns}, nature, origin FROM app.expenses WHERE owner_id = $1 ORDER BY created_at, id`,
           [actor.userId],
         );
         const debtRows = await client.query<{ id: string; label: string; total_installments: number | null }>(
@@ -134,7 +136,14 @@ export function createPgRegistryStore(runner: TransactionRunner): RegistryReposi
         const balanceRow = balance.rows[0];
         const openingBalance: OpeningBalance | null =
           balanceRow === undefined ? null : { amount: Number(balanceRow.opening_balance), month: parseYearMonth(balanceRow.balance_month) };
+        const origins: Record<string, 'provider_test' | 'demo'> = {};
+        const note = (key: string, origin: string | undefined) => {
+          if (origin === 'provider_test' || origin === 'demo') origins[key] = origin;
+        };
+        note('opening_balance', balanceRow?.origin);
+        for (const row of [...incomeRows.rows, ...expenseRows.rows]) note(row.id, row.origin);
         return {
+          ...(Object.keys(origins).length === 0 ? {} : { origins }),
           openingBalance,
           incomes: incomeRows.rows.map((row) => ({ id: row.id, label: row.label, amount: Number(row.amount), schedule: scheduleOf(row) })),
           expenses: expenseRows.rows.map((row) => ({ id: row.id, label: row.label, amount: Number(row.amount), nature: row.nature, schedule: scheduleOf(row) })),

@@ -5,6 +5,13 @@ import { SubscriptionService } from '../modules/subscription/application/subscri
 import type { PaymentsConfig } from './payments-config.ts';
 import { createPgPrivacyStore } from '../adapters/postgres/pg-privacy-store.ts';
 import { PrivacyService } from '../modules/privacy/application/privacy-service.ts';
+import { createAesGcmTokenCipher } from '../adapters/crypto/aes-gcm-token-cipher.ts';
+import { createDemoBankAggregator, demoLinkToken } from '../adapters/demo-bank/demo-bank.ts';
+import { DEMO_PROFILES } from '../adapters/demo-bank/profiles.ts';
+import { createFintocClient } from '../adapters/fintoc/fintoc-client.ts';
+import { createPgBankStore } from '../adapters/postgres/pg-bank-store.ts';
+import { AggregationService } from '../modules/aggregation/application/aggregation-service.ts';
+import type { BankConfig } from './bank-config.ts';
 import type { AuthRoutesOptions } from '../api/v1/auth-routes.ts';
 import { loadBreachedPasswordList } from '../adapters/breached-passwords/breached-password-list.ts';
 import { argon2PasswordHasher } from '../adapters/crypto/argon2-password-hasher.ts';
@@ -40,12 +47,19 @@ export interface WiredServices {
     readonly households: HouseholdService;
     readonly subscriptions: { readonly service: SubscriptionService; readonly appBaseUrl: string };
     readonly privacy: PrivacyService;
+    readonly aggregation: AggregationService;
   };
   close(): Promise<void>;
 }
 
 /** Composition root of the database-backed modules: connects their ports with the adapters. */
-export async function wireServices(service: ServiceConfig, config: IdentityConfig, payments: PaymentsConfig, clock: Clock): Promise<WiredServices> {
+export async function wireServices(
+  service: ServiceConfig,
+  config: IdentityConfig,
+  payments: PaymentsConfig,
+  bank: BankConfig,
+  clock: Clock,
+): Promise<WiredServices> {
   let email: EmailSender;
   if (service.environment === 'development') {
     email = createDevOutboxEmailSender(DEV_OUTBOX);
@@ -98,6 +112,16 @@ export async function wireServices(service: ServiceConfig, config: IdentityConfi
   });
 
   const privacyStore = createPgPrivacyStore(runner);
+  const fintoc = bank.fintoc === null ? null : createFintocClient(bank.fintoc);
+  const aggregation = new AggregationService({
+    store: createPgBankStore(runner),
+    ...(fintoc === null ? {} : { fintoc: { links: fintoc, aggregator: fintoc } }),
+    demo: { aggregator: createDemoBankAggregator(clock), profiles: DEMO_PROFILES.map(({ id, label }) => ({ id, label })), linkTokenOf: demoLinkToken },
+    cipher: createAesGcmTokenCipher(new Map([[1, bank.tokenKey]]), 1),
+    hasBankConsent: async (actor) => (await privacyStore.listForActor(actor)).some((consent) => consent.kind === 'bank_connection' && consent.withdrawnAt === null),
+    clock,
+    ids,
+  });
 
   return {
     modules: {
@@ -108,7 +132,10 @@ export async function wireServices(service: ServiceConfig, config: IdentityConfi
       scenarios: new ScenarioService({ scenarios: createPgScenarioStore(runner), registry: registryStore, plans, ids, commitments: households }),
       households,
       subscriptions: { service: subscriptions, appBaseUrl: config.appBaseUrl },
-      privacy: new PrivacyService({ data: privacyStore, consents: privacyStore, hasher: argon2PasswordHasher, passwordHashOf: (actor) => stores.accounts.passwordHash(actor) }),
+      aggregation,
+      privacy: new PrivacyService({ data: privacyStore, consents: privacyStore, hasher: argon2PasswordHasher, passwordHashOf: (actor) => stores.accounts.passwordHash(actor),
+        beforeErase: (actor) => aggregation.revokeAllAtProvider(actor),
+      }),
     },
     close: () => pool.end(),
   };

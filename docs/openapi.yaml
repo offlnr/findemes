@@ -1474,6 +1474,13 @@ paths:
                             pattern: ^\d{4}-(0[1-9]|1[0-2])$
                             examples:
                               - 2026-11
+                          origin:
+                            type: string
+                            enum:
+                              - provider_test
+                              - demo
+                            description: "Solo si el dato viene del modo de prueba del banco o del banco de
+                              demostración (HU36): la app lo rotula."
                       - type: "null"
                   incomes:
                     type: array
@@ -1565,6 +1572,13 @@ paths:
                                       examples:
                                         - 2026-11
                                     - type: "null"
+                        origin:
+                          type: string
+                          enum:
+                            - provider_test
+                            - demo
+                          description: "Solo si el dato viene del modo de prueba del banco o del banco de
+                            demostración (HU36): la app lo rotula."
                   expenses:
                     type: array
                     items:
@@ -1662,6 +1676,13 @@ paths:
                                       examples:
                                         - 2026-11
                                     - type: "null"
+                        origin:
+                          type: string
+                          enum:
+                            - provider_test
+                            - demo
+                          description: "Solo si el dato viene del modo de prueba del banco o del banco de
+                            demostración (HU36): la app lo rotula."
                   debts:
                     type: array
                     items:
@@ -5190,14 +5211,1053 @@ paths:
                     type: string
                   message:
                     type: string
+  /v1/bank/providers:
+    get:
+      summary: Formas de conectar un banco en este ambiente (HU36)
+      tags: &a11
+        - banco
+      security: &a12
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - fintoc
+                  - demoProfiles
+                properties:
+                  fintoc:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - available
+                      - mode
+                    properties:
+                      available:
+                        type: boolean
+                      mode:
+                        type: string
+                        enum:
+                          - test
+                  demoProfiles:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - id
+                        - label
+                      properties:
+                        id:
+                          type: string
+                        label:
+                          type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/bank/fintoc/link-intents:
+    post:
+      summary: Abrir el widget de Fintoc (HU36)
+      tags: *a11
+      description: Devuelve el token del widget y la llave pública. La clave del banco
+        se ingresa solo en el widget de Fintoc.
+      security: *a12
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - widgetToken
+                  - publicKey
+                properties:
+                  widgetToken:
+                    type: string
+                  publicKey:
+                    type: string
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "502":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "503":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/bank/links:
+    post:
+      summary: Conectar un banco y sincronizar sus movimientos (HU36)
+      tags: *a11
+      description: "Fintoc: con el exchange token que entrega el widget. Demostración:
+        con un perfil del banco de demostración. Requiere el consentimiento
+        bank_connection vigente."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: false
+                  required:
+                    - provider
+                    - exchangeToken
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - fintoc
+                    exchangeToken:
+                      type: string
+                      minLength: 1
+                      maxLength: 256
+                - type: object
+                  additionalProperties: false
+                  required:
+                    - provider
+                    - profileId
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - demo
+                    profileId:
+                      type: string
+                      minLength: 1
+                      maxLength: 64
+      security: *a12
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "502":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "503":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+    get:
+      summary: Mis bancos conectados y sus cuentas (HU36)
+      tags: *a11
+      security: *a12
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - links
+                properties:
+                  links:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - id
+                        - provider
+                        - institutionName
+                        - origin
+                        - status
+                        - connectedAt
+                        - lastSyncedAt
+                        - accounts
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        provider:
+                          type: string
+                          enum:
+                            - fintoc
+                            - demo
+                        institutionName:
+                          type: string
+                        origin:
+                          type: string
+                          enum:
+                            - real
+                            - provider_test
+                            - demo
+                          description: "real: datos del banco. provider_test: modo de prueba de Fintoc
+                            (datos ficticios). demo: banco de demostración. La
+                            app rotula lo que no es real."
+                        status:
+                          type: string
+                          enum:
+                            - active
+                            - revoked
+                        connectedAt:
+                          type: string
+                          format: date-time
+                        lastSyncedAt:
+                          anyOf:
+                            - type: string
+                              format: date-time
+                            - type: "null"
+                        accounts:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            required:
+                              - id
+                              - name
+                              - type
+                              - availableBalance
+                              - origin
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              name:
+                                type: string
+                              type:
+                                type: string
+                              availableBalance:
+                                type: integer
+                              origin:
+                                type: string
+                                enum:
+                                  - real
+                                  - provider_test
+                                  - demo
+                                description: "real: datos del banco. provider_test: modo de prueba de Fintoc
+                                  (datos ficticios). demo: banco de
+                                  demostración. La app rotula lo que no es
+                                  real."
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/bank/links/{id}/sync:
+    post:
+      summary: Sincronizar de nuevo un banco (HU36)
+      tags: *a11
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a12
+      responses:
+        "204":
+          description: Default Response
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "502":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "503":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/bank/links/{id}:
+    delete:
+      summary: Desconectar un banco (HU36, HU21)
+      tags: *a11
+      description: Revoca el acceso en Fintoc y borra sus cuentas y movimientos. Lo
+        que confirmaste en tu registro se mantiene.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a12
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/bank/movements:
+    get:
+      summary: Movimientos y totales por mes (HU36)
+      tags: *a11
+      description: Se muestran tal como llegan, con la suma de abonos y cargos de cada
+        mes. El sistema no clasifica ni califica movimientos.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: query
+          name: accountId
+          required: false
+        - schema:
+            type: string
+            pattern: ^([1-9]|1[0-2])$
+          in: query
+          name: months
+          required: false
+      security: *a12
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - movements
+                  - totals
+                properties:
+                  movements:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - id
+                        - accountId
+                        - postedOn
+                        - amount
+                        - description
+                        - origin
+                        - confirmedAs
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        accountId:
+                          type: string
+                          format: uuid
+                        postedOn:
+                          type: string
+                          format: date
+                        amount:
+                          type: integer
+                          description: Negativo = cargo; positivo = abono.
+                        description:
+                          type: string
+                          description: Texto del banco, sin interpretar.
+                        origin:
+                          type: string
+                          enum:
+                            - real
+                            - provider_test
+                            - demo
+                          description: "real: datos del banco. provider_test: modo de prueba de Fintoc
+                            (datos ficticios). demo: banco de demostración. La
+                            app rotula lo que no es real."
+                        confirmedAs:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - income
+                                - expense
+                            - type: "null"
+                  totals:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - month
+                        - credits
+                        - debits
+                      properties:
+                        month:
+                          type: string
+                        credits:
+                          type: integer
+                        debits:
+                          type: integer
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/bank/movements/{id}/confirm:
+    post:
+      summary: Confirmar un movimiento como recurrente (HU36, HU01, HU02)
+      tags: *a11
+      description: Un abono se agrega como ingreso y un cargo como gasto, todos los
+        meses desde el mes del movimiento si no se indica otra periodicidad.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - label
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                schedule:
+                  description: "Periodicidad (HU01): un solo mes, todos los meses o cada N meses
+                    desde el mes de inicio. until null = sin término."
+                  oneOf:
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - month
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - once
+                        month:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - monthly
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+                    - type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - intervalMonths
+                        - from
+                        - until
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - every_n_months
+                        intervalMonths:
+                          type: integer
+                          minimum: 2
+                          maximum: 24
+                        from:
+                          type: string
+                          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                          examples:
+                            - 2026-11
+                        until:
+                          anyOf:
+                            - type: string
+                              pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                              examples:
+                                - 2026-11
+                            - type: "null"
+                nature:
+                  type: string
+                  enum:
+                    - fixed
+                    - variable_estimate
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a12
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "502":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "503":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/bank/accounts/{id}/opening-balance:
+    post:
+      summary: Usar el saldo disponible de una cuenta como saldo inicial (HU04, HU36)
+      tags: *a11
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          in: path
+          name: id
+          required: true
+      security: *a12
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
   /v1/household:
     get:
       summary: "Mi hogar: integrantes, gastos comunes y mi aporte (HU12-HU15)"
-      tags: &a11
+      tags: &a13
         - hogar
       description: household es null si no perteneces a un hogar. No incluye datos
         individuales de ningún integrante.
-      security: &a12
+      security: &a14
         - bearerAuth: []
       responses:
         "200":
@@ -5451,7 +6511,7 @@ paths:
                     type: string
     post:
       summary: Crear un hogar (HU12)
-      tags: *a11
+      tags: *a13
       description: Quien lo crea queda como administrador. Requiere el plan Familiar
         (Tabla 13).
       requestBody:
@@ -5473,7 +6533,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 80
-      security: *a12
+      security: *a14
       responses:
         "201":
           description: Default Response
@@ -5583,9 +6643,9 @@ paths:
   /v1/household/invitations:
     post:
       summary: Generar un enlace de invitación (HU12, HU31)
-      tags: *a11
+      tags: *a13
       description: Enlace de un solo uso con vigencia de 7 días. Solo el administrador.
-      security: *a12
+      security: *a14
       responses:
         "201":
           description: Default Response
@@ -5698,7 +6758,7 @@ paths:
   /v1/household/invitations/preview:
     post:
       summary: Ver una invitación antes de aceptarla (HU31)
-      tags: *a11
+      tags: *a13
       description: Sin sesión. Informa el nombre del hogar, cuántos integrantes tiene,
         qué será visible y qué permanece privado.
       requestBody:
@@ -5795,7 +6855,7 @@ paths:
   /v1/household/invitations/accept:
     post:
       summary: Aceptar una invitación (HU12, HU31)
-      tags: *a11
+      tags: *a13
       requestBody:
         required: true
         content:
@@ -5815,7 +6875,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 80
-      security: *a12
+      security: *a14
       responses:
         "200":
           description: Default Response
@@ -5925,7 +6985,7 @@ paths:
   /v1/household/members/{userId}:
     delete:
       summary: Remover un integrante o salir del hogar (HU12)
-      tags: *a11
+      tags: *a13
       description: El administrador remueve integrantes; cualquier integrante puede
         salir indicando su propio id.
       parameters:
@@ -5935,7 +6995,7 @@ paths:
           in: path
           name: userId
           required: true
-      security: *a12
+      security: *a14
       responses:
         "204":
           description: Default Response
@@ -6034,7 +7094,7 @@ paths:
   /v1/household/expenses:
     post:
       summary: Registrar un gasto común (HU13, HU14)
-      tags: *a11
+      tags: *a13
       requestBody:
         required: true
         content:
@@ -6179,7 +7239,7 @@ paths:
                                 type: integer
                                 minimum: 1
                                 maximum: 10000
-      security: *a12
+      security: *a14
       responses:
         "201":
           description: Default Response
@@ -6289,7 +7349,7 @@ paths:
   /v1/household/expenses/{id}:
     put:
       summary: Modificar un gasto común o su regla de aporte (HU13, HU14)
-      tags: *a11
+      tags: *a13
       description: Quien lo registró o el administrador. Solo el administrador cambia
         la regla de aporte.
       requestBody:
@@ -6443,7 +7503,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a12
+      security: *a14
       responses:
         "200":
           description: Default Response
@@ -6552,7 +7612,7 @@ paths:
                     type: string
     delete:
       summary: Eliminar un gasto común (HU13)
-      tags: *a11
+      tags: *a13
       parameters:
         - schema:
             type: string
@@ -6560,7 +7620,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a12
+      security: *a14
       responses:
         "204":
           description: Default Response

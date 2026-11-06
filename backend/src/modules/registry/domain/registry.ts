@@ -51,6 +51,11 @@ export interface RegistrySnapshot {
   readonly incomes: readonly ScheduledEntry[];
   readonly expenses: readonly RegistryExpense[];
   readonly debts: readonly RegistryDebt[];
+  /**
+   * Entries that came from the bank in test or demo mode (HU36, ADR-002), by entry id, plus
+   * `opening_balance`. The app labels them so they are never presented as real data.
+   */
+  readonly origins?: Readonly<Record<string, 'provider_test' | 'demo'>>;
 }
 
 export const EMPTY_REGISTRY: RegistrySnapshot = { openingBalance: null, incomes: [], expenses: [], debts: [] };
