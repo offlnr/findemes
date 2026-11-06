@@ -45,7 +45,7 @@ GoRouter buildRouter({required Listenable refresh, required AuthStatus Function(
         GoRoute(path: '/verificar', builder: (_, s) => VerifyScreen(plan: s.uri.queryParameters['plan'], token: s.uri.queryParameters['token'])),
         GoRoute(path: '/recuperar', builder: (_, _) => const RecoverScreen()),
         GoRoute(path: '/restablecer', builder: (_, s) => ResetPasswordScreen(token: s.uri.queryParameters['token'])),
-        GoRoute(path: '/invitacion', builder: (_, _) => const InvitationScreen()),
+        GoRoute(path: '/invitacion', builder: (_, s) => InvitationScreen(token: s.uri.queryParameters['token'])),
         GoRoute(path: '/demo', builder: (_, _) => const DemoScreen()),
         GoRoute(path: '/app', redirect: (_, _) => '/app/resumen'),
         ShellRoute(

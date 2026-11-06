@@ -6282,6 +6282,8 @@ paths:
                           - members
                           - expenses
                           - myMonthlyContribution
+                          - monthlyTotal
+                          - memberMonthlyTotals
                         properties:
                           id:
                             type: string
@@ -6493,6 +6495,24 @@ paths:
                           myMonthlyContribution:
                             type: integer
                             description: Suma de mis aportes a los gastos mensuales.
+                          monthlyTotal:
+                            type: integer
+                            description: Suma de los gastos comunes mensuales.
+                          memberMonthlyTotals:
+                            type: array
+                            description: Aporte mensual de cada integrante a los gastos comunes (HU15).
+                            items:
+                              type: object
+                              additionalProperties: false
+                              required:
+                                - userId
+                                - amount
+                              properties:
+                                userId:
+                                  type: string
+                                  format: uuid
+                                amount:
+                                  type: integer
                       - type: "null"
         "401":
           description: Default Response

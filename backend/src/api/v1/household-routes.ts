@@ -50,6 +50,8 @@ const householdView = strict({
   members: { type: 'array', items: memberView },
   expenses: { type: 'array', items: expenseView },
   myMonthlyContribution: { type: 'integer', description: 'Suma de mis aportes a los gastos mensuales.' },
+  monthlyTotal: { type: 'integer', description: 'Suma de los gastos comunes mensuales.' },
+  memberMonthlyTotals: { type: 'array', description: 'Aporte mensual de cada integrante a los gastos comunes (HU15).', items: strict({ userId: id, amount: { type: 'integer' } }) },
 });
 
 interface ExpenseJson {
@@ -113,9 +115,15 @@ export const householdRoutes: FastifyPluginCallback<HouseholdRoutesOptions> = (a
       const { household } = view;
       const isAdmin = view.myRole === 'admin';
       let monthly = 0;
+      let monthlyTotal = 0;
+      const perMember = new Map<string, number>(household.members.map((member) => [member.userId, 0]));
       const expenses = household.expenses.map((expense) => {
         const myShare = view.myShares.get(expense.id) ?? 0;
-        if (expense.schedule.kind === 'monthly') monthly += myShare;
+        if (expense.schedule.kind === 'monthly') {
+          monthly += myShare;
+          monthlyTotal += expense.amount;
+          for (const [userId, part] of view.shares.get(expense.id) ?? new Map<UserId, number>()) perMember.set(userId, (perMember.get(userId) ?? 0) + part);
+        }
         return {
           id: expense.id,
           label: expense.label,
@@ -137,6 +145,8 @@ export const householdRoutes: FastifyPluginCallback<HouseholdRoutesOptions> = (a
           members: household.members.map((member) => ({ userId: member.userId, displayName: member.displayName, role: member.role, isMe: member.userId === actor.userId })),
           expenses,
           myMonthlyContribution: monthly,
+          monthlyTotal,
+          memberMonthlyTotals: [...perMember].map(([userId, amount]) => ({ userId, amount })),
         },
       };
     },

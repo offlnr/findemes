@@ -100,6 +100,37 @@ class AuthController extends Notifier<AuthState> {
     state = const AuthState.signedOut();
   }
 
+  /// HU17.3: cierra la sesión en todos los dispositivos.
+  Future<void> logoutAll() async {
+    try {
+      await authorized((token) => _api.logoutAll(accessToken: token));
+    } on AuthApiException {
+      // Se cierra localmente de todos modos.
+    }
+    await _vault.write(refreshTokenKey, null);
+    state = const AuthState.signedOut();
+  }
+
+  /// HU17.4: la sesión actual se reemplaza por la nueva que entrega el servidor.
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    final session = await authorized((token) => _api.changePassword(accessToken: token, currentPassword: currentPassword, newPassword: newPassword));
+    await _open(session, keepAccount: true);
+  }
+
+  /// Tras eliminar la cuenta (HU21) ya no hay sesión que cerrar en el servidor.
+  Future<void> forgetSession() async {
+    await _vault.write(refreshTokenKey, null);
+    await _vault.write(deviceIdKey, null);
+    state = const AuthState.signedOut();
+  }
+
+  /// Recarga el alias después de rectificarlo (HU21).
+  Future<void> reloadAccount() async {
+    final token = state.accessToken;
+    if (token == null) return;
+    state = AuthState.signedIn(accessToken: token, account: await _api.me(token));
+  }
+
   Future<void> _open(AuthSession session, {bool keepAccount = false}) async {
     if (session.refreshToken != null) await _vault.write(refreshTokenKey, session.refreshToken);
     if (session.deviceId != null) await _vault.write(deviceIdKey, session.deviceId);

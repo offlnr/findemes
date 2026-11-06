@@ -4,11 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/auth/auth_api.dart';
 import '../../data/auth/auth_controller.dart';
+import '../../data/household_api.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/common.dart';
 
 /// Pantallas fuera de sesión (HU17, HU17.1, HU17.2, CU-08, CU-11) conectadas a `/v1/auth/*`.
-/// La invitación al hogar (HU31) todavía navega sin enviar datos.
+/// La invitación al hogar (HU31) muestra qué se comparte y se acepta con la API.
 class AuthLayout extends StatelessWidget {
   const AuthLayout({super.key, required this.line1, required this.line2, required this.lead, required this.title, required this.children});
   final String line1;
@@ -437,19 +438,107 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> with 
   }
 }
 
-class InvitationScreen extends StatelessWidget {
-  const InvitationScreen({super.key});
+/// Invitación al hogar (HU31): antes de aceptar se informa qué verán los demás y qué sigue privado.
+/// Con sesión se acepta aquí; sin sesión, la invitación queda pendiente mientras la persona entra o
+/// crea su cuenta, y se acepta desde Hogar.
+class InvitationScreen extends ConsumerStatefulWidget {
+  const InvitationScreen({super.key, this.token});
+  final String? token;
   @override
-  Widget build(BuildContext context) => AuthLayout(
-        line1: 'La casa,',
-        line2: 'en común.',
-        lead: 'Los gastos del hogar se comparten. Tus finanzas personales, no.',
-        title: 'Te invitaron a un hogar',
-        children: [
-          const Muted('Camila te invitó al hogar "Rojas Pérez". Verás los gastos comunes y cuánto aporta cada uno. Tus ingresos, deudas y escenarios seguirán siendo solo tuyos.', size: 14),
-          FilledButton(onPressed: () => context.go('/app/hogar'), child: const Text('Aceptar e iniciar sesión')),
-          OutlinedButton(onPressed: () => context.go('/registro'), child: const Text('Crear cuenta y aceptar')),
-          const _Links([('Rechazar invitación', '/login')]),
-        ],
-      );
+  ConsumerState<InvitationScreen> createState() => _InvitationScreenState();
+}
+
+class _InvitationScreenState extends ConsumerState<InvitationScreen> {
+  late final Future<InvitationPreview?> _preview = _load();
+  final _name = TextEditingController();
+  String? _error;
+  bool _busy = false;
+
+  Future<InvitationPreview?> _load() async {
+    final token = widget.token;
+    if (token == null || token.isEmpty) return null;
+    try {
+      return await ref.read(householdApiProvider).preview(token);
+    } on AuthApiException {
+      return null;
+    }
+  }
+
+  Future<void> _accept() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(householdApiProvider).accept(widget.token!, _name.text.trim());
+      ref.read(pendingInvitationProvider.notifier).set(null);
+      ref.invalidate(householdDataProvider);
+      if (mounted) context.go('/app/hogar');
+    } on AuthApiException catch (e) {
+      setState(() => _error = e.fieldMessages['displayName'] ?? e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _later(String path) {
+    ref.read(pendingInvitationProvider.notifier).set(widget.token);
+    context.go(path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final signedIn = ref.watch(authControllerProvider).status == AuthStatus.signedIn;
+    return AuthLayout(
+      line1: 'La casa,',
+      line2: 'en común.',
+      lead: 'Los gastos del hogar se comparten. Tus finanzas personales, no.',
+      title: 'Te invitaron a un hogar',
+      children: [
+        FutureBuilder<InvitationPreview?>(
+          future: _preview,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator(color: FdmColors.ink));
+            final preview = snapshot.data;
+            if (preview == null) {
+              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                const Muted('La invitación no es válida, ya se usó o venció. Pide a quien administra el hogar un enlace nuevo.', size: 14),
+                const SizedBox(height: 16),
+                FilledButton(onPressed: () => context.go(signedIn ? '/app/hogar' : '/login'), child: const Text('Continuar')),
+              ]);
+            }
+            final count = preview.memberCount == 1 ? '1 integrante' : '${preview.memberCount} integrantes';
+            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text('Hogar «${preview.householdName}», con $count.', style: FdmText.ui(15, weight: FontWeight.w600)),
+              const SizedBox(height: 14),
+              Text('Lo verán los demás integrantes', style: FdmText.ui(13, weight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Bullets(preview.visibleToMembers),
+              Text('Seguirá siendo solo tuyo', style: FdmText.ui(13, weight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Bullets(preview.private),
+              const SizedBox(height: 8),
+              if (signedIn) ...[
+                TextField(controller: _name, maxLength: 80, decoration: InputDecoration(labelText: 'Tu nombre en el hogar', errorText: _error)),
+                FilledButton(onPressed: _busy ? null : _accept, child: const Text('Aceptar invitación')),
+              ] else ...[
+                const Muted('Entra o crea tu cuenta para aceptar. La invitación queda pendiente en Hogar.', size: 13),
+                const SizedBox(height: 12),
+                FilledButton(onPressed: () => _later('/login'), child: const Text('Iniciar sesión y aceptar')),
+                const SizedBox(height: 8),
+                OutlinedButton(onPressed: () => _later('/registro'), child: const Text('Crear cuenta y aceptar')),
+              ],
+              const _Links([('Rechazar invitación', '/login')]),
+            ]);
+          },
+        ),
+      ],
+    );
+  }
 }

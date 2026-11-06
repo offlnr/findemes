@@ -40,9 +40,12 @@ class LoginCodeRequired extends LoginOutcome {
 
 /// Error con un mensaje para mostrar y, si corresponde, los mensajes por campo.
 class AuthApiException implements Exception {
-  const AuthApiException(this.message, {this.fieldMessages = const {}, this.status});
+  const AuthApiException(this.message, {this.fieldMessages = const {}, this.status, this.code});
   final String message;
   final Map<String, String> fieldMessages;
+
+  /// Código de error de la API (`error`), por ejemplo `plan_limit` o `consent_required`.
+  final String? code;
 
   /// Código HTTP de la respuesta; null si no se pudo contactar al servidor.
   final int? status;
@@ -94,6 +97,17 @@ class AuthApi {
 
   Future<void> logout({required String accessToken, String? refreshToken}) async {
     await _post('/v1/auth/logout', refreshToken == null ? null : {'refreshToken': refreshToken}, accessToken: accessToken);
+  }
+
+  /// HU17.3: cierra todas las sesiones, también la actual.
+  Future<void> logoutAll({required String accessToken}) async {
+    await _post('/v1/auth/logout-all', null, accessToken: accessToken);
+  }
+
+  /// HU17.4: exige la contraseña vigente; las demás sesiones se cierran y llega una nueva.
+  Future<AuthSession> changePassword({required String accessToken, required String currentPassword, required String newPassword}) async {
+    final body = await _post('/v1/auth/password', {'currentPassword': currentPassword, 'newPassword': newPassword, 'client': _clientKind}, accessToken: accessToken);
+    return _session(body as Map<String, dynamic>);
   }
 
   Future<void> requestPasswordReset(String email) async {
