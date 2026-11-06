@@ -1,4 +1,5 @@
 import { clp } from '../../core/index.ts';
+import type { PaymentStatusSource } from '../../modules/administration/ports/administration-ports.ts';
 import type { PaymentCommitResult, PaymentGateway, PaymentStart } from '../../modules/subscription/ports/subscription-ports.ts';
 
 /**
@@ -38,6 +39,31 @@ export class WebpayError extends Error {
     this.name = 'WebpayError';
     this.httpStatus = httpStatus;
   }
+}
+
+/**
+ * HU26: status of a transaction as Transbank reports it (GET transactions/{token}). Used by the
+ * admin API to reconcile orders; it never changes anything.
+ */
+export function createWebpayStatusSource(config: WebpayConfig): PaymentStatusSource {
+  const doFetch = config.fetch ?? fetch;
+  return {
+    async status(token) {
+      const response = await doFetch(`${config.baseUrl}${API_PATH}/${encodeURIComponent(token)}`, {
+        method: 'GET',
+        headers: { 'Tbk-Api-Key-Id': config.commerceCode, 'Tbk-Api-Key-Secret': config.apiKey, Accept: 'application/json' },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (response.status === 404 || response.status === 422) return null;
+      if (!response.ok) throw new WebpayError('status', response.status);
+      const body = (await response.json()) as { status?: unknown; amount?: unknown; buy_order?: unknown };
+      return {
+        status: typeof body.status === 'string' ? body.status : 'UNKNOWN',
+        amount: typeof body.amount === 'number' ? body.amount : null,
+        buyOrder: typeof body.buy_order === 'string' ? body.buy_order : null,
+      };
+    },
+  };
 }
 
 /**

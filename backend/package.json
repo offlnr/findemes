@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:api": "node --watch src/composition/main-api.ts",
-    "dev:admin-api": "node --watch src/composition/main-admin-api.ts",
+    "dev:api": "node --env-file-if-exists=.env.local --watch src/composition/main-api.ts",
+    "dev:admin-api": "node --env-file-if-exists=.env.local --watch src/composition/main-admin-api.ts",
     "openapi:generate": "node src/composition/generate-openapi.ts",
     "db:migrate": "node --env-file-if-exists=.env.local src/composition/migrate.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p src/core/tsconfig.json --noEmit",
@@ -15,7 +15,8 @@
     "smoke:webpay": "node src/composition/smoke/webpay-smoke.ts",
     "smoke:fintoc": "node --env-file-if-exists=.env.local src/composition/smoke/fintoc-smoke.ts",
     "smoke:email": "node --env-file-if-exists=.env.local src/composition/smoke/email-smoke.ts",
-    "smoke": "pnpm smoke:webpay && pnpm smoke:fintoc && pnpm smoke:email"
+    "smoke": "pnpm smoke:webpay && pnpm smoke:fintoc && pnpm smoke:email",
+    "admin:create": "node --env-file-if-exists=.env.local src/composition/create-admin.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
