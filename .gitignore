@@ -65,3 +65,13 @@ desktop.ini
 
 # Local development emails (backend/.outbox)
 .outbox/
+
+# Informe 2 deliverables and local working notes (kept out of the repository)
+Archivos para informe 2/
+prototipo2amejorar.html
+requerimientos_informe2.md
+
+# Local agent skills installed per machine
+.agents/
+.claude/skills/
+skills-lock.json
