@@ -1280,12 +1280,170 @@ paths:
                     type: string
                   message:
                     type: string
+    patch:
+      summary: Rectificar los datos de la cuenta (HU21)
+      tags: &a3
+        - privacidad
+      description: Los datos financieros se rectifican en el registro; aquí, el alias
+        de la cuenta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - displayName
+              properties:
+                displayName:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+      security: &a4
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Default Response
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+    delete:
+      summary: Eliminar mi cuenta con borrado efectivo (HU21)
+      tags: *a3
+      description: Exige la contraseña vigente. Borra la cuenta y todos sus datos
+        individuales. Si administrabas un hogar, la administración pasa al
+        integrante más antiguo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+      security: *a4
+      responses:
+        "204":
+          description: Default Response
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
   /v1/registry:
     get:
       summary: Mi registro financiero (HU01-HU04)
-      tags: &a3
+      tags: &a5
         - registro financiero
-      security: &a4
+      security: &a6
         - bearerAuth: []
       responses:
         "200":
@@ -1581,7 +1739,7 @@ paths:
   /v1/registry/opening-balance:
     put:
       summary: Registrar el saldo inicial (HU04)
-      tags: *a3
+      tags: *a5
       description: Acepta saldo positivo o negativo. Es el punto de partida del primer
         mes de la proyección.
       requestBody:
@@ -1604,7 +1762,7 @@ paths:
                   pattern: ^\d{4}-(0[1-9]|1[0-2])$
                   examples:
                     - 2026-11
-      security: *a4
+      security: *a6
       responses:
         "204":
           description: Default Response
@@ -1658,7 +1816,7 @@ paths:
   /v1/registry/incomes:
     post:
       summary: Registrar un ingreso (HU01)
-      tags: *a3
+      tags: *a5
       requestBody:
         required: true
         content:
@@ -1749,7 +1907,7 @@ paths:
                               examples:
                                 - 2026-11
                             - type: "null"
-      security: *a4
+      security: *a6
       responses:
         "201":
           description: Default Response
@@ -1814,7 +1972,7 @@ paths:
   /v1/registry/incomes/{id}:
     put:
       summary: Editar un ingreso (HU01)
-      tags: *a3
+      tags: *a5
       requestBody:
         required: true
         content:
@@ -1912,7 +2070,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -1991,7 +2149,7 @@ paths:
                     type: string
     delete:
       summary: Eliminar un ingreso (HU01)
-      tags: *a3
+      tags: *a5
       parameters:
         - schema:
             type: string
@@ -1999,7 +2157,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a4
+      security: *a6
       responses:
         "204":
           description: Default Response
@@ -2036,7 +2194,7 @@ paths:
   /v1/registry/expenses:
     post:
       summary: Registrar un gasto (HU02)
-      tags: *a3
+      tags: *a5
       requestBody:
         required: true
         content:
@@ -2134,7 +2292,7 @@ paths:
                               examples:
                                 - 2026-11
                             - type: "null"
-      security: *a4
+      security: *a6
       responses:
         "201":
           description: Default Response
@@ -2199,7 +2357,7 @@ paths:
   /v1/registry/expenses/{id}:
     put:
       summary: Editar un gasto (HU02)
-      tags: *a3
+      tags: *a5
       requestBody:
         required: true
         content:
@@ -2304,7 +2462,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -2383,7 +2541,7 @@ paths:
                     type: string
     delete:
       summary: Eliminar un gasto (HU02)
-      tags: *a3
+      tags: *a5
       parameters:
         - schema:
             type: string
@@ -2391,7 +2549,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a4
+      security: *a6
       responses:
         "204":
           description: Default Response
@@ -2428,7 +2586,7 @@ paths:
   /v1/registry/debts:
     post:
       summary: Registrar una deuda con sus cuotas pendientes (HU03)
-      tags: *a3
+      tags: *a5
       description: Las cuotas se generan desde el mes de la próxima cuota y se agotan
         solas al término del plazo.
       requestBody:
@@ -2467,7 +2625,7 @@ paths:
                       minimum: 1
                       maximum: 600
                     - type: "null"
-      security: *a4
+      security: *a6
       responses:
         "201":
           description: Default Response
@@ -2532,7 +2690,7 @@ paths:
   /v1/registry/debts/{id}:
     put:
       summary: Editar una deuda (HU03)
-      tags: *a3
+      tags: *a5
       requestBody:
         required: true
         content:
@@ -2576,7 +2734,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -2655,7 +2813,7 @@ paths:
                     type: string
     delete:
       summary: Eliminar una deuda (HU03)
-      tags: *a3
+      tags: *a5
       parameters:
         - schema:
             type: string
@@ -2663,7 +2821,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a4
+      security: *a6
       responses:
         "204":
           description: Default Response
@@ -2700,7 +2858,7 @@ paths:
   /v1/projection:
     get:
       summary: Proyección de mi flujo de caja y salud financiera (HU05, HU39)
-      tags: *a3
+      tags: *a5
       description: Se recalcula en cada consulta desde el registro. Horizonte
         configurable de 1 a 36 meses (por defecto 12). No emite recomendaciones.
       parameters:
@@ -2710,7 +2868,7 @@ paths:
           in: query
           name: months
           required: false
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -2918,9 +3076,9 @@ paths:
   /v1/scenarios:
     get:
       summary: Mis escenarios y el plan vigente (HU06, Tabla 13)
-      tags: &a5
+      tags: &a7
         - escenarios
-      security: &a6
+      security: &a8
         - bearerAuth: []
       responses:
         "200":
@@ -3014,7 +3172,7 @@ paths:
                     type: string
     post:
       summary: Crear un escenario con decisiones (HU06, HU07)
-      tags: *a5
+      tags: *a7
       description: El escenario se deriva del registro y no lo modifica. El plan
         gratuito guarda hasta 2 escenarios y no simula prepagos.
       requestBody:
@@ -3054,7 +3212,7 @@ paths:
                         type: object
                         description: Parámetros del tipo de decisión (Tabla 11); los valida el motor.
                           Meses en formato AAAA-MM.
-      security: *a6
+      security: *a8
       responses:
         "201":
           description: Default Response
@@ -3206,7 +3364,7 @@ paths:
   /v1/scenarios/compare:
     get:
       summary: Comparar escenarios entre sí y con la base (HU09)
-      tags: *a5
+      tags: *a7
       description: En el orden pedido, sin ordenar por conveniencia ni destacar uno.
         El plan gratuito compara un escenario frente a la base.
       parameters:
@@ -3222,7 +3380,7 @@ paths:
           in: query
           name: months
           required: false
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -3692,7 +3850,7 @@ paths:
     get:
       summary: "Resultado de un escenario: indicadores, variación y explicación (HU08,
         HU10)"
-      tags: *a5
+      tags: *a7
       parameters:
         - schema:
             type: string
@@ -3706,7 +3864,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -4191,7 +4349,7 @@ paths:
                                 type: string
     put:
       summary: Renombrar o cambiar las decisiones de un escenario (HU11)
-      tags: *a5
+      tags: *a7
       requestBody:
         required: true
         content:
@@ -4236,7 +4394,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -4387,7 +4545,7 @@ paths:
                                 type: string
     delete:
       summary: Eliminar un escenario (HU11)
-      tags: *a5
+      tags: *a7
       description: No afecta el registro ni a los demás escenarios.
       parameters:
         - schema:
@@ -4396,7 +4554,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a6
+      security: *a8
       responses:
         "204":
           description: Default Response
@@ -4433,7 +4591,7 @@ paths:
   /v1/plans:
     get:
       summary: Planes y sus capacidades (HU18, HU30, Tabla 13)
-      tags: &a7
+      tags: &a9
         - planes y pagos
       description: Sin sesión. El sistema no destaca ningún plan como preferible.
       responses:
@@ -4495,8 +4653,8 @@ paths:
   /v1/subscription:
     get:
       summary: Mi plan y el estado de mi suscripción (HU18, HU20, Tabla 14)
-      tags: *a7
-      security: &a8
+      tags: *a9
+      security: &a10
         - bearerAuth: []
       responses:
         "200":
@@ -4612,7 +4770,7 @@ paths:
   /v1/subscription/checkout:
     post:
       summary: Contratar un plan con Webpay Plus (HU19)
-      tags: *a7
+      tags: *a9
       description: Crea la orden y la transacción en Webpay (ambiente de integración
         durante el proyecto). La app redirige al navegador a redirectUrl; el
         plan se activa cuando el backend confirma con Transbank.
@@ -4631,7 +4789,7 @@ paths:
                   enum:
                     - paid
                     - family
-      security: *a8
+      security: *a10
       responses:
         "201":
           description: Default Response
@@ -4713,10 +4871,10 @@ paths:
   /v1/subscription/cancel:
     post:
       summary: Cancelar la renovación (Tabla 14, Cancelada)
-      tags: *a7
+      tags: *a9
       description: El acceso continúa hasta el término del período pagado. No se
         eliminan datos (HU20).
-      security: *a8
+      security: *a10
       responses:
         "200":
           description: Default Response
@@ -4748,7 +4906,7 @@ paths:
   /v1/payments/webpay/return:
     get:
       summary: Retorno desde Webpay Plus (HU19)
-      tags: *a7
+      tags: *a9
       description: Lo llama el navegador al volver de Transbank. Confirma la
         transacción desde el servidor y redirige a la app con el resultado.
       parameters:
@@ -4781,7 +4939,7 @@ paths:
           description: Redirección a la pantalla de resultado de la app.
     post:
       summary: Retorno desde Webpay Plus (HU19)
-      tags: *a7
+      tags: *a9
       description: Lo llama el navegador al volver de Transbank. Confirma la
         transacción desde el servidor y redirige a la app con el resultado.
       requestBody:
@@ -4807,14 +4965,239 @@ paths:
       responses:
         "303":
           description: Redirección a la pantalla de resultado de la app.
+  /v1/me/export:
+    get:
+      summary: Exportar mis datos personales (HU21)
+      tags: *a3
+      description: "Documento JSON con todo lo que la plataforma guarda de la cuenta:
+        registro, escenarios, hogar, suscripción, consentimientos y datos
+        bancarios."
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/consents:
+    get:
+      summary: Mis consentimientos y su historial (HU32)
+      tags: *a3
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - consents
+                properties:
+                  consents:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - kind
+                        - documentVersion
+                        - acceptedAt
+                        - withdrawnAt
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - terms
+                            - privacy_policy
+                            - bank_connection
+                        documentVersion:
+                          type: string
+                        acceptedAt:
+                          type: string
+                          format: date-time
+                        withdrawnAt:
+                          anyOf:
+                            - type: string
+                              format: date-time
+                            - type: "null"
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+    post:
+      summary: Aceptar la versión vigente de un documento (HU32)
+      tags: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - terms
+                    - privacy_policy
+                    - bank_connection
+      security: *a4
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - kind
+                  - documentVersion
+                properties:
+                  kind:
+                    type: string
+                    enum:
+                      - terms
+                      - privacy_policy
+                      - bank_connection
+                  documentVersion:
+                    type: string
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                        - field
+                        - message
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+                  fields:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+  /v1/consents/{kind}:
+    delete:
+      summary: Retirar un consentimiento (HU32)
+      tags: *a3
+      description: El historial se conserva; el retiro queda registrado con su fecha.
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - terms
+              - privacy_policy
+              - bank_connection
+          in: path
+          name: kind
+          required: true
+      security: *a4
+      responses:
+        "204":
+          description: Default Response
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - error
+                  - message
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
   /v1/household:
     get:
       summary: "Mi hogar: integrantes, gastos comunes y mi aporte (HU12-HU15)"
-      tags: &a9
+      tags: &a11
         - hogar
       description: household es null si no perteneces a un hogar. No incluye datos
         individuales de ningún integrante.
-      security: &a10
+      security: &a12
         - bearerAuth: []
       responses:
         "200":
@@ -5068,7 +5451,7 @@ paths:
                     type: string
     post:
       summary: Crear un hogar (HU12)
-      tags: *a9
+      tags: *a11
       description: Quien lo crea queda como administrador. Requiere el plan Familiar
         (Tabla 13).
       requestBody:
@@ -5090,7 +5473,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 80
-      security: *a10
+      security: *a12
       responses:
         "201":
           description: Default Response
@@ -5200,9 +5583,9 @@ paths:
   /v1/household/invitations:
     post:
       summary: Generar un enlace de invitación (HU12, HU31)
-      tags: *a9
+      tags: *a11
       description: Enlace de un solo uso con vigencia de 7 días. Solo el administrador.
-      security: *a10
+      security: *a12
       responses:
         "201":
           description: Default Response
@@ -5315,7 +5698,7 @@ paths:
   /v1/household/invitations/preview:
     post:
       summary: Ver una invitación antes de aceptarla (HU31)
-      tags: *a9
+      tags: *a11
       description: Sin sesión. Informa el nombre del hogar, cuántos integrantes tiene,
         qué será visible y qué permanece privado.
       requestBody:
@@ -5412,7 +5795,7 @@ paths:
   /v1/household/invitations/accept:
     post:
       summary: Aceptar una invitación (HU12, HU31)
-      tags: *a9
+      tags: *a11
       requestBody:
         required: true
         content:
@@ -5432,7 +5815,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 80
-      security: *a10
+      security: *a12
       responses:
         "200":
           description: Default Response
@@ -5542,7 +5925,7 @@ paths:
   /v1/household/members/{userId}:
     delete:
       summary: Remover un integrante o salir del hogar (HU12)
-      tags: *a9
+      tags: *a11
       description: El administrador remueve integrantes; cualquier integrante puede
         salir indicando su propio id.
       parameters:
@@ -5552,7 +5935,7 @@ paths:
           in: path
           name: userId
           required: true
-      security: *a10
+      security: *a12
       responses:
         "204":
           description: Default Response
@@ -5651,7 +6034,7 @@ paths:
   /v1/household/expenses:
     post:
       summary: Registrar un gasto común (HU13, HU14)
-      tags: *a9
+      tags: *a11
       requestBody:
         required: true
         content:
@@ -5796,7 +6179,7 @@ paths:
                                 type: integer
                                 minimum: 1
                                 maximum: 10000
-      security: *a10
+      security: *a12
       responses:
         "201":
           description: Default Response
@@ -5906,7 +6289,7 @@ paths:
   /v1/household/expenses/{id}:
     put:
       summary: Modificar un gasto común o su regla de aporte (HU13, HU14)
-      tags: *a9
+      tags: *a11
       description: Quien lo registró o el administrador. Solo el administrador cambia
         la regla de aporte.
       requestBody:
@@ -6060,7 +6443,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a10
+      security: *a12
       responses:
         "200":
           description: Default Response
@@ -6169,7 +6552,7 @@ paths:
                     type: string
     delete:
       summary: Eliminar un gasto común (HU13)
-      tags: *a9
+      tags: *a11
       parameters:
         - schema:
             type: string
@@ -6177,7 +6560,7 @@ paths:
           in: path
           name: id
           required: true
-      security: *a10
+      security: *a12
       responses:
         "204":
           description: Default Response

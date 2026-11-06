@@ -3,6 +3,8 @@ import { createWebpayPlusGateway } from '../adapters/webpay/webpay-plus-gateway.
 import { createPgSubscriptionStore } from '../adapters/postgres/pg-subscription-store.ts';
 import { SubscriptionService } from '../modules/subscription/application/subscription-service.ts';
 import type { PaymentsConfig } from './payments-config.ts';
+import { createPgPrivacyStore } from '../adapters/postgres/pg-privacy-store.ts';
+import { PrivacyService } from '../modules/privacy/application/privacy-service.ts';
 import type { AuthRoutesOptions } from '../api/v1/auth-routes.ts';
 import { loadBreachedPasswordList } from '../adapters/breached-passwords/breached-password-list.ts';
 import { argon2PasswordHasher } from '../adapters/crypto/argon2-password-hasher.ts';
@@ -37,6 +39,7 @@ export interface WiredServices {
     readonly scenarios: ScenarioService;
     readonly households: HouseholdService;
     readonly subscriptions: { readonly service: SubscriptionService; readonly appBaseUrl: string };
+    readonly privacy: PrivacyService;
   };
   close(): Promise<void>;
 }
@@ -94,6 +97,8 @@ export async function wireServices(service: ServiceConfig, config: IdentityConfi
     apiPublicUrl: payments.apiPublicUrl,
   });
 
+  const privacyStore = createPgPrivacyStore(runner);
+
   return {
     modules: {
       // Secure cookies also work on http://localhost: browsers treat it as a secure context.
@@ -103,6 +108,7 @@ export async function wireServices(service: ServiceConfig, config: IdentityConfi
       scenarios: new ScenarioService({ scenarios: createPgScenarioStore(runner), registry: registryStore, plans, ids, commitments: households }),
       households,
       subscriptions: { service: subscriptions, appBaseUrl: config.appBaseUrl },
+      privacy: new PrivacyService({ data: privacyStore, consents: privacyStore, hasher: argon2PasswordHasher, passwordHashOf: (actor) => stores.accounts.passwordHash(actor) }),
     },
     close: () => pool.end(),
   };

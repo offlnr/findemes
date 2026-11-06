@@ -10,6 +10,8 @@ import type { HouseholdService } from '../../modules/household/application/house
 import { householdRoutes } from './household-routes.ts';
 import type { SubscriptionService } from '../../modules/subscription/application/subscription-service.ts';
 import { subscriptionRoutes } from './subscription-routes.ts';
+import type { PrivacyService } from '../../modules/privacy/application/privacy-service.ts';
+import { privacyRoutes } from './privacy-routes.ts';
 
 export interface V1RoutesOptions {
   readonly clock: Clock;
@@ -21,6 +23,7 @@ export interface V1RoutesOptions {
   readonly households?: HouseholdService;
   /** Plans and Webpay payments; appBaseUrl is where the payment result screen lives. */
   readonly subscriptions?: { readonly service: SubscriptionService; readonly appBaseUrl: string };
+  readonly privacy?: PrivacyService;
 }
 
 /**
@@ -43,6 +46,9 @@ export const v1Routes: FastifyPluginAsync<V1RoutesOptions> = async (app, options
         appBaseUrl: options.subscriptions.appBaseUrl,
         accessTokens: options.auth.accessTokens,
       });
+    }
+    if (options.privacy !== undefined) {
+      await app.register(privacyRoutes, { privacy: options.privacy, accessTokens: options.auth.accessTokens });
     }
     if (options.households !== undefined) {
       await app.register(householdRoutes, { households: options.households, accessTokens: options.auth.accessTokens });
