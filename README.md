@@ -80,5 +80,8 @@ los enlaces de la landing («Conectar mi banco», «Crear cuenta», «Entrar», 
 Cómo levantar todo en local y el entorno de prueba de cada integración (Webpay, Fintoc, correo,
 documentación interactiva de ambas API): [`docs/entornos-de-prueba.md`](docs/entornos-de-prueba.md).
 
+Manual de instalación del ambiente local paso a paso: [`docs/instalacion-local.md`](docs/instalacion-local.md).
+Lo que falta para que todo funcione completo: [`docs/pendientes.md`](docs/pendientes.md).
+
 Las reglas del proyecto y los comandos de desarrollo están en [`CLAUDE.md`](CLAUDE.md); el stack
 técnico, en [`docs/adr/001-technical-stack.md`](docs/adr/001-technical-stack.md).

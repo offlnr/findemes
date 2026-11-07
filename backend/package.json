@@ -16,7 +16,8 @@
     "smoke:fintoc": "node --env-file-if-exists=.env.local src/composition/smoke/fintoc-smoke.ts",
     "smoke:email": "node --env-file-if-exists=.env.local src/composition/smoke/email-smoke.ts",
     "smoke": "pnpm smoke:webpay && pnpm smoke:fintoc && pnpm smoke:email",
-    "admin:create": "node --env-file-if-exists=.env.local src/composition/create-admin.ts"
+    "admin:create": "node --env-file-if-exists=.env.local src/composition/create-admin.ts",
+    "env:init": "node src/composition/init-env.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
