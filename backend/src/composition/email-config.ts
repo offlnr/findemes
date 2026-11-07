@@ -44,7 +44,8 @@ export function loadEmailConfig(env: NodeJS.ProcessEnv, environment: 'developmen
       host: data.SMTP_HOST,
       port: data.SMTP_PORT,
       secure: data.SMTP_SECURE === 'true',
-      requireTls: production,
+      // Credentials never travel in clear text: any authenticated server (SES, Gmail) requires TLS.
+      requireTls: production || data.SMTP_USER !== undefined,
       from: data.EMAIL_FROM,
       ...(data.SMTP_USER === undefined ? {} : { user: data.SMTP_USER }),
       ...(data.SMTP_PASSWORD === undefined ? {} : { password: data.SMTP_PASSWORD }),
