@@ -36,6 +36,6 @@ export type SimulationOutcome =
 
 /**
  * Engine entry point: pure and deterministic (rule 1). Same request and catalog, same outcome.
- * Implemented test-first in the engine block that follows the project skeleton.
+ * Implemented in `simulate.ts`.
  */
 export type Simulate = (request: SimulationRequest, catalog: DecisionCatalog) => SimulationOutcome;

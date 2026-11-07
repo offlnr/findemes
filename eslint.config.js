@@ -7,7 +7,10 @@ const CORE_TEST_FILES = ['backend/src/core/**/*.test.ts'];
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '**/.astro/**', 'app/**', 'admin/**'],
+    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '**/.astro/**', 'app/**', 'admin/**',
+      // Local tooling and static prototypes, not part of the product code.
+      '.agents/**', '.claude/**', '.taste-skill/**', '.impeccable/**', 'prototype/**',
+      'Archivos para informe 2/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,

@@ -1,10 +1,20 @@
+import cookie from '@fastify/cookie';
+import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import { registerErrorHandling } from '../http/error-handling.ts';
-import { v1Routes } from './v1/routes.ts';
+import type { Clock } from '../modules/shared/ports.ts';
+import { v1Routes, type V1RoutesOptions } from './v1/routes.ts';
 
-export interface PublicApiOptions {
+export interface PublicApiOptions extends Omit<V1RoutesOptions, 'clock'> {
   readonly logger: NonNullable<FastifyServerOptions['logger']>;
+  readonly clock: Clock;
+  /** Exact browser origins of the web app; empty means no cross-origin access. */
+  readonly corsOrigins?: readonly string[];
+  /** Interactive documentation at /docs to try every route (development and integration only). */
+  readonly docs?: boolean;
 }
 
 /** Requests in this API are small JSON documents. */
@@ -19,11 +29,36 @@ const OPENAPI_INFO = {
 
 /** Builds the public REST API. Contains no administrative route (rule 9). */
 export async function buildPublicApi(options: PublicApiOptions): Promise<FastifyInstance> {
-  const app = Fastify({ logger: options.logger, bodyLimit: BODY_LIMIT_BYTES });
+  const { logger, corsOrigins, docs, ...modules } = options;
+  const app = Fastify({
+    logger,
+    bodyLimit: BODY_LIMIT_BYTES,
+    // Strict validation: unknown fields are rejected (not silently removed) and types are not coerced.
+    ajv: { customOptions: { removeAdditional: false, coerceTypes: false } },
+  });
 
-  await app.register(swagger, { openapi: { openapi: '3.1.0', info: OPENAPI_INFO } });
+  await app.register(swagger, {
+    openapi: {
+      openapi: '3.1.0',
+      info: OPENAPI_INFO,
+      components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } } },
+    },
+  });
+
+  if (docs === true) {
+    await app.register(swaggerUi, { routePrefix: '/docs', uiConfig: { docExpansion: 'list', persistAuthorization: false } });
+  }
 
   registerErrorHandling(app);
+  await app.register(cookie);
+  await app.register(cors, {
+    origin: [...(corsOrigins ?? [])],
+    // The web refresh token travels in an HttpOnly cookie (CLAUDE.md, Sesiones).
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
+  // Limits apply only to routes that opt in through `config.rateLimit` (e.g. the public demo).
+  await app.register(rateLimit, { global: false });
 
   app.get(
     '/health',
@@ -44,7 +79,7 @@ export async function buildPublicApi(options: PublicApiOptions): Promise<Fastify
     () => ({ status: 'ok' as const }),
   );
 
-  await app.register(v1Routes, { prefix: '/v1' });
+  await app.register(v1Routes, { prefix: '/v1', ...modules });
 
   return app;
 }

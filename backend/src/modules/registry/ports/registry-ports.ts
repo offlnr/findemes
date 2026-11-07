@@ -1,10 +1,35 @@
-import type { FinancialState } from '../../../core/index.ts';
+import type { Expense } from '../../../core/index.ts';
 import type { Actor } from '../../shared/actor.ts';
+import type { WriteContext } from '../../shared/ports.ts';
+
+export type { WriteContext };
+import type { OpeningBalance, RegistryDebt, RegistryExpense, RegistrySnapshot, ScheduledEntry } from '../domain/registry.ts';
 
 /**
- * Reads the base financial state of the actor (HU01-HU04), ready to be passed to the engine.
- * Returns only the actor's own data; any other owner's records are invisible.
+ * The actor's own financial registry (HU01-HU04). Every method filters by the actor (deny by
+ * default, rule 5); records of other owners behave as if they did not exist (`false`).
  */
-export interface FinancialStateReader {
-  loadForActor(actor: Actor): Promise<FinancialState | null>;
+export interface RegistryRepository {
+  load(actor: Actor): Promise<RegistrySnapshot>;
+  setOpeningBalance(context: WriteContext, balance: OpeningBalance): Promise<void>;
+  /** The id is chosen by the caller (UUID); the owner is always the actor. */
+  createIncome(context: WriteContext, income: ScheduledEntry): Promise<void>;
+  createExpense(context: WriteContext, expense: RegistryExpense): Promise<void>;
+  createDebt(context: WriteContext, debt: RegistryDebt): Promise<void>;
+  /** Updates and deletes return `false` when the record does not exist or belongs to someone else. */
+  updateIncome(context: WriteContext, income: ScheduledEntry): Promise<boolean>;
+  updateExpense(context: WriteContext, expense: RegistryExpense): Promise<boolean>;
+  updateDebt(context: WriteContext, debt: RegistryDebt): Promise<boolean>;
+  deleteIncome(context: WriteContext, id: string): Promise<boolean>;
+  deleteExpense(context: WriteContext, id: string): Promise<boolean>;
+  deleteDebt(context: WriteContext, id: string): Promise<boolean>;
+}
+
+/**
+ * Commitments that come from outside the individual registry and enter the projection as fixed
+ * expenses, such as the member's contribution to the household (HU15). Read-only: information
+ * flows from the shared space to the individual profile, never the other way (rule 5).
+ */
+export interface CommitmentSource {
+  commitmentsFor(actor: Actor): Promise<readonly Expense[]>;
 }

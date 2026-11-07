@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../data/finance_repository.dart';
+import '../data/auth/auth_controller.dart';
 import '../theme/tokens.dart';
-import 'common.dart';
 import 'fdm_icon.dart';
 
 class NavEntry {
@@ -13,6 +12,9 @@ class NavEntry {
   final String path;
   final FdmIcons icon;
 }
+
+/// Pantallas que ya muestran datos reales del usuario desde la API.
+const connectedPaths = ['/app/resumen', '/app/registro', '/app/proyeccion', '/app/escenarios', '/app/comparar'];
 
 const navEntries = [
   NavEntry('Mi situación', '/app/resumen', FdmIcons.steps),
@@ -36,8 +38,19 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 1000;
     final menu = _Sidebar(location: location);
+    final body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      // Las cifras de ejemplo nunca se presentan como propias: se rotulan las pantallas aún no conectadas.
+      if (!connectedPaths.any(location.startsWith)) const ColoredBox(
+        color: FdmColors.accentSoft,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+          child: Text('Las cifras de estas pantallas son de ejemplo: todavía no se conectan a tu registro.', textAlign: TextAlign.center),
+        ),
+      ),
+      Expanded(child: child),
+    ]);
     if (wide) {
-      return Scaffold(body: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [SizedBox(width: 240, child: menu), Expanded(child: child)]));
+      return Scaffold(body: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [SizedBox(width: 240, child: menu), Expanded(child: body)]));
     }
     return Scaffold(
       appBar: AppBar(
@@ -46,7 +59,7 @@ class AppShell extends StatelessWidget {
         title: Text('Fin de Mes', style: FdmText.serif(24, color: FdmColors.onInk)),
       ),
       drawer: Drawer(backgroundColor: FdmColors.ink, child: menu),
-      body: child,
+      body: body,
     );
   }
 }
@@ -57,7 +70,7 @@ class _Sidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider).value;
+    final account = ref.watch(authControllerProvider).account;
     return ColoredBox(
       color: FdmColors.ink,
       child: SafeArea(
@@ -72,24 +85,20 @@ class _Sidebar extends ConsumerWidget {
               ),
               for (final e in navEntries) _NavItem(entry: e, active: location.startsWith(e.path)),
               const Spacer(),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16),
-                child: Pill('Datos de demostración', color: FdmColors.accent),
-              ),
-              if (session != null)
+              if (account != null)
                 Row(children: [
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: FdmColors.accent,
-                    child: Text(session.initials, style: FdmText.ui(14, weight: FontWeight.w700, color: FdmColors.ink)),
+                    child: Text(_initials(account.displayName), style: FdmText.ui(14, weight: FontWeight.w700, color: FdmColors.ink)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(session.name, style: FdmText.ui(14, weight: FontWeight.w600, color: FdmColors.onInk)),
-                      Text(session.planLabel, style: FdmText.ui(12, color: FdmColors.accent)),
+                      Text(account.displayName, overflow: TextOverflow.ellipsis, style: FdmText.ui(14, weight: FontWeight.w600, color: FdmColors.onInk)),
+                      Text(account.email, overflow: TextOverflow.ellipsis, style: FdmText.ui(12, color: FdmColors.accent)),
                       InkWell(
-                        onTap: () => context.go('/login'),
+                        onTap: () => ref.read(authControllerProvider.notifier).logout(),
                         child: Text('Cerrar sesión', style: FdmText.ui(12, weight: FontWeight.w500, color: FdmColors.onInk).copyWith(decoration: TextDecoration.underline, decorationColor: FdmColors.onInk)),
                       ),
                     ]),
@@ -101,6 +110,11 @@ class _Sidebar extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _initials(String name) {
+  final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).take(2);
+  return parts.map((p) => p.characters.first.toUpperCase()).join();
 }
 
 class _NavItem extends StatelessWidget {

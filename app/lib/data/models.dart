@@ -281,15 +281,3 @@ class DeviceSession {
   final String lastUse;
   final bool current;
 }
-
-class DemoProfile {
-  const DemoProfile({required this.id, required this.name, required this.opening, required this.income, required this.expenses, required this.debt, required this.indicators, required this.closings});
-  final String id;
-  final String name;
-  final int opening;
-  final int income;
-  final int expenses;
-  final int debt;
-  final List<Indicator> indicators;
-  final List<int> closings;
-}

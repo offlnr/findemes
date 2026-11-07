@@ -6,7 +6,7 @@ describe('public API', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = await buildPublicApi({ logger: false });
+    app = await buildPublicApi({ logger: false, clock: { now: () => new Date('2026-11-15T12:00:00Z') } });
     app.get('/boom-test-only', () => {
       throw new Error('database password is hunter2');
     });
@@ -58,5 +58,22 @@ describe('public API', () => {
       payload: JSON.stringify({ padding: 'x'.repeat(70 * 1024) }),
     });
     expect(response.statusCode).toBe(413);
+  });
+});
+
+describe('public API CORS', () => {
+  it('allows only the configured exact origins', async () => {
+    const app = await buildPublicApi({
+      logger: false,
+      clock: { now: () => new Date('2026-11-15T12:00:00Z') },
+      corsOrigins: ['https://app.findemes.cl'],
+    });
+    await app.ready();
+    const allowed = await app.inject({ method: 'GET', url: '/health', headers: { origin: 'https://app.findemes.cl' } });
+    const denied = await app.inject({ method: 'GET', url: '/health', headers: { origin: 'https://evil.example' } });
+    await app.close();
+
+    expect(allowed.headers['access-control-allow-origin']).toBe('https://app.findemes.cl');
+    expect(denied.headers['access-control-allow-origin']).toBeUndefined();
   });
 });

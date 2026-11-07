@@ -8,6 +8,7 @@ describe('loadServiceConfig', () => {
       host: '127.0.0.1',
       port: 3000,
       logLevel: 'info',
+      corsOrigins: [],
     });
   });
 
@@ -21,7 +22,18 @@ describe('loadServiceConfig', () => {
       host: '0.0.0.0',
       port: 8080,
       logLevel: 'warn',
+      corsOrigins: [],
     });
+  });
+
+  it('reads a list of exact CORS origins', () => {
+    const config = loadServiceConfig({ CORS_ORIGINS: 'https://app.findemes.cl, http://localhost:8080' }, 3000);
+    expect(config.corsOrigins).toEqual(['https://app.findemes.cl', 'http://localhost:8080']);
+  });
+
+  it('rejects wildcard or path origins', () => {
+    expect(() => loadServiceConfig({ CORS_ORIGINS: '*' }, 3000)).toThrow(/CORS_ORIGINS/);
+    expect(() => loadServiceConfig({ CORS_ORIGINS: 'https://app.findemes.cl/' }, 3000)).toThrow(/CORS_ORIGINS/);
   });
 
   it('treats empty variables as missing', () => {
