@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="defs_sp_salida" targetNamespace="https://findemes.cl/bpmn" exporter="generate_bpmn.py">
+<bpmn:collaboration id="collab_sp_salida">
+<bpmn:participant id="pool_sp_salida" name="Fin de Mes" processRef="proc_sp_salida"/>
+</bpmn:collaboration>
+<bpmn:process id="proc_sp_salida" name="Salida de un miembro" isExecutable="false">
+<bpmn:startEvent id="s_start" name=""><bpmn:outgoing>fs1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:serviceTask id="s_quita" name="Quitar a la persona del hogar y de sus reglas"><bpmn:incoming>fs1</bpmn:incoming><bpmn:outgoing>fs2</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:exclusiveGateway id="s_admin" name="¿Era el administrador?"><bpmn:incoming>fs2</bpmn:incoming><bpmn:outgoing>fs3</bpmn:outgoing><bpmn:outgoing>fs4</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:serviceTask id="s_promueve" name="Promover al miembro más antiguo como administrador"><bpmn:incoming>fs3</bpmn:incoming><bpmn:outgoing>fs5</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:exclusiveGateway id="s_merge" name=""><bpmn:incoming>fs4</bpmn:incoming><bpmn:incoming>fs5</bpmn:incoming><bpmn:outgoing>fs6</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:serviceTask id="s_reparte" name="Repartir sus aportes en partes iguales entre los demás"><bpmn:incoming>fs6</bpmn:incoming><bpmn:outgoing>fs7</bpmn:outgoing></bpmn:serviceTask>
+<bpmn:endEvent id="s_end" name=""><bpmn:incoming>fs7</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="fs1" name="" sourceRef="s_start" targetRef="s_quita"/>
+<bpmn:sequenceFlow id="fs2" name="" sourceRef="s_quita" targetRef="s_admin"/>
+<bpmn:sequenceFlow id="fs3" name="Sí" sourceRef="s_admin" targetRef="s_promueve"/>
+<bpmn:sequenceFlow id="fs4" name="No" sourceRef="s_admin" targetRef="s_merge"/>
+<bpmn:sequenceFlow id="fs5" name="" sourceRef="s_promueve" targetRef="s_merge"/>
+<bpmn:sequenceFlow id="fs6" name="" sourceRef="s_merge" targetRef="s_reparte"/>
+<bpmn:sequenceFlow id="fs7" name="" sourceRef="s_reparte" targetRef="s_end"/>
+</bpmn:process>
+<bpmndi:BPMNDiagram id="dia_sp_salida" name="Salida de un miembro"><bpmndi:BPMNPlane id="plane_sp_salida" bpmnElement="collab_sp_salida">
+<bpmndi:BPMNShape id="pool_sp_salida_di" bpmnElement="pool_sp_salida" isHorizontal="true"><dc:Bounds x="1312" y="689" width="946" height="276"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="s_start_di" bpmnElement="s_start"  bioc:fill="#E6FF97" bioc:stroke="#62A715" color:background-color="#E6FF97" color:border-color="#62A715"><dc:Bounds x="1382" y="772" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="s_quita_di" bpmnElement="s_quita"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1445" y="750" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="s_admin_di" bpmnElement="s_admin" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="1635" y="765" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"><dc:Bounds x="1610" y="729" width="100" height="32"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="s_promueve_di" bpmnElement="s_promueve"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="1725" y="845" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="s_merge_di" bpmnElement="s_merge" isMarkerVisible="true" bioc:fill="#FFFFCC" bioc:stroke="#A6A61D" color:background-color="#FFFFCC" color:border-color="#A6A61D"><dc:Bounds x="1915" y="765" width="50" height="50"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="s_reparte_di" bpmnElement="s_reparte"  bioc:fill="#ECEFFF" bioc:stroke="#03689A" color:background-color="#ECEFFF" color:border-color="#03689A"><dc:Bounds x="2005" y="750" width="150" height="80"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="s_end_di" bpmnElement="s_end"  bioc:fill="#EEAAAA" bioc:stroke="#990000" color:background-color="#EEAAAA" color:border-color="#990000"><dc:Bounds x="2182" y="772" width="36" height="36"/><bpmndi:BPMNLabel color:color="#000000"/></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="fs1_di" bpmnElement="fs1"><di:waypoint x="1418" y="790"/><di:waypoint x="1445" y="790"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fs2_di" bpmnElement="fs2"><di:waypoint x="1595" y="790"/><di:waypoint x="1635" y="790"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fs3_di" bpmnElement="fs3"><di:waypoint x="1660" y="815"/><di:waypoint x="1660" y="885"/><di:waypoint x="1725" y="885"/><bpmndi:BPMNLabel><dc:Bounds x="1666" y="821" width="30" height="16"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fs4_di" bpmnElement="fs4"><di:waypoint x="1685" y="790"/><di:waypoint x="1915" y="790"/><bpmndi:BPMNLabel><dc:Bounds x="1691" y="772" width="30" height="16"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fs5_di" bpmnElement="fs5"><di:waypoint x="1875" y="885"/><di:waypoint x="1940" y="885"/><di:waypoint x="1940" y="815"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fs6_di" bpmnElement="fs6"><di:waypoint x="1965" y="790"/><di:waypoint x="2005" y="790"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="fs7_di" bpmnElement="fs7"><di:waypoint x="2155" y="790"/><di:waypoint x="2182" y="790"/></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>
